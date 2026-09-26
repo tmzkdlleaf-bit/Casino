@@ -1,0 +1,11 @@
+# Cloudflare Pages 보안 헤더 — 사이트 전체에 적용
+# CSP: 스크립트는 이 사이트 + jsdelivr(버전 고정·SRI)만, 데이터 통신은 이 프로젝트의 Supabase만 허용
+#  - 'unsafe-inline': index.html 한 파일 구조(인라인 <script>/<style>)를 유지하기 위해 필요
+#  - img-src https: 공지 마크다운에 외부 이미지 주소를 넣을 수 있게 허용
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://fuyfqejfqoflygvymbhp.supabase.co wss://fuyfqejfqoflygvymbhp.supabase.co; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
