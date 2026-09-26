@@ -756,6 +756,113 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
 .boot-error h2:focus{outline:none}
 
 /* =========================================================
+   15. 계정 / 폼 공통
+   ========================================================= */
+.card{padding:clamp(1.25rem, 3vw, 2rem); border:1px solid var(--line); border-radius:1.25rem; background:var(--black-2)}
+.card-h{margin:0 0 1.25rem; font-family:var(--f-serif); font-weight:900; font-size:var(--s2); line-height:1.3}
+.settings-grid{display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:1.5rem; align-items:start}
+.settings-grid .form{max-width:none}
+@media (max-width:860px){ .settings-grid{grid-template-columns:1fr} }
+.auth-card{max-width:30rem}
+.kv{display:grid; grid-template-columns:7rem 1fr; margin:0; border-top:1px solid var(--line)}
+.kv dt, .kv dd{margin:0; padding:.7rem 0; border-bottom:1px solid var(--line-2)}
+.kv dt{color:var(--smoke)}
+.form-actions{display:flex; flex-wrap:wrap; align-items:center; gap:.75rem}
+.field-error{display:block; margin-top:.35rem; color:var(--red-text); font-size:var(--s-1)}
+.field-error::before{content:"! "; font-weight:500}   /* 색 외 표시 */
+.form-error{margin:0; padding:.8rem 1rem; border:1px solid rgba(224,116,123,.55); border-radius:.6rem; background:rgba(140,28,38,.14); color:var(--ivory)}
+.form-note{margin:0; padding:.8rem 1rem; border:1px solid rgba(201,165,90,.5); border-radius:.6rem; background:rgba(201,165,90,.08)}
+.input[aria-invalid="true"]{border-color:var(--red-text)}
+.link-btn{
+  display:inline-flex; align-items:center; min-height:var(--tap); padding:0 .25rem; border:0; background:none; cursor:pointer;
+  color:var(--smoke); font-size:.9375rem; text-decoration:underline; text-underline-offset:.25em;
+}
+.link-btn:hover{color:var(--ivory)}
+.btn[aria-busy="true"]{cursor:progress; opacity:.7}
+.btn.danger{border-color:rgba(224,116,123,.6); color:var(--red-text)}
+.btn.danger:hover{background:rgba(140,28,38,.2); border-color:var(--red-text)}
+.btn.small{min-height:2.25rem; padding:.4rem 1rem; font-size:.875rem}
+.nav a.login{color:var(--gold)}
+.check{display:flex; align-items:center; gap:.65rem; min-height:var(--tap); cursor:pointer}
+.check input{width:1.2rem; height:1.2rem; margin:0; accent-color:var(--velvet)}
+
+/* =========================================================
+   16. 마크다운 본문
+   ========================================================= */
+.md{color:rgba(237,227,200,.86); line-height:1.85}
+.md > :first-child{margin-top:0}
+.md p, .md ul, .md ol, .md blockquote, .md pre, .md table{margin:0 0 1.1rem}
+.md h1, .md h2, .md h3, .md h4{font-family:var(--f-serif); font-weight:900; color:var(--ivory); line-height:1.35; margin:2rem 0 .75rem}
+.md h1{font-size:var(--s3)} .md h2{font-size:var(--s2)} .md h3, .md h4{font-size:var(--s1)}
+.md a{color:var(--gold); text-underline-offset:.2em}
+.md a:hover{color:var(--ivory)}
+.md strong{font-weight:500; color:var(--ivory)}
+.md ul, .md ol{padding-left:1.4rem}
+.md li + li{margin-top:.3rem}
+.md blockquote{padding:.25rem 0 .25rem 1.1rem; border-left:2px solid var(--velvet); color:var(--smoke)}
+.md code{padding:.1rem .35rem; border-radius:.3rem; background:var(--black-3); font-size:.9em}
+.md pre{padding:1rem; border-radius:.6rem; background:var(--black-3); overflow-x:auto}
+.md pre code{padding:0; background:none}
+.md hr{border:0; border-top:1px solid var(--line); margin:2rem 0}
+.md img{border-radius:.6rem; height:auto}
+.md table{border-collapse:collapse; width:100%; display:block; overflow-x:auto}
+.md th, .md td{padding:.5rem .75rem; border:1px solid var(--line); text-align:left}
+.notice-article .body.md p{color:inherit; white-space:normal}
+
+/* =========================================================
+   17. 관리 페이지
+   ========================================================= */
+.admin-tabs{display:flex; gap:.25rem; overflow-x:auto; padding:.3rem; margin-bottom:2rem; border:1px solid var(--line); border-radius:999px; width:max-content; max-width:100%; scrollbar-width:none}
+.admin-tabs::-webkit-scrollbar{display:none}
+.admin-tabs [role="tab"]{flex:none; min-height:2.5rem; padding:.45rem 1.1rem; border:0; border-radius:999px; background:none; color:var(--smoke); cursor:pointer; white-space:nowrap; transition:color .3s, background .3s}
+.admin-tabs [role="tab"]:hover{color:var(--ivory)}
+.admin-tabs [role="tab"][aria-selected="true"]{background:var(--velvet); color:var(--ivory); font-weight:500}
+.admin-tabs [role="tab"]:focus-visible{outline-offset:-2px}
+.admin-panel:focus-visible{outline-offset:6px; border-radius:1rem}
+.adm{display:grid; grid-template-columns:minmax(15rem, 20rem) minmax(0, 1fr); gap:1.5rem; align-items:start}
+@media (max-width:960px){ .adm{grid-template-columns:1fr} }
+.adm-list{position:sticky; top:6rem; display:grid; gap:.75rem}
+@media (max-width:960px){ .adm-list{position:static} }
+.adm-list ul{list-style:none; margin:0; padding:0; max-height:60vh; overflow-y:auto; border-top:1px solid var(--line-2)}
+.adm-list li button{
+  display:grid; width:100%; gap:.1rem; padding:.7rem .75rem; border:0; border-bottom:1px solid var(--line-2); border-radius:0;
+  background:none; color:var(--ivory); text-align:left; cursor:pointer; transition:background .2s;
+}
+.adm-list li button:hover{background:rgba(237,227,200,.04)}
+.adm-list li button[aria-current="true"]{background:rgba(140,28,38,.18); box-shadow:inset 3px 0 0 var(--red)}
+.adm-list li button:focus-visible{outline-offset:-2px}
+.adm-list .t{font-weight:400; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.adm-list .m{font-size:var(--s-1); color:var(--smoke)}
+.adm-list .empty{padding:1rem .75rem; color:var(--smoke); font-size:.9375rem}
+.adm-editor .form{max-width:none}
+.adm-editor .row2{display:grid; grid-template-columns:1fr 1fr; gap:1rem}
+@media (max-width:600px){ .adm-editor .row2{grid-template-columns:1fr} }
+.adm-editor textarea.input{min-height:10rem; font-family:inherit; line-height:1.7}
+.md-tools{display:flex; gap:.5rem; margin-bottom:.5rem}
+.md-preview{min-height:10rem; padding:1rem; border:1px dashed var(--line-strong); border-radius:.6rem}
+.label-like{display:block; margin-bottom:.5rem; font-weight:400}
+.img-field{display:grid; grid-template-columns:7rem 1fr; gap:1rem; align-items:center}
+.img-prev{aspect-ratio:3/4; border-radius:.6rem; border:1px solid var(--line); background:var(--black-3); overflow:hidden; display:grid; place-items:center; color:var(--smoke); font-size:.75rem}
+.img-prev img{width:100%; height:100%; object-fit:cover}
+.img-field input[type="file"]{max-width:100%; font-size:.875rem; color:var(--smoke)}
+.img-field input[type="file"]::file-selector-button{margin-right:.75rem; min-height:2.5rem; padding:.4rem 1rem; border:1px solid var(--line-strong); border-radius:999px; background:transparent; color:var(--ivory); cursor:pointer; font:inherit}
+.sub-editor{margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--line)}
+.sub-editor h3{margin:0 0 1rem; font-family:var(--f-serif); font-weight:900; font-size:var(--s1)}
+.inv-rows{display:grid; gap:.5rem; margin-bottom:1rem}
+.inv-row{display:grid; grid-template-columns:minmax(0, 2fr) 5rem minmax(0, 2fr) auto; gap:.5rem; align-items:end}
+.inv-row .field label{font-size:var(--s-1); color:var(--smoke); margin-bottom:.25rem}
+@media (max-width:600px){ .inv-row{grid-template-columns:1fr 5rem; } .inv-row .note{grid-column:1 / -1} }
+.adm-status{min-height:1.5rem; margin:0; color:var(--smoke); font-size:.9375rem}
+table.members td, table.members th{padding-inline:.5rem; vertical-align:middle}
+table.members td:first-child, table.members th:first-child{padding-left:0}
+table.members .who small{display:block; color:var(--smoke); font-size:var(--s-1)}
+table.members .input{min-height:2.25rem; padding:.35rem .6rem}
+.chip-form{display:flex; gap:.4rem; align-items:center; justify-content:flex-end; flex-wrap:wrap}
+.chip-form input[type="number"]{width:7.5rem}
+.chip-form input[type="text"]{width:9rem}
+.members{min-width:52rem}
+
+/* =========================================================
    14. 고대비 모드 (Windows 강제 색상) — 배경색으로만 그린 표시가 사라지지 않게
    ========================================================= */
 @media (forced-colors: active){
@@ -808,6 +915,7 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
       <a href="#game">게임</a>
       <a href="#settings">설정</a>
       <a href="#admin" class="admin" data-admin-only hidden>관리</a>
+      <a href="#login" class="login" data-guest-only hidden>로그인</a>
       <span class="nav-ink" aria-hidden="true"></span>
     </nav>
   </div>
@@ -985,7 +1093,7 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
       </header>
       <div class="table shop-bar" data-spot>
         <span id="wallet-label">보유 칩</span>
-        <span class="wallet"><span class="chip red" aria-hidden="true"></span><strong id="wallet" aria-describedby="wallet-label">0</strong></span>
+        <span class="wallet"><span class="chip red" aria-hidden="true"></span><strong id="wallet" aria-describedby="wallet-label">—</strong></span>
       </div>
       <h2 class="sr">상품 목록</h2>
       <p class="sr" id="buy-note">구매 기능은 준비 중입니다.</p>
@@ -1018,23 +1126,95 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
         <h1 class="page-title split">설정</h1>
         <p class="page-lede">내 표시 정보와 화면 효과를 바꿀 수 있습니다.</p>
       </header>
-      <form class="form" id="settings-form">
-        <div class="field">
-          <label for="set-name">표시 이름</label>
-          <input class="input" id="set-name" name="nickname" type="text" autocomplete="nickname" maxlength="30">
-        </div>
-        <div class="field">
-          <label for="set-char">연결된 캐릭터</label>
-          <select class="input" id="set-char" name="character"></select>
-        </div>
-        <div class="switch">
-          <div>
-            <label for="set-calm">애니메이션 끄기</label>
-            <span class="hint" id="set-calm-hint">칩 낙하, 카드 뒤집기, 탭 전환 효과를 멈춥니다. 이 기기에 저장됩니다.</span>
+      <div class="settings-grid">
+        <section class="card" aria-labelledby="acct-h">
+          <h2 class="card-h" id="acct-h">계정</h2>
+          <div id="acct-guest">
+            <p class="muted">로그인하면 표시 이름과 보유 칩을 확인할 수 있습니다.</p>
+            <a class="btn primary" href="#login">로그인</a>
           </div>
-          <input type="checkbox" role="switch" id="set-calm" name="calm" aria-describedby="set-calm-hint">
+          <form class="form" id="acct-form" novalidate hidden>
+            <dl class="kv">
+              <dt>이메일</dt><dd id="acct-email"></dd>
+              <dt>내 캐릭터</dt><dd id="acct-char"></dd>
+              <dt>보유 칩</dt><dd id="acct-chips"></dd>
+            </dl>
+            <p class="hint">캐릭터 연결과 칩은 관리자가 관리합니다. 칩은 캐릭터별로 쌓입니다.</p>
+            <div class="field">
+              <label for="set-name">표시 이름</label>
+              <input class="input" id="set-name" name="nickname" type="text" autocomplete="nickname" maxlength="30" required aria-describedby="set-name-err">
+              <span class="field-error" id="set-name-err" hidden></span>
+            </div>
+            <div class="form-actions">
+              <button class="btn primary" type="submit">저장</button>
+              <a class="btn" href="#password">비밀번호 변경</a>
+              <button class="btn" type="button" id="logout">로그아웃</button>
+            </div>
+          </form>
+        </section>
+        <section class="card" aria-labelledby="disp-h">
+          <h2 class="card-h" id="disp-h">화면</h2>
+          <div class="switch">
+            <div>
+              <label for="set-calm">애니메이션 끄기</label>
+              <span class="hint" id="set-calm-hint">칩 낙하, 카드 뒤집기, 탭 전환 효과를 멈춥니다. 바로 적용되고, 로그인 중이면 계정에도 저장됩니다.</span>
+            </div>
+            <input type="checkbox" role="switch" id="set-calm" name="calm" aria-describedby="set-calm-hint">
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 로그인 ===================== -->
+  <section data-page="login" class="page" hidden>
+    <div class="wrap">
+      <header class="page-head">
+        <h1 class="page-title split">로그인</h1>
+        <p class="page-lede">계정은 관리자 초대로만 만들어집니다.</p>
+      </header>
+      <form class="form card auth-card" id="login-form" novalidate>
+        <p class="form-error" id="login-error" role="alert" hidden></p>
+        <div class="field">
+          <label for="login-email">이메일</label>
+          <input class="input" id="login-email" name="email" type="email" autocomplete="email" inputmode="email" required aria-describedby="login-email-err">
+          <span class="field-error" id="login-email-err" hidden></span>
         </div>
-        <div><button class="btn primary" type="submit">설정 저장</button></div>
+        <div class="field">
+          <label for="login-pw">비밀번호</label>
+          <input class="input" id="login-pw" name="password" type="password" autocomplete="current-password" required aria-describedby="login-pw-err">
+          <span class="field-error" id="login-pw-err" hidden></span>
+        </div>
+        <div class="form-actions">
+          <button class="btn primary" type="submit">로그인</button>
+          <button class="link-btn" type="button" id="forgot">비밀번호를 잊으셨나요?</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ===================== 비밀번호 설정 (초대·재설정 링크 / 변경) ===================== -->
+  <section data-page="password" class="page" hidden>
+    <div class="wrap">
+      <header class="page-head">
+        <h1 class="page-title split">비밀번호</h1>
+        <p class="page-lede" id="pw-lede">새 비밀번호를 정해 주세요.</p>
+      </header>
+      <form class="form card auth-card" id="pw-form" novalidate>
+        <p class="form-error" id="pw-error" role="alert" hidden></p>
+        <input type="email" name="username" autocomplete="username" id="pw-user" hidden>
+        <div class="field">
+          <label for="pw-new">새 비밀번호</label>
+          <input class="input" id="pw-new" name="new-password" type="password" autocomplete="new-password" minlength="8" required aria-describedby="pw-new-hint pw-new-err">
+          <span class="hint" id="pw-new-hint">8자 이상</span>
+          <span class="field-error" id="pw-new-err" hidden></span>
+        </div>
+        <div class="field">
+          <label for="pw-new2">새 비밀번호 확인</label>
+          <input class="input" id="pw-new2" name="confirm-password" type="password" autocomplete="new-password" minlength="8" required aria-describedby="pw-new2-err">
+          <span class="field-error" id="pw-new2-err" hidden></span>
+        </div>
+        <div class="form-actions"><button class="btn primary" type="submit">비밀번호 저장</button></div>
       </form>
     </div>
   </section>
@@ -1046,30 +1226,19 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
         <h1 class="page-title split">관리</h1>
         <p class="page-lede">관리자에게만 보이는 페이지입니다.</p>
       </header>
-      <div class="admin-grid">
-        <div class="panel">
-          <h2>공지 작성</h2>
-          <div class="form">
-            <div class="field"><label for="ad-title">제목</label><input class="input" id="ad-title" type="text"></div>
-            <div class="field"><label for="ad-body">내용</label><textarea class="input" id="ad-body" rows="5"></textarea></div>
-            <div><button class="btn primary" type="button" disabled aria-describedby="ad-note">공지 올리기</button><span class="hint" id="ad-note">작성 기능 연결 전입니다.</span></div>
-          </div>
-        </div>
-        <div class="panel">
-          <h2>게임 일정</h2>
-          <p class="slot-note">스탭 시간대별 게임 개설 기능이 들어갈 자리입니다.</p>
-        </div>
-        <div class="panel full">
-          <h2>멤버 관리</h2>
-          <div class="table-scroll">
-            <table class="members">
-              <caption class="sr">멤버 목록 — 이름, 구분, 보유 칩</caption>
-              <thead><tr><th scope="col">이름</th><th scope="col">구분</th><th scope="col">칩</th></tr></thead>
-              <tbody id="admin-members"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <div class="admin-tabs" role="tablist" aria-label="관리 항목" id="admin-tabs"></div>
+      <div class="admin-panel" role="tabpanel" id="admin-panel" tabindex="0"></div>
+    </div>
+  </section>
+
+  <!-- ===================== 404 ===================== -->
+  <section data-page="notfound" class="page" hidden>
+    <div class="wrap">
+      <header class="page-head">
+        <h1 class="page-title split">없는 페이지</h1>
+        <p class="page-lede">주소가 바뀌었거나 삭제된 페이지입니다.</p>
+      </header>
+      <a class="btn primary" href="#home">홈으로</a>
     </div>
   </section>
 
@@ -1099,29 +1268,33 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- 버전 고정 + 무결성 해시(SRI): CDN 파일이 바뀌면 브라우저가 실행을 거부 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"
+        integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
 <script>
 /* =========================================================
    CONFIG
-   Supabase 연결 시 URL / anon key를 넣고
-   state.isAdmin 을 프로필 role 조회 결과로 교체합니다.
+   관리자 여부는 로그인한 계정의 profiles.role 로 판정합니다.
+   권한의 실제 차단은 DB(RLS, supabase/setup.sql)에서 이뤄지고, 여기서는 화면만 나눕니다.
    ========================================================= */
 const CONFIG = {
   // 공개용 anon 키. service_role 키는 절대 넣지 말 것
   SUPABASE_URL: "https://fuyfqejfqoflygvymbhp.supabase.co",
   SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1eWZxZWpmcW9mbHlndnltYmhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4OTI5MTAsImV4cCI6MjA5NjQ2ODkxMH0.Bb3eevn__xlaILyKywMvZ6maIgaKMCFYBu6dv9BJtr4",
-  DEV_SHOW_ADMIN: true   // 뼈대 확인용. 운영 전 false
+  PASSWORD_MIN: 8,
+  // 업로드 이미지 규격 (가로·세로 중 긴 변 px). WebP로 변환해 저장
+  IMG: { character: 1600, characterThumb: 640, item: 512 }
 };
 
 const SITE_NAME = "사이트명";   // 문서 제목(탭 이름)에 쓰임
-const PAGE_TITLES = { home: "", characters: "캐릭터", world: "세계관", story: "지난 이야기", shop: "상점", game: "게임", settings: "설정", admin: "관리", notices: "공지" };
+const PAGE_TITLES = { home: "", characters: "캐릭터", world: "세계관", story: "지난 이야기", shop: "상점", game: "게임", settings: "설정", admin: "관리", notices: "공지", login: "로그인", password: "비밀번호", notfound: "없는 페이지" };
 const setTitle = t => { document.title = t ? `${t} | ${SITE_NAME}` : SITE_NAME; };
 
 const mqReduce = matchMedia("(prefers-reduced-motion: reduce)");
 const mqFine = matchMedia("(hover: hover) and (pointer: fine)");
 const mqMobileNav = matchMedia("(max-width: 860px)");
 const CALM_KEY = "comu-calm";
-const state = { isAdmin: CONFIG.DEV_SHOW_ADMIN, calm: false, filter: "all" };
+const state = { isAdmin: false, session: null, profile: null, mine: [], calm: false, filter: "all" };   // mine: 내 소유 캐릭터 [{uuid, balance}]
 try { state.calm = localStorage.getItem(CALM_KEY) === "1"; } catch (_) {}
 const motionOK = () => !mqReduce.matches && !state.calm;
 
@@ -1233,6 +1406,12 @@ function renderNoticeList(){
   return list.length;
 }
 
+function renderHomeNotices(){
+  $("#notice-list").innerHTML = DATA.notices.length
+    ? sortedNotices().slice(0, 3).map(noticeRow).join("")
+    : `<li class="slot-note" style="padding:.55rem 0">등록된 공지가 없습니다.</li>`;
+}
+
 function renderHome(){
   const unit = `<span>사이트명</span><span><i>♠</i></span><span>문구 자리</span><span><i>♥</i></span><span>사이트명</span><span><i>♣</i></span><span>문구 자리</span><span><i>♦</i></span>`;
   $("#marquee").innerHTML = unit + unit;
@@ -1242,23 +1421,28 @@ function renderHome(){
     const off = i - mid;
     return `<a class="fan-card" href="#characters/${c.id}" style="--rot:${off * 7}deg;--lift:${Math.abs(off) * .35}rem;z-index:${i}" aria-label="${esc(c.name)} 프로필">
       <span class="pcard ${isRed(c.suit) ? "red-suit" : ""}" aria-hidden="true">
-        <span class="pip tl">${c.suit}</span><span class="face">${c.img ? `<img src="${esc(c.img)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover">` : "이미지"}</span><span class="pip br">${c.suit}</span>
+        <span class="pip tl">${c.suit}</span><span class="face">${c.img ? `<img src="${esc(c.thumb || c.img)}" alt="" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover">` : "이미지"}</span><span class="pip br">${c.suit}</span>
       </span></a>`;
   }).join("");
 
   $("#chip-row").innerHTML = DATA.players.map(c => `<span class="chip ${c.chip}"><span class="face"></span></span>`).join("");
 
-  $("#notice-list").innerHTML = sortedNotices().slice(0, 3).map(noticeRow).join("");
+  renderHomeNotices();
 
   const last = DATA.chapters[DATA.chapters.length - 1];
   $("#latest-card").innerHTML = last
     ? `<span class="ep">최근 이야기 / 제${last.number}화</span><h2 class="g-title">${esc(last.title)}</h2><p>${esc(last.summary)}</p>`
     : `<span class="ep">최근 이야기</span><h2 class="g-title">아직 기록이 없습니다</h2>`;
   $("#roster-meta").textContent = `딜러 ${DATA.dealers.length}명 / 참가자 ${DATA.players.length}명`;
-  if (!DATA.notices.length) $("#notice-list").innerHTML = `<li class="slot-note" style="padding:.55rem 0">등록된 공지가 없습니다.</li>`;
 }
 
-const imgSlot = (c, alt = "", lazy = true) => c.img ? `<img src="${esc(c.img)}" alt="${esc(alt)}"${lazy ? ` loading="lazy"` : ""} decoding="async">` : ph();
+/* 작은 이미지(thumb)가 있으면 srcset으로 화면 크기에 맞는 파일만 받음 */
+const imgSlot = (c, alt = "", lazy = true, sizes = "100vw") => {
+  if (!c.img) return ph();
+  const set = c.thumb ? ` srcset="${esc(c.thumb)} ${CONFIG.IMG.characterThumb}w, ${esc(c.img)} ${CONFIG.IMG.character}w" sizes="${sizes}"` : "";
+  return `<img src="${esc(c.thumb || c.img)}"${set} alt="${esc(alt)}"${lazy ? ` loading="lazy"` : ` fetchpriority="high"`} decoding="async">`;
+};
+const STRIP_SIZES = "(max-width: 760px) 50vw, 30vw";
 
 function renderCast(){
   $("#count-dealer").textContent = DATA.dealers.length + "명";
@@ -1267,14 +1451,14 @@ function renderCast(){
 
   $("#cast-dealers").innerHTML = DATA.dealers.map((c, i) => `
     <a class="strip dealer ${isRed(c.suit) ? "red-suit" : ""}" href="#characters/${c.id}" data-id="${c.id}" style="--delay:${i * 80}ms">
-      <span class="img">${imgSlot(c)}</span>
+      <span class="img">${imgSlot(c, "", true, STRIP_SIZES)}</span>
       <span class="pip" aria-hidden="true">${c.suit}</span>
       <span class="label"><span class="name">${esc(c.name)}</span><span class="sub">프로필 보기</span></span>
     </a>`).join("");
 
   $("#cast-players").innerHTML = DATA.players.map((c, i) => `
     <a class="strip player" href="#characters/${c.id}" data-id="${c.id}" style="--delay:${i * 80}ms;--band:${c.chip === "red" ? "var(--velvet)" : "var(--felt)"}">
-      <span class="img">${imgSlot(c)}</span>
+      <span class="img">${imgSlot(c, "", true, STRIP_SIZES)}</span>
       <span class="chip ${c.chip} badge" aria-hidden="true"></span>
       <span class="label"><span class="name">${esc(c.name)}</span><span class="sub">프로필 보기</span></span>
     </a>`).join("");
@@ -1292,7 +1476,7 @@ function renderProfile(id){
   const v = $("#pf-visual");
   v.className = "pf-visual " + (dealer ? "dealer" : "player") + (dealer && isRed(c.suit) ? " red-suit" : "");
   v.style.setProperty("--band", c.chip === "red" ? "var(--velvet)" : "var(--felt)");
-  v.innerHTML = `<span class="img">${imgSlot(c, `${c.name} 캐릭터 이미지`, false)}</span>` +
+  v.innerHTML = `<span class="img">${imgSlot(c, `${c.name} 캐릭터 이미지`, false, "(max-width: 860px) 100vw, 55vw")}</span>` +
     (dealer ? `<span class="pip" aria-hidden="true">${c.suit}</span>` : `<span class="chip ${c.chip} badge" aria-hidden="true"></span>`);
 
   const role = $("#pf-role");
@@ -1319,7 +1503,7 @@ let invItems = [];
 function renderInventory(inv, selected = 0){
   invItems = inv;
   const filled = inv.map((it, i) => `
-    <button class="slot" type="button" data-slot="${i}" aria-pressed="${i === selected}" aria-controls="pf-inv-detail" aria-label="${esc(it.name)}, ${it.quantity}개">
+    <button class="slot" type="button" data-slot="${i}" aria-pressed="${i === selected}" aria-controls="pf-inv-detail" tabindex="${i === selected ? 0 : -1}" aria-label="${esc(it.name)}, ${it.quantity}개">
       ${it.img ? `<img src="${esc(it.img)}" alt="">` : ph()}
       ${it.quantity > 1 ? `<span class="qty" aria-hidden="true">×${it.quantity}</span>` : ""}
     </button>`).join("");
@@ -1341,12 +1525,17 @@ function renderNotice(id){
     <a class="link-back" href="#notices">공지 목록으로</a>
     <div class="meta">${n.pinned ? `<span class="tag pin">고정</span>` : ""}${n.category ? `<span class="tag">${esc(n.category)}</span>` : ""}${timeTag(n.date, n.iso)}</div>
     <h1>${esc(n.title)}</h1>
-    <div class="body"><p>${esc(n.body)}</p></div>
+    <div class="body" id="notice-body"><p>${esc(n.body)}</p></div>
     <nav class="pager" aria-label="다른 공지">
       ${older ? `<a href="#notices/${older.id}"><small>아래 공지</small><strong>${esc(older.title)}</strong></a>` : "<span></span>"}
       ${newer ? `<a href="#notices/${newer.id}"><small>위 공지</small><strong>${esc(newer.title)}</strong></a>` : "<span></span>"}
     </nav>`;
   setTitle(n.title);
+  // 마크다운은 라이브러리를 처음 필요할 때 불러옴. 그 전까지는 일반 텍스트로 보임
+  renderMarkdown(n.body).then(html => {
+    const el = $("#notice-body");
+    if (el && currentKey === "notice/" + id){ el.innerHTML = html; el.classList.add("md"); }
+  }).catch(() => {});
   return true;
 }
 
@@ -1387,14 +1576,29 @@ function renderShop(){
     </article>`).join("");
 }
 
-function renderSettings(){
-  $("#set-char").innerHTML = `<option value="">선택 안 함</option>` +
-    [...DATA.dealers, ...DATA.players].map(c => `<option value="${c.id}">${esc(c.name)} (${c.role})</option>`).join("");
-}
+/* 내 소유 캐릭터 + 잔액 (공개 캐릭터 데이터와 합침) */
+const myChars = () => state.mine.map(m => ({ ...ALL().find(c => c.uuid === m.uuid), balance: m.balance })).filter(c => c.name);
 
-function renderAdmin(){
-  $("#admin-members").innerHTML = [...DATA.dealers, ...DATA.players].map(c => `
-    <tr><td>${esc(c.name)}</td><td class="${c.role === "딜러" ? "tag-d" : "tag-p"}">${c.role}</td><td>0</td></tr>`).join("");
+/* 계정 영역(설정 페이지) + 상점 보유 칩 */
+function renderAccount(){
+  const p = state.profile, on = !!state.session;
+  $("#acct-guest").hidden = on;
+  $("#acct-form").hidden = !on;
+  $$("#nav [data-guest-only]").forEach(el => el.hidden = on || !USE_DB);
+  $$("#nav [data-admin-only]").forEach(el => el.hidden = !state.isAdmin);
+  if (on){
+    const mine = myChars();
+    $("#acct-email").textContent = state.session.user.email || "—";
+    $("#acct-char").textContent = mine.length ? mine.map(c => `${c.name} (${c.role})`).join(", ") : "연결 안 됨";
+    $("#acct-chips").textContent = mine.length ? mine.map(c => `${mine.length > 1 ? c.name + " " : ""}${c.balance.toLocaleString("ko-KR")}칩`).join(", ") : "—";
+    if (document.activeElement !== $("#set-name")) $("#set-name").value = p?.display_name || "";
+    $("#pw-user").value = state.session.user.email || "";
+  }
+  // 칩은 캐릭터별. 상점에는 대표 캐릭터(참가자 우선)의 잔액을 표시
+  const main = myChars().sort((a, b) => (a.role === "참가자" ? 0 : 1) - (b.role === "참가자" ? 0 : 1))[0];
+  $("#wallet").textContent = main ? main.balance.toLocaleString("ko-KR") : "—";
+  $("#wallet-label").textContent = !on ? "보유 칩 (로그인 필요)" : main ? `보유 칩 · ${main.name}` : "보유 칩 (연결된 캐릭터 없음)";
+  moveNavInk();
 }
 
 /* ---------- effects ---------- */
@@ -1527,17 +1731,20 @@ function setMenu(open, { restoreFocus = true } = {}){
 /* ---------- router ----------
    #home  #characters  #characters/d3  #notices  #notices/n2  #world ...
    ------------------------------------------------------------------ */
-const PAGES = ["home","characters","world","story","shop","game","settings","admin","notices"];
+const PAGES = ["home","characters","world","story","shop","game","settings","admin","notices","login","password"];
 let current = null, currentKey = null, lastProfile = null, listScroll = 0;
 
 function resolve(){
-  let [page, param] = (location.hash.slice(1) || "home").split("/");
-  if (!PAGES.includes(page)) page = "home";
-  if (page === "admin" && !state.isAdmin) page = "home";
+  const [page, param] = (location.hash.slice(1) || "home").split("/");
   let view = page;
-  if (page === "characters" && param) view = ALL().some(c => c.id === param) ? "profile" : "characters";
-  if (page === "notices" && param) view = DATA.notices.some(n => n.id === param) ? "notice" : "notices";
-  const navKey = view === "profile" ? "characters" : (view === "notice" || view === "notices") ? null : view;
+  if (!PAGES.includes(page)) view = "notfound";
+  else if (page === "admin" && !state.isAdmin) view = state.session ? "notfound" : "login";   // 로그인 후 같은 주소에서 바로 관리 화면으로
+  else if (page === "password" && !state.session) view = "login";
+  else if (page === "login" && state.session) view = "settings";
+  else if ((page === "login" || page === "password") && !USE_DB) view = "notfound";
+  else if (page === "characters" && param) view = ALL().some(c => c.id === param) ? "profile" : "notfound";
+  else if (page === "notices" && param) view = DATA.notices.some(n => String(n.id) === param) ? "notice" : "notfound";
+  const navKey = view === "profile" ? "characters" : ["notice", "notices", "notfound", "password"].includes(view) ? null : view;
   return { view, param, navKey };
 }
 
@@ -1582,6 +1789,13 @@ function route(){
     if (view === "characters") { applyFilter(); deal(); }
     if (view === "notices") renderNoticeList();
     if (view === "world") bindSpy();
+    if (view === "settings") renderAccount();
+    if (view === "admin") admOpen();
+    if (view === "login") showLoginNotice();
+    if (view === "password"){
+      $("#pw-lede").textContent = { invite: "초대를 수락했습니다. 사용할 비밀번호를 정해 주세요.", recovery: "새 비밀번호를 정해 주세요." }[state.pwMode] || "새 비밀번호를 입력해 주세요.";
+      $("#pw-form").reset(); $("#pw-error").hidden = true;
+    }
     moveNavInk();
     onScroll();
     // SPA 화면 전환을 보조기기에 알림: 새 화면의 h1으로 포커스 이동 (첫 로드는 제외)
@@ -1601,7 +1815,6 @@ function focusHeading(scope){
   target.focus({ preventScroll: true });
 }
 
-function applyAdmin(){ $$("#nav [data-admin-only]").forEach(el => el.hidden = !state.isAdmin); }
 
 function applyCalm(){
   document.body.classList.toggle("calm", state.calm);
@@ -1665,16 +1878,41 @@ $("#spin").addEventListener("click", () => {
   $("#wheel").style.transform = `rotate(${spun}deg)`;
 });
 
-$("#settings-form").addEventListener("submit", e => {
-  e.preventDefault();
-  state.calm = $("#set-calm").checked;
+/* 스위치는 누르는 즉시 적용 (role="switch"의 기대 동작) */
+$("#set-calm").addEventListener("change", e => {
+  state.calm = e.target.checked;
   try { localStorage.setItem(CALM_KEY, state.calm ? "1" : "0"); } catch (_) {}
   applyCalm();
-  // TODO: 표시 이름·연결 캐릭터는 Supabase profiles 테이블에 저장
-  toast("설정을 저장했습니다");
+  toast(state.calm ? "애니메이션을 껐습니다" : "애니메이션을 켰습니다");
+  if (USE_DB && state.session){
+    sb.from("profiles").update({ reduce_motion: state.calm }).eq("id", state.session.user.id).then(({ error }) => {
+      if (!error && state.profile) state.profile.reduce_motion = state.calm;
+    });
+  }
 });
 
-window.addEventListener("hashchange", route);
+/* 소지품 칸: 방향키·Home·End로 이동 (칸 전체가 Tab 한 번) */
+$("#pf-inv").addEventListener("keydown", e => {
+  const btns = $$("#pf-inv button.slot"), i = btns.indexOf(document.activeElement);
+  if (i < 0) return;
+  const cols = getComputedStyle($("#pf-inv")).gridTemplateColumns.split(" ").length;
+  const step = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: cols, ArrowUp: -cols }[e.key];
+  let j = step != null ? i + step : e.key === "Home" ? 0 : e.key === "End" ? btns.length - 1 : null;
+  if (j == null) return;
+  e.preventDefault();
+  j = Math.max(0, Math.min(btns.length - 1, j));
+  btns.forEach((b, k) => b.tabIndex = k === j ? 0 : -1);
+  btns[j].focus();
+});
+
+window.addEventListener("hashchange", () => {
+  if (ADM.dirty && current === "admin" && !confirm("저장하지 않은 변경이 있습니다. 이 페이지를 떠날까요?")){
+    history.replaceState(null, "", "#admin"); return;
+  }
+  ADM.dirty = false;
+  route();
+});
+window.addEventListener("beforeunload", e => { if (ADM.dirty){ e.preventDefault(); e.returnValue = ""; } });
 addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   if ($("#site-head").classList.contains("open")){ setMenu(false); return; }   // 메뉴가 먼저
@@ -1746,8 +1984,19 @@ function runIntro(){
    DATA LAYER — Supabase 조회 → 화면용 DATA 모양으로 변환
    세계관(DATA.world)은 DB가 아니라 이 파일의 더미 데이터 자리에서 직접 작성합니다.
    ========================================================= */
-const USE_DB = !!(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase);
-const sb = USE_DB ? supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY) : null;
+const DB_CONFIGURED = !!(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY);
+const USE_DB = DB_CONFIGURED && !!window.supabase;
+
+/* 초대·비밀번호 재설정 메일 링크는 #access_token=…&type=invite 형태로 돌아옴.
+   해시 라우터가 이를 페이지 주소로 읽기 전에 먼저 챙겨 둠 */
+const AUTH_HASH = (() => {
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (!h.has("access_token") && !h.has("error")) return null;
+  return { type: h.get("type"), error: h.get("error_code") || h.get("error"), errorText: h.get("error_description") };
+})();
+const sb = USE_DB ? supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
+  auth: { flowType: "implicit", detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+}) : null;
 
 const SUIT_MAP = { spade: "♠", heart: "♥", club: "♣", diamond: "♦" };
 const publicUrl = (bucket, path) => path ? sb.storage.from(bucket).getPublicUrl(path).data.publicUrl : "";
@@ -1766,6 +2015,7 @@ function mapCharacter(r){
     suit: SUIT_MAP[r.suit] || "♠",
     chip: r.chip_color || "green",
     img: publicUrl("characters", r.image_path),
+    thumb: publicUrl("characters", r.thumb_path),
     age: r.age, height: r.height,
     keywords: r.keywords || [],
     description: r.description || "",
@@ -1781,19 +2031,26 @@ function mapCharacter(r){
   };
 }
 
+const noticeQuery = () => sb.from("notices")
+  .select("id, title, body, is_pinned, pin_order, published_at, notice_categories(name)")
+  .order("is_pinned", { ascending: false }).order("pin_order")
+  .order("published_at", { ascending: false });
+const mapNotice = n => ({
+  id: String(n.id), title: n.title, body: n.body, date: fmtDate(n.published_at), iso: n.published_at,
+  category: n.notice_categories?.name ?? "", pinned: n.is_pinned, pinOrder: n.pin_order
+});
+
 function withTimeout(promise, ms = 12000){
   return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
 }
 
 async function loadAll(){
   const q = await withTimeout(Promise.all([
+    // 필요한 컬럼만 명시 — 나중에 비공개 컬럼을 추가해도 노출되지 않게
     sb.from("characters")
-      .select("*, inventory(quantity, note, sort_order, items(name, description, image_path))")
+      .select("id, slug, name, kind, suit, chip_color, image_path, thumb_path, age, height, keywords, description, sort_order, inventory(quantity, note, sort_order, items(name, description, image_path))")
       .order("sort_order"),
-    sb.from("notices")
-      .select("id, title, body, is_pinned, pin_order, published_at, notice_categories(name)")
-      .order("is_pinned", { ascending: false }).order("pin_order")
-      .order("published_at", { ascending: false }),
+    noticeQuery(),
     sb.from("notice_categories").select("name").order("sort_order"),
     sb.from("chapters").select("number, title, summary, played_on").order("number"),
     sb.from("items").select("id, name, description, image_path, price, stock, sort_order")
@@ -1808,10 +2065,7 @@ async function loadAll(){
     dealers: all.filter(c => c.role === "딜러"),
     players: all.filter(c => c.role === "참가자"),
     categories: cats.map(c => c.name),
-    notices: notices.map(n => ({
-      id: n.id, title: n.title, body: n.body, date: fmtDate(n.published_at), iso: n.published_at,
-      category: n.notice_categories?.name ?? "", pinned: n.is_pinned, pinOrder: n.pin_order
-    })),
+    notices: notices.map(mapNotice),
     chapters: chapters.map(c => ({ number: c.number, title: c.title, summary: c.summary, date: fmtDate(c.played_on), iso: c.played_on })),
     items: items.map(it => ({ id: it.id, name: it.name, description: it.description, price: it.price, stock: it.stock, img: publicUrl("items", it.image_path) }))
   };
@@ -1824,27 +2078,854 @@ function showBootError(err){
     <div class="boot-error" role="alert">
       <h2 tabindex="-1">불러오지 못했습니다</h2>
       <p>잠시 후 다시 시도해 주세요.</p>
-      <button class="btn" type="button" onclick="location.reload()">다시 시도</button>
+      <button class="btn" type="button" id="boot-retry">다시 시도</button>
     </div>`;
+  $("#boot-retry").addEventListener("click", () => location.reload());
   document.body.classList.remove("intro-on");
   $("#intro")?.remove();
   [$("#skip-link"), $("#site-head"), $("#app"), $(".site-foot")].forEach(el => el.inert = true);  // 오류 화면 뒤는 조작 불가
   $("#boot .btn").focus();
 }
 
+/* =========================================================
+   FORM — 검증·오류 표시·처리 중 상태 (접근성: aria-invalid + 오류 문구 연결)
+   ========================================================= */
+const ERR_TEXT = [
+  [/Invalid login credentials/i, "이메일 또는 비밀번호가 올바르지 않습니다."],
+  [/Email not confirmed/i, "이메일 인증이 끝나지 않은 계정입니다."],
+  [/rate limit|too many|429/i, "요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요."],
+  [/should be different/i, "기존과 다른 비밀번호를 입력해 주세요."],
+  [/Password should|weak password/i, "더 길거나 복잡한 비밀번호를 사용해 주세요."],
+  [/profiles_character_unique/i, "다른 멤버에게 이미 연결된 캐릭터입니다."],
+  [/duplicate key.*slug|slug.*duplicate/i, "이미 쓰고 있는 주소(slug)입니다."],
+  [/duplicate key|23505/i, "같은 값이 이미 있습니다."],
+  [/foreign key|23503/i, "다른 곳에서 사용 중이라 처리할 수 없습니다. 연결된 항목을 먼저 정리해 주세요."],
+  [/row-level security|permission denied|42501|JWT/i, "권한이 없습니다. 다시 로그인해 주세요."],
+  [/Failed to fetch|NetworkError|timeout|Load failed/i, "연결이 원활하지 않습니다. 잠시 후 다시 시도해 주세요."],
+  [/otp_expired|expired/i, "링크가 만료되었습니다. 비밀번호 재설정을 다시 요청하거나 관리자에게 초대를 다시 요청해 주세요."]
+];
+function errMsg(e){
+  const m = `${e?.message || ""} ${e?.code || ""} ${e?.details || ""}`.trim() || String(e || "");
+  for (const [re, t] of ERR_TEXT) if (re.test(m)) return t;
+  return /[가-힣]/.test(e?.message || "") ? e.message : "처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+}
+
+function fieldError(input, msg){
+  input.setAttribute("aria-invalid", msg ? "true" : "false");
+  const err = document.getElementById(input.id + "-err");
+  if (err){ err.textContent = msg || ""; err.hidden = !msg; }
+}
+function checkField(input){
+  const v = input.validity;
+  let msg = "";
+  if (v.valueMissing) msg = input.type === "file" ? "파일을 선택해 주세요." : "필수 항목입니다.";
+  else if (v.typeMismatch) msg = input.type === "email" ? "이메일 형식이 올바르지 않습니다." : "형식이 올바르지 않습니다.";
+  else if (v.tooShort) msg = `${input.minLength}자 이상 입력해 주세요.`;
+  else if (v.tooLong) msg = `${input.maxLength}자 이하로 입력해 주세요.`;
+  else if (v.patternMismatch) msg = input.dataset.patternMsg || "형식이 올바르지 않습니다.";
+  else if (v.rangeUnderflow) msg = `${input.min} 이상이어야 합니다.`;
+  else if (v.rangeOverflow) msg = `${input.max} 이하여야 합니다.`;
+  else if (v.stepMismatch || v.badInput) msg = "정수를 입력해 주세요.";
+  // minlength는 사람이 직접 입력한 값만 검사하므로 직접 한 번 더 확인
+  else if (input.minLength > 0 && input.value && input.value.length < input.minLength) msg = `${input.minLength}자 이상 입력해 주세요.`;
+  fieldError(input, msg);
+  return !msg;
+}
+function validateForm(form){
+  let first = null;
+  $$("input, textarea, select", form).forEach(f => {
+    if (f.type === "hidden" || f.hidden || f.disabled || !f.willValidate) return;
+    if (!checkField(f) && !first) first = f;
+  });
+  first?.focus();
+  return !first;
+}
+// 입력을 고치면 오류 표시를 바로 지움
+document.addEventListener("input", e => { if (e.target.getAttribute?.("aria-invalid") === "true") checkField(e.target); });
+
+/* 처리 중 버튼: disabled 대신 aria-disabled — disabled로 바꾸면 포커스가 사라짐 */
+async function withBusy(btn, fn){
+  if (btn.getAttribute("aria-busy") === "true") return;
+  const label = btn.textContent;
+  btn.setAttribute("aria-busy", "true"); btn.setAttribute("aria-disabled", "true");
+  btn.textContent = "처리 중…";
+  try { return await fn(); }
+  finally { btn.textContent = label; btn.removeAttribute("aria-busy"); btn.removeAttribute("aria-disabled"); }
+}
+function showMsg(el, msg){ el.textContent = msg || ""; el.hidden = !msg; }
+
+/* =========================================================
+   AUTH — 이메일 + 비밀번호, 초대제
+   ========================================================= */
+async function refreshAuth(session){
+  const before = `${state.session?.user.id}|${state.isAdmin}`;
+  state.session = session || null;
+  if (session){
+    const { data, error } = await sb.from("profiles").select("id, email, display_name, role, reduce_motion").eq("id", session.user.id).maybeSingle();
+    state.profile = error ? null : data;
+    await loadMine();
+    // '애니메이션 끄기'는 계정 설정을 따름 (이 기기에도 저장)
+    if (state.profile && state.profile.reduce_motion !== state.calm){
+      state.calm = state.profile.reduce_motion;
+      try { localStorage.setItem(CALM_KEY, state.calm ? "1" : "0"); } catch (_) {}
+      applyCalm();
+    }
+  } else { state.profile = null; state.mine = []; }
+  state.isAdmin = state.profile?.role === "admin";
+  subscribeProfile();
+  renderAccount();
+  // 로그인 상태나 권한이 바뀌었을 때만 현재 화면을 다시 판정 (토큰 갱신 때는 그대로)
+  if (state.ready && before !== `${state.session?.user.id}|${state.isAdmin}`) route();
+}
+
+async function loadMine(){
+  const uid = state.session?.user.id;
+  if (!uid){ state.mine = []; return; }
+  const { data: chars, error } = await sb.from("characters").select("id").eq("owner_id", uid);
+  if (error){ state.mine = []; return; }
+  const ids = chars.map(c => c.id);
+  const bal = ids.length ? (await sb.from("chip_balances").select("character_id, balance").in("character_id", ids)).data || [] : [];
+  state.mine = ids.map(id => ({ uuid: id, balance: bal.find(b => b.character_id === id)?.balance ?? 0 }));
+}
+
+function showLoginNotice(){
+  $("#login-note")?.remove();
+  showMsg($("#login-error"), state.loginNotice || "");
+  state.loginNotice = null;
+}
+
+$("#login-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = e.currentTarget;
+  showMsg($("#login-error"), "");
+  if (!validateForm(f)) return;
+  await withBusy($('button[type="submit"]', f), async () => {
+    const { error } = await sb.auth.signInWithPassword({ email: f.email.value.trim(), password: f.password.value });
+    if (error){
+      showMsg($("#login-error"), errMsg(error));
+      f.password.value = ""; f.password.focus();
+      return;
+    }
+    f.reset();
+    toast("로그인했습니다");
+    // 화면 이동은 onAuthStateChange → refreshAuth → route 가 처리
+  });
+});
+
+$("#forgot").addEventListener("click", async e => {
+  const email = $("#login-email");
+  showMsg($("#login-error"), "");
+  if (!email.value.trim() || !checkField(email)){
+    fieldError(email, "재설정 메일을 받을 이메일을 입력해 주세요.");
+    email.focus(); return;
+  }
+  await withBusy(e.currentTarget, async () => {
+    const { error } = await sb.auth.resetPasswordForEmail(email.value.trim(), { redirectTo: location.origin + location.pathname });
+    if (error){ showMsg($("#login-error"), errMsg(error)); return; }
+    $("#login-note")?.remove();
+    $("#login-form").insertAdjacentHTML("afterbegin", `<p class="form-note" id="login-note" role="status">가입된 이메일이라면 재설정 메일이 발송됩니다. 메일의 링크를 눌러 새 비밀번호를 정해 주세요.</p>`);
+  });
+});
+
+$("#pw-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = e.currentTarget, a = $("#pw-new"), b = $("#pw-new2");
+  showMsg($("#pw-error"), "");
+  if (!validateForm(f)) return;
+  if (a.value !== b.value){ fieldError(b, "비밀번호가 서로 다릅니다."); b.focus(); return; }
+  await withBusy($('button[type="submit"]', f), async () => {
+    const { error } = await sb.auth.updateUser({ password: a.value });
+    if (error){ showMsg($("#pw-error"), errMsg(error)); return; }
+    f.reset();
+    state.pwMode = null;
+    toast("비밀번호를 저장했습니다");
+    location.hash = "#settings";
+  });
+});
+
+$("#acct-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = e.currentTarget, name = $("#set-name");
+  if (!validateForm(f)) return;
+  await withBusy($('button[type="submit"]', f), async () => {
+    const { data, error } = await sb.from("profiles").update({ display_name: name.value.trim() }).eq("id", state.session.user.id).select("display_name").single();
+    if (error){ toast(errMsg(error)); return; }
+    state.profile = { ...state.profile, display_name: data.display_name };
+    toast("저장했습니다");
+  });
+});
+
+$("#logout").addEventListener("click", async e => {
+  await withBusy(e.currentTarget, async () => {
+    await sb.auth.signOut();
+    toast("로그아웃했습니다");
+    location.hash = "#home";
+  });
+});
+
+/* =========================================================
+   MARKDOWN — 처음 필요할 때만 불러옴. 버전 고정 + SRI, DOMPurify로 소독
+   ========================================================= */
+const LIBS = {
+  marked: { src: "https://cdn.jsdelivr.net/npm/marked@18.0.14/lib/marked.umd.js", sri: "sha384-2vpGtuKqJvFlwJqYnf/wUMuzUfhUnYBt9oay0e2yaFcq0Dh6/aEbQ8YAOeKGzlYo" },
+  purify: { src: "https://cdn.jsdelivr.net/npm/dompurify@3.4.16/dist/purify.min.js", sri: "sha384-a7SzOxErzJ3ZpQz0zJ32d67dSitNzPcbfybc/ykU9KJhMgZkwqfSxlhhdJRS+XGL" }
+};
+const loadScript = ({ src, sri }) => new Promise((res, rej) => {
+  const s = document.createElement("script");
+  s.src = src; s.integrity = sri; s.crossOrigin = "anonymous";
+  s.onload = res; s.onerror = () => rej(new Error("script load failed: " + src));
+  document.head.append(s);
+});
+let mdReady = null;
+function loadMarkdown(){
+  return mdReady ||= Promise.all([loadScript(LIBS.marked), loadScript(LIBS.purify)]).then(() => {
+    const m = window.marked, parse = (m.parse || m.marked?.parse).bind(m.marked || m);
+    DOMPurify.addHook("afterSanitizeAttributes", node => {
+      if (node.tagName === "A" && /^https?:/i.test(node.getAttribute("href") || "") && !node.href.startsWith(location.origin)) node.setAttribute("rel", "noopener noreferrer");
+      if (node.tagName === "IMG"){ node.setAttribute("loading", "lazy"); node.setAttribute("decoding", "async"); if (!node.hasAttribute("alt")) node.setAttribute("alt", ""); }
+    });
+    return text => {
+      const html = DOMPurify.sanitize(parse(text, { gfm: true, breaks: true }), {
+        FORBID_TAGS: ["style", "form", "input", "button", "textarea", "select", "iframe", "object", "embed"], FORBID_ATTR: ["style"]
+      });
+      // 본문 제목 단계를 한 칸 내림 — 페이지 제목(h1) 아래에 오도록 (WCAG 1.3.1)
+      const t = document.createElement("template");
+      t.innerHTML = html;
+      $$("h1, h2, h3, h4, h5", t.content).reverse().forEach(h => {
+        const n = document.createElement("h" + Math.min(6, +h.tagName[1] + 1));
+        n.innerHTML = h.innerHTML; h.replaceWith(n);
+      });
+      return t.innerHTML;
+    };
+  }).catch(err => { mdReady = null; throw err; });
+}
+async function renderMarkdown(text){ return (await loadMarkdown())(text || ""); }
+
+/* =========================================================
+   REALTIME — 공지·내 칩이 새로고침 없이 갱신됨
+   ========================================================= */
+let chanNotices = null, chanProfile = null, noticeTimer = 0;
+function subscribeNotices(){
+  if (!USE_DB || chanNotices) return;
+  chanNotices = sb.channel("public:notices")
+    .on("postgres_changes", { event: "*", schema: "public", table: "notices" }, () => {
+      clearTimeout(noticeTimer); noticeTimer = setTimeout(reloadNotices, 400);   // 연속 변경은 한 번에
+    })
+    .subscribe();
+}
+async function reloadNotices(){
+  const { data, error } = await noticeQuery();
+  if (error) return;
+  DATA.notices = data.map(mapNotice);
+  renderHomeNotices();
+  if (current === "notices") renderNoticeList();
+  if (current === "notice"){
+    const id = currentKey.split("/")[1];
+    // 읽는 중인 공지는 포커스를 옮기지 않고 내용만 교체. 삭제됐다면 '없는 페이지'로
+    if (DATA.notices.some(n => n.id === id)) renderNotice(id); else route();
+  }
+}
+function subscribeProfile(){
+  if (!USE_DB) return;
+  const uid = state.session?.user.id;
+  if (chanProfile && chanProfile.uid === uid) return;
+  if (chanProfile){ sb.removeChannel(chanProfile); chanProfile = null; }
+  if (!uid) return;
+  chanProfile = sb.channel("me:" + uid)
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${uid}` }, ({ new: row }) => {
+      const wasAdmin = state.isAdmin;
+      state.profile = { ...state.profile, ...row };
+      state.isAdmin = state.profile.role === "admin";
+      renderAccount();
+      if (wasAdmin !== state.isAdmin) route();
+    })
+    // 칩 기록은 RLS 때문에 내 캐릭터 것(관리자는 전부)만 도착함 → 잔액 다시 조회
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "chip_ledger" }, () => loadMine().then(renderAccount))
+    .subscribe();
+  chanProfile.uid = uid;
+}
+
+/* 관리 페이지에서 저장한 뒤 공개 화면 데이터 새로 고침 */
+async function refreshPublic(){
+  try {
+    Object.assign(DATA, await loadAll());
+    renderHome(); renderCast(); renderStory(); renderShop(); renderNoticeSeg(); renderAccount();
+  } catch (err){ console.error("[data] refresh failed:", err); }
+}
+
+/* =========================================================
+   ADMIN — 관리 페이지. 화면만 관리자에게 보이고, 실제 차단은 RLS + RPC가 담당
+   ========================================================= */
+const ADM = { tab: "notices", rows: {}, sel: null, dirty: false, tabsDrawn: false };
+const ADMIN_TABS = [["notices", "공지"], ["notice_categories", "공지 분류"], ["characters", "캐릭터"], ["items", "아이템"], ["chapters", "지난 이야기"], ["members", "멤버"], ["schedule", "게임 일정"]];
+const OPT = {
+  kind: [["dealer", "딜러"], ["player", "참가자"]],
+  suit: [["spade", "♠ 스페이드"], ["heart", "♥ 하트"], ["club", "♣ 클럽"], ["diamond", "♦ 다이아"]],
+  chip: [["green", "초록"], ["red", "빨강"]]
+};
+const SCHEMAS = {
+  notices: {
+    label: "공지", key: "id", touch: true, needs: ["notice_categories"],
+    select: "id, title, body, is_pinned, pin_order, published_at, category_id",
+    order: [["is_pinned", { ascending: false }], ["published_at", { ascending: false }]],
+    title: r => r.title, meta: r => [r.is_pinned ? "고정" : "", fmtDate(r.published_at)].filter(Boolean).join(" · "),
+    fields: [
+      { k: "title", label: "제목", type: "text", required: true, max: 120 },
+      { row: [
+        { k: "category_id", label: "분류", type: "select", options: () => [["", "분류 없음"], ...(ADM.rows.notice_categories || []).map(c => [c.id, c.name])] },
+        { k: "published_at", label: "게시 시각", type: "datetime", hint: "비우면 저장하는 시각" }
+      ] },
+      { row: [
+        { k: "is_pinned", label: "상단 고정", type: "check" },
+        { k: "pin_order", label: "고정 순서", type: "number", min: 0, hint: "작을수록 위" }
+      ] },
+      { k: "body", label: "내용", type: "markdown", required: true, hint: "마크다운 사용 가능 — **굵게**, [링크](https://…), - 목록, > 인용" }
+    ]
+  },
+  notice_categories: {
+    label: "공지 분류", key: "id", select: "id, name, sort_order", order: [["sort_order"]],
+    title: r => r.name, meta: r => r.sort_order != null ? `순서 ${r.sort_order}` : "",
+    fields: [
+      { k: "name", label: "분류 이름", type: "text", required: true, max: 20 },
+      { k: "sort_order", label: "표시 순서", type: "number", min: 0, hint: "작을수록 앞" }
+    ]
+  },
+  characters: {
+    label: "캐릭터", key: "id", touch: true, needs: ["items"],
+    select: "id, slug, name, kind, suit, chip_color, image_path, thumb_path, age, height, keywords, description, sort_order",
+    order: [["sort_order"]],
+    title: r => r.name, meta: r => `${r.kind === "dealer" ? "딜러" : "참가자"} · ${r.slug}`,
+    fields: [
+      { row: [
+        { k: "name", label: "이름", type: "text", required: true, max: 40 },
+        { k: "slug", label: "주소 이름(slug)", type: "text", required: true, max: 40, pattern: "[a-z0-9\\-]+", patternMsg: "영문 소문자, 숫자, 하이픈(-)만 쓸 수 있습니다.", hint: "프로필 주소에 쓰임 — #characters/이 값" }
+      ] },
+      { row: [
+        { k: "kind", label: "구분", type: "select", required: true, options: () => OPT.kind },
+        { k: "sort_order", label: "표시 순서", type: "number", min: 0 }
+      ] },
+      { row: [
+        { k: "suit", label: "카드 무늬 (딜러)", type: "select", options: () => [["", "없음"], ...OPT.suit] },
+        { k: "chip_color", label: "칩 색 (참가자)", type: "select", options: () => [["", "없음"], ...OPT.chip] }
+      ] },
+      { row: [
+        { k: "age", label: "나이", type: "text", max: 20 },
+        { k: "height", label: "키", type: "text", max: 20 }
+      ] },
+      { k: "keywords", label: "성격 키워드", type: "tags", hint: "쉼표로 구분 — 예: 침착, 계산적" },
+      { k: "description", label: "설명", type: "textarea" },
+      { k: "image_path", thumbKey: "thumb_path", label: "캐릭터 이미지", type: "image", bucket: "characters", max: CONFIG.IMG.character, thumb: CONFIG.IMG.characterThumb,
+        hint: `세로형 권장. 올리면 WebP로 자동 변환 (긴 변 ${CONFIG.IMG.character}px + 목록용 ${CONFIG.IMG.characterThumb}px)` }
+    ],
+    after: row => `
+      <section class="card sub-editor" aria-labelledby="inv-h">
+        <h3 id="inv-h">소지품</h3>
+        <p class="hint">아이템은 ‘아이템’ 탭에서 먼저 만들어 두세요. 위에서부터 순서대로 표시됩니다.</p>
+        <div class="inv-rows" id="inv-rows"><p class="adm-status">불러오는 중…</p></div>
+        <div class="form-actions">
+          <button class="btn" type="button" data-inv-add>칸 추가</button>
+          <button class="btn primary" type="button" data-inv-save data-char="${esc(row.id)}">소지품 저장</button>
+        </div>
+        <p class="adm-status" id="inv-status" role="status"></p>
+      </section>`
+  },
+  items: {
+    label: "아이템", key: "id", touch: true, select: "id, name, description, image_path, price, stock, is_for_sale, sort_order", order: [["sort_order"]],
+    title: r => r.name, meta: r => [r.is_for_sale ? `판매 ${r.price ?? 0}칩` : "비매품", r.stock != null ? `재고 ${r.stock}` : ""].filter(Boolean).join(" · "),
+    fields: [
+      { k: "name", label: "이름", type: "text", required: true, max: 40 },
+      { k: "description", label: "설명", type: "textarea" },
+      { row: [
+        { k: "price", label: "가격 (칩)", type: "number", min: 0, nullable: true, hint: "비우면 가격 없음" },
+        { k: "stock", label: "재고", type: "number", min: 0, nullable: true, hint: "비우면 무제한" }
+      ] },
+      { row: [
+        { k: "is_for_sale", label: "상점에 표시", type: "check" },
+        { k: "sort_order", label: "표시 순서", type: "number", min: 0 }
+      ] },
+      { k: "image_path", label: "아이템 이미지", type: "image", bucket: "items", max: CONFIG.IMG.item, hint: `정사각형 권장. WebP로 자동 변환 (긴 변 ${CONFIG.IMG.item}px), 투명 배경 유지` }
+    ]
+  },
+  chapters: {
+    label: "지난 이야기", key: "id", touch: true, select: "id, number, title, summary, body, played_on", order: [["number", { ascending: false }]],
+    title: r => `제${r.number}화 ${r.title || ""}`, meta: r => fmtDate(r.played_on),
+    fields: [
+      { row: [
+        { k: "number", label: "회차", type: "number", required: true, min: 1 },
+        { k: "played_on", label: "진행일", type: "date" }
+      ] },
+      { k: "title", label: "제목", type: "text", required: true, max: 80 },
+      { k: "summary", label: "요약", type: "textarea", hint: "지난 이야기 목록과 홈에 표시" },
+      { k: "body", label: "본문", type: "textarea", hint: "상세 기록 (현재 공개 화면에는 표시되지 않음)" }
+    ]
+  }
+};
+const flatFields = s => s.fields.flatMap(f => f.row || [f]);
+const admPanel = () => $("#admin-panel");
+const admStatus = msg => { const el = $("#adm-status"); if (el) el.textContent = msg; };
+
+function admDrawTabs(){
+  $("#admin-tabs").innerHTML = ADMIN_TABS.map(([id, label]) =>
+    `<button type="button" role="tab" id="tab-${id}" data-tab="${id}" aria-controls="admin-panel" aria-selected="${id === ADM.tab}" tabindex="${id === ADM.tab ? 0 : -1}">${label}</button>`).join("");
+  admPanel().setAttribute("aria-labelledby", "tab-" + ADM.tab);
+}
+
+async function admLoad(table){
+  const s = SCHEMAS[table];
+  let q = sb.from(table).select(s.select);
+  for (const [col, opt] of s.order) q = q.order(col, opt || {});
+  const { data, error } = await q;
+  if (error) throw error;
+  ADM.rows[table] = data;
+}
+
+async function admOpen(){
+  if (!USE_DB || !state.isAdmin) return;
+  admDrawTabs();
+  await admShow(ADM.tab);
+}
+
+async function admShow(tab){
+  ADM.tab = tab;
+  admDrawTabs();
+  const panel = admPanel();
+  panel.innerHTML = `<p class="adm-status" role="status">불러오는 중…</p>`;
+  try {
+    if (tab === "schedule"){ panel.innerHTML = `<div class="card"><p class="slot-note">스탭 시간대별 게임 개설 기능이 들어갈 자리입니다.</p></div>`; return; }
+    if (tab === "members"){ await admMembers(); return; }
+    const s = SCHEMAS[tab];
+    await Promise.all([admLoad(tab), ...(s.needs || []).map(admLoad)]);
+    admRenderCrud(tab);
+  } catch (err){
+    panel.innerHTML = `<p class="form-error" role="alert">${esc(errMsg(err))}</p>`;
+  }
+}
+
+function admRenderCrud(table){
+  const s = SCHEMAS[table], rows = ADM.rows[table] || [];
+  const sel = ADM.sel == null ? null : String(ADM.sel);
+  admPanel().innerHTML = `
+    <div class="adm">
+      <div class="adm-list">
+        <button class="btn primary" type="button" data-adm-new>새 ${s.label} 추가</button>
+        <ul aria-label="${s.label} 목록">
+          ${rows.length ? rows.map(r => `<li><button type="button" data-adm-sel="${esc(String(r[s.key]))}" aria-current="${sel === String(r[s.key])}">
+            <span class="t">${esc(s.title(r) || "(제목 없음)")}</span>${s.meta ? `<span class="m">${esc(s.meta(r) || "")}</span>` : ""}</button></li>`).join("")
+            : `<li class="empty">아직 없습니다.</li>`}
+        </ul>
+      </div>
+      <div class="adm-editor" id="adm-editor"></div>
+    </div>`;
+  admRenderEditor(table);
+}
+
+const toLocalInput = iso => {
+  if (!iso) return "";
+  const d = new Date(iso), z = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`;
+};
+
+function admField(table, f, v){
+  const id = `f-${table}-${f.k}`, val = v[f.k];
+  const hint = f.hint ? `<span class="hint" id="${id}-hint">${esc(f.hint)}</span>` : "";
+  const err = `<span class="field-error" id="${id}-err" hidden></span>`;
+  const desc = `aria-describedby="${f.hint ? id + "-hint " : ""}${id}-err"`;
+  const req = f.required ? " required" : "";
+  const label = `<label for="${id}">${esc(f.label)}${f.required ? ` <span aria-hidden="true">*</span>` : ""}</label>`;
+  switch (f.type){
+    case "check":
+      return `<div class="field"><label class="check"><input type="checkbox" name="${f.k}" id="${id}"${val ? " checked" : ""}>${esc(f.label)}</label>${hint}</div>`;
+    case "select":
+      return `<div class="field">${label}<select class="input" name="${f.k}" id="${id}"${req} ${desc}>${f.options().map(([ov, ol]) =>
+        `<option value="${esc(ov)}"${String(val ?? "") === String(ov) ? " selected" : ""}>${esc(ol)}</option>`).join("")}</select>${hint}${err}</div>`;
+    case "textarea":
+      return `<div class="field">${label}<textarea class="input" name="${f.k}" id="${id}" rows="5"${req} ${desc}>${esc(val ?? "")}</textarea>${hint}${err}</div>`;
+    case "markdown":
+      return `<div class="field">${label}
+        <div class="md-tools"><button class="btn small" type="button" data-md-preview="${id}" aria-pressed="false" aria-controls="${id} ${id}-prev">미리보기</button></div>
+        <textarea class="input" name="${f.k}" id="${id}" rows="12"${req} ${desc}>${esc(val ?? "")}</textarea>
+        <div class="md-preview md" id="${id}-prev" hidden tabindex="0" aria-label="미리보기"></div>${hint}${err}</div>`;
+    case "number":
+      return `<div class="field">${label}<input class="input" type="number" inputmode="numeric" step="1" name="${f.k}" id="${id}" value="${val ?? ""}"${f.min != null ? ` min="${f.min}"` : ""}${req} ${desc}>${hint}${err}</div>`;
+    case "datetime":
+      return `<div class="field">${label}<input class="input" type="datetime-local" name="${f.k}" id="${id}" value="${toLocalInput(val)}"${req} ${desc}>${hint}${err}</div>`;
+    case "date":
+      return `<div class="field">${label}<input class="input" type="date" name="${f.k}" id="${id}" value="${esc(val ?? "")}"${req} ${desc}>${hint}${err}</div>`;
+    case "tags":
+      return `<div class="field">${label}<input class="input" type="text" name="${f.k}" id="${id}" value="${esc((val || []).join(", "))}"${req} ${desc}>${hint}${err}</div>`;
+    case "image": {
+      const url = val ? publicUrl(f.bucket, (f.thumbKey && v[f.thumbKey]) || val) : "";
+      return `<div class="field"><span class="label-like" id="${id}-lbl">${esc(f.label)}</span>
+        <div class="img-field">
+          <div class="img-prev" id="${id}-prev">${url ? `<img src="${esc(url)}" alt="현재 이미지">` : `<span aria-hidden="true">없음</span>`}</div>
+          <div>
+            <input type="file" accept="image/*" name="${f.k}" id="${id}" aria-labelledby="${id}-lbl" ${desc}>
+            ${val ? `<label class="check"><input type="checkbox" name="${f.k}__remove">이미지 삭제</label>` : ""}
+          </div>
+        </div>${hint}${err}</div>`;
+    }
+    default:
+      return `<div class="field">${label}<input class="input" type="text" name="${f.k}" id="${id}" value="${esc(val ?? "")}"${f.max ? ` maxlength="${f.max}"` : ""}${f.pattern ? ` pattern="${esc(f.pattern)}" data-pattern-msg="${esc(f.patternMsg || "")}"` : ""}${req} ${desc}>${hint}${err}</div>`;
+  }
+}
+
+function admCurrentRow(table){
+  const s = SCHEMAS[table];
+  return ADM.sel == null ? null : (ADM.rows[table] || []).find(r => String(r[s.key]) === String(ADM.sel)) || null;
+}
+
+function admRenderEditor(table){
+  const s = SCHEMAS[table], row = admCurrentRow(table), v = row || (table === "items" ? { is_for_sale: true } : {});
+  $("#adm-editor").innerHTML = `
+    <form class="form card" id="adm-form" data-table="${table}" novalidate aria-labelledby="adm-form-h">
+      <h2 class="card-h" id="adm-form-h" tabindex="-1">${row ? esc(s.title(row) || "(제목 없음)") : `새 ${s.label}`}</h2>
+      <p class="hint">* 표시는 필수 항목입니다.</p>
+      <p class="form-error" id="adm-error" role="alert" hidden></p>
+      ${s.fields.map(f => f.row ? `<div class="row2">${f.row.map(x => admField(table, x, v)).join("")}</div>` : admField(table, f, v)).join("")}
+      <div class="form-actions">
+        <button class="btn primary" type="submit">${row ? "저장" : "추가"}</button>
+        ${row ? `<button class="btn danger" type="button" data-adm-del>삭제</button>` : ""}
+      </div>
+      <p class="adm-status" id="adm-status" role="status"></p>
+    </form>
+    ${row && s.after ? s.after(row) : ""}`;
+  ADM.dirty = false;
+  if (row && table === "characters") admLoadInventory(row.id);
+}
+
+function admCollect(form, s){
+  const out = {};
+  for (const f of flatFields(s)){
+    const el = form.elements[f.k];
+    if (!el || f.type === "image") continue;
+    const raw = typeof el.value === "string" ? el.value.trim() : el.value;
+    switch (f.type){
+      case "check": out[f.k] = el.checked; break;
+      case "number": out[f.k] = raw === "" ? (f.nullable ? null : 0) : Number(raw); break;   // 대부분 NOT NULL default 0
+      case "tags": out[f.k] = raw.split(/[,，、]/).map(t => t.trim()).filter(Boolean); break;
+      case "datetime": out[f.k] = raw ? new Date(raw).toISOString() : (f.k === "published_at" ? new Date().toISOString() : null); break;
+      case "select": case "date": out[f.k] = raw === "" ? null : raw; break;
+      default: out[f.k] = raw;   // 텍스트는 빈 문자열 그대로 (NOT NULL default '' 컬럼)
+    }
+  }
+  if (s.touch) out.updated_at = new Date().toISOString();
+  return out;
+}
+
+/* 이미지 → WebP (지원하지 않는 브라우저는 PNG/JPEG). 긴 변을 max px로 축소 */
+async function toWebP(file, max){
+  if (!/^image\//.test(file.type)) throw new Error("이미지 파일만 올릴 수 있습니다.");
+  if (file.size > 25 * 1024 * 1024) throw new Error("25MB 이하 이미지만 올릴 수 있습니다.");
+  const bmp = await createImageBitmap(file);
+  const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+  const w = Math.max(1, Math.round(bmp.width * k)), h = Math.max(1, Math.round(bmp.height * k));
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const ctx = c.getContext("2d"); ctx.imageSmoothingQuality = "high"; ctx.drawImage(bmp, 0, 0, w, h);
+  bmp.close?.();
+  const enc = (type, q) => new Promise(r => c.toBlob(r, type, q));
+  const webp = await enc("image/webp", .86);
+  if (webp && webp.type === "image/webp") return webp;
+  return file.type === "image/png" ? enc("image/png") : enc("image/jpeg", .88);
+}
+const extOf = blob => ({ "image/webp": "webp", "image/png": "png", "image/jpeg": "jpg" })[blob.type] || "bin";
+
+async function admSave(form){
+  const table = form.dataset.table, s = SCHEMAS[table], row = admCurrentRow(table);
+  showMsg($("#adm-error"), "");
+  if (!validateForm(form)) return;
+  const vals = admCollect(form, s);
+  const imgF = flatFields(s).find(f => f.type === "image");
+  const uploaded = [], oldPaths = [];
+  try {
+    if (imgF){
+      const file = form.elements[imgF.k].files[0], remove = form.elements[imgF.k + "__remove"]?.checked;
+      if (file){
+        admStatus("이미지 변환 중…");
+        const base = `${(vals.slug || table).replace(/[^a-z0-9-]/gi, "")}-${Date.now()}`;
+        const jobs = [[imgF.k, imgF.max, ""], ...(imgF.thumbKey ? [[imgF.thumbKey, imgF.thumb, "-" + imgF.thumb]] : [])];
+        for (const [key, size, suffix] of jobs){
+          const blob = await toWebP(file, size), path = `${base}${suffix}.${extOf(blob)}`;
+          admStatus("이미지 올리는 중…");
+          const { error } = await sb.storage.from(imgF.bucket).upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
+          if (error) throw error;
+          uploaded.push(path); vals[key] = path;
+        }
+      } else if (remove && row){
+        vals[imgF.k] = null; if (imgF.thumbKey) vals[imgF.thumbKey] = null;
+      }
+      if (row && (file || remove)) oldPaths.push(...[row[imgF.k], imgF.thumbKey && row[imgF.thumbKey]].filter(Boolean));
+    }
+    admStatus("저장 중…");
+    const q = row ? sb.from(table).update(vals).eq(s.key, row[s.key]) : sb.from(table).insert(vals);
+    const { data, error } = await q.select(s.select).single();
+    if (error) throw error;
+    if (oldPaths.length) sb.storage.from(imgF.bucket).remove(oldPaths);   // 이전 파일 정리 (실패해도 무시)
+    ADM.sel = data[s.key];
+    await admLoad(table);
+    admRenderCrud(table);
+    admStatus(row ? "저장했습니다." : "추가했습니다.");
+    toast(row ? "저장했습니다" : "추가했습니다");
+    $("#adm-form-h")?.focus();
+    refreshPublic();
+  } catch (err){
+    if (uploaded.length) sb.storage.from(imgF.bucket).remove(uploaded);   // 반쪽 저장된 이미지 정리
+    admStatus("");
+    showMsg($("#adm-error"), errMsg(err));
+    $("#adm-error").scrollIntoView({ block: "nearest" });
+  }
+}
+
+async function admDelete(){
+  const table = ADM.tab, s = SCHEMAS[table], row = admCurrentRow(table);
+  if (!row || !confirm(`‘${s.title(row)}’을(를) 삭제할까요? 되돌릴 수 없습니다.`)) return;
+  try {
+    if (table === "characters"){
+      const { error } = await sb.rpc("admin_set_inventory", { p_character: row.id, p_rows: [] });
+      if (error) throw error;
+    }
+    const { error } = await sb.from(table).delete().eq(s.key, row[s.key]);
+    if (error) throw error;
+    const imgF = flatFields(s).find(f => f.type === "image");
+    if (imgF){ const paths = [row[imgF.k], imgF.thumbKey && row[imgF.thumbKey]].filter(Boolean); if (paths.length) sb.storage.from(imgF.bucket).remove(paths); }
+    ADM.sel = null;
+    await admLoad(table);
+    admRenderCrud(table);
+    toast("삭제했습니다");
+    admStatus("삭제했습니다.");
+    $('[data-adm-new]', admPanel())?.focus();
+    refreshPublic();
+  } catch (err){ showMsg($("#adm-error"), errMsg(err)); }
+}
+
+/* ----- 캐릭터 소지품 ----- */
+function invRowHtml(r = {}, i = 0){
+  const items = ADM.rows.items || [];
+  return `<div class="inv-row" data-inv-row>
+    <div class="field"><label for="inv-item-${i}">아이템</label>
+      <select class="input" id="inv-item-${i}" data-k="item_id"><option value="">선택</option>${items.map(it =>
+        `<option value="${esc(it.id)}"${it.id === r.item_id ? " selected" : ""}>${esc(it.name)}</option>`).join("")}</select></div>
+    <div class="field"><label for="inv-qty-${i}">수량</label>
+      <input class="input" type="number" inputmode="numeric" min="1" step="1" id="inv-qty-${i}" data-k="quantity" value="${r.quantity ?? 1}"></div>
+    <div class="field note"><label for="inv-note-${i}">캐릭터별 메모</label>
+      <input class="input" type="text" id="inv-note-${i}" data-k="note" maxlength="80" value="${esc(r.note ?? "")}"></div>
+    <button class="btn small danger" type="button" data-inv-del aria-label="${i + 1}번째 칸 삭제">삭제</button>
+  </div>`;
+}
+let invSeq = 0;
+async function admLoadInventory(charId){
+  const box = $("#inv-rows");
+  const { data, error } = await sb.from("inventory").select("item_id, quantity, note, sort_order").eq("character_id", charId).order("sort_order");
+  if (!box.isConnected) return;
+  if (error){ box.innerHTML = `<p class="form-error" role="alert">${esc(errMsg(error))}</p>`; return; }
+  box.innerHTML = data.length ? data.map(r => invRowHtml(r, invSeq++)).join("") : `<p class="adm-status" data-inv-empty>소지품이 없습니다.</p>`;
+}
+async function admSaveInventory(btn){
+  const rows = $$("#inv-rows [data-inv-row]").map(el => ({
+    item_id: $('[data-k="item_id"]', el).value,
+    quantity: Math.max(1, parseInt($('[data-k="quantity"]', el).value, 10) || 1),
+    note: $('[data-k="note"]', el).value.trim()
+  })).filter(r => r.item_id);
+  await withBusy(btn, async () => {
+    const { error } = await sb.rpc("admin_set_inventory", { p_character: btn.dataset.char, p_rows: rows });
+    $("#inv-status").textContent = error ? errMsg(error) : `소지품 ${rows.length}칸을 저장했습니다.`;
+    if (!error){ ADM.dirty = false; toast("소지품을 저장했습니다"); refreshPublic(); }
+  });
+}
+
+/* ----- 멤버 · 캐릭터별 칩 ----- */
+async function admMembers(){
+  const [pr, ch, bl] = await Promise.all([
+    sb.from("profiles").select("id, email, display_name, role, created_at").order("created_at"),
+    sb.from("characters").select("id, owner_id"),
+    sb.from("chip_balances").select("character_id, balance")
+  ]);
+  const failed = [pr, ch, bl].find(r => r.error);
+  if (failed) throw failed.error;
+  const members = pr.data, owner = new Map(ch.data.map(c => [c.id, c.owner_id])), bal = new Map(bl.data.map(b => [b.character_id, b.balance ?? 0]));
+  const chars = ALL();
+  const nameOf = m => m.display_name || (m.email || "").split("@")[0] || "이름 없음";
+  admPanel().innerHTML = `
+    <div class="card">
+      <h2 class="card-h">멤버</h2>
+      <p class="form-note">새 멤버 초대: Supabase 대시보드 → Authentication → Users → <strong>Invite user</strong>. 초대받은 사람은 메일의 링크로 들어와 비밀번호를 정합니다.</p>
+      <div class="table-scroll" style="margin-top:1.25rem">
+        <table class="members" style="min-width:36rem">
+          <caption class="sr">멤버 목록 — 이름, 역할, 소유 캐릭터</caption>
+          <thead><tr><th scope="col">멤버</th><th scope="col">역할</th><th scope="col">소유 캐릭터</th></tr></thead>
+          <tbody>${members.map(m => `<tr>
+            <th scope="row" class="who" style="font-weight:400">${esc(nameOf(m))}<small>${esc(m.email || "")}</small></th>
+            <td class="${m.role === "admin" ? "tag-d" : ""}">${m.role === "admin" ? "관리자" : "멤버"}</td>
+            <td>${esc(chars.filter(c => owner.get(c.uuid) === m.id).map(c => c.name).join(", ") || "—")}</td>
+          </tr>`).join("") || `<tr><td colspan="3" class="muted">멤버가 없습니다.</td></tr>`}</tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card" style="margin-top:1.5rem">
+      <h2 class="card-h">캐릭터별 소유자 · 칩</h2>
+      <div class="table-scroll">
+        <table class="members">
+          <caption class="sr">캐릭터별 소유 멤버, 보유 칩, 칩 지급·차감</caption>
+          <thead><tr><th scope="col">캐릭터</th><th scope="col">소유 멤버</th><th scope="col">칩</th><th scope="col">칩 지급·차감</th></tr></thead>
+          <tbody>${chars.map(c => {
+            const nm = esc(c.name), cur = owner.get(c.uuid) || "";
+            return `<tr>
+              <th scope="row" class="who" style="font-weight:400">${nm}<small>${c.role}</small></th>
+              <td><label class="sr" for="own-${c.uuid}">${nm} 소유 멤버</label>
+                <select class="input" id="own-${c.uuid}" data-owner="${c.uuid}" data-prev="${esc(cur)}">
+                  <option value="">없음</option>
+                  ${members.map(m => `<option value="${m.id}"${m.id === cur ? " selected" : ""}>${esc(nameOf(m))}</option>`).join("")}
+                </select></td>
+              <td id="chips-${c.uuid}">${(bal.get(c.uuid) ?? 0).toLocaleString("ko-KR")}</td>
+              <td><form class="chip-form" data-chips="${c.uuid}" data-name="${nm}" novalidate>
+                <label class="sr" for="cd-${c.uuid}">${nm} 칩 증감 (차감은 음수)</label>
+                <input class="input" type="number" inputmode="numeric" step="1" id="cd-${c.uuid}" name="delta" placeholder="+100 / -50" required aria-describedby="cd-${c.uuid}-err">
+                <label class="sr" for="cr-${c.uuid}">사유</label>
+                <input class="input" type="text" id="cr-${c.uuid}" name="reason" placeholder="사유" maxlength="60">
+                <button class="btn small" type="submit">적용</button>
+                <span class="field-error" id="cd-${c.uuid}-err" hidden></span>
+              </form></td>
+            </tr>`; }).join("") || `<tr><td colspan="4" class="muted">캐릭터가 없습니다.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+/* ----- 관리 페이지 이벤트 ----- */
+$("#admin-tabs").addEventListener("click", e => {
+  const t = e.target.closest('[role="tab"]');
+  if (!t || t.dataset.tab === ADM.tab) return;
+  if (ADM.dirty && !confirm("저장하지 않은 변경이 있습니다. 이동할까요?")) return;
+  ADM.sel = null; ADM.dirty = false;
+  admShow(t.dataset.tab);
+  $("#tab-" + t.dataset.tab)?.focus();
+});
+$("#admin-tabs").addEventListener("keydown", e => {
+  const tabs = $$('[role="tab"]', e.currentTarget), i = tabs.indexOf(document.activeElement);
+  if (i < 0) return;
+  const j = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+  if (j == null) return;
+  e.preventDefault();
+  tabs[(j + tabs.length) % tabs.length].click();
+});
+admPanel().addEventListener("click", async e => {
+  const t = e.target;
+  if (t.closest("[data-adm-new]")){
+    if (ADM.dirty && !confirm("저장하지 않은 변경이 있습니다. 새로 쓸까요?")) return;
+    ADM.sel = null; admRenderCrud(ADM.tab); $("#adm-form-h").focus(); return;
+  }
+  const sel = t.closest("[data-adm-sel]");
+  if (sel){
+    if (ADM.dirty && !confirm("저장하지 않은 변경이 있습니다. 이동할까요?")) return;
+    ADM.sel = sel.dataset.admSel;
+    $$("[data-adm-sel]", admPanel()).forEach(b => b.setAttribute("aria-current", b === sel));
+    admRenderEditor(ADM.tab); $("#adm-form-h").focus(); return;
+  }
+  if (t.closest("[data-adm-del]")) return admDelete();
+  const pv = t.closest("[data-md-preview]");
+  if (pv){
+    const ta = document.getElementById(pv.dataset.mdPreview), box = document.getElementById(pv.dataset.mdPreview + "-prev");
+    const on = pv.getAttribute("aria-pressed") !== "true";
+    pv.setAttribute("aria-pressed", on); pv.textContent = on ? "편집으로 돌아가기" : "미리보기";
+    if (on){
+      box.innerHTML = `<p class="muted">불러오는 중…</p>`;
+      try { box.innerHTML = await renderMarkdown(ta.value) || `<p class="muted">내용이 없습니다.</p>`; }
+      catch (_){ box.textContent = "미리보기를 불러오지 못했습니다."; }
+    }
+    ta.hidden = on; box.hidden = !on;
+    return;
+  }
+  if (t.closest("[data-inv-add]")){
+    $("#inv-rows [data-inv-empty]")?.remove();
+    $("#inv-rows").insertAdjacentHTML("beforeend", invRowHtml({}, invSeq++));
+    $("#inv-rows [data-inv-row]:last-child select").focus();
+    ADM.dirty = true; return;
+  }
+  const del = t.closest("[data-inv-del]");
+  if (del){
+    const row = del.closest("[data-inv-row]"), next = row.nextElementSibling || row.previousElementSibling;
+    row.remove(); ADM.dirty = true;
+    (next ? $("select", next) : $("[data-inv-add]"))?.focus();
+    $("#inv-status").textContent = "칸을 삭제했습니다. ‘소지품 저장’을 눌러야 반영됩니다.";
+    return;
+  }
+  const invSave = t.closest("[data-inv-save]");
+  if (invSave) return admSaveInventory(invSave);
+});
+admPanel().addEventListener("submit", async e => {
+  e.preventDefault();
+  const f = e.target;
+  if (f.id === "adm-form") return withBusy($('button[type="submit"]', f), () => admSave(f));
+  if (f.dataset.chips){
+    const input = f.delta, delta = parseInt(input.value, 10);
+    if (!checkField(input)) return input.focus();
+    if (!delta){ fieldError(input, "0이 아닌 정수를 입력해 주세요."); return input.focus(); }
+    await withBusy($("button", f), async () => {
+      const { data, error } = await sb.rpc("admin_adjust_chips", { p_character: f.dataset.chips, p_amount: delta, p_reason: f.reason.value.trim() });
+      if (error){ fieldError(input, errMsg(error)); input.focus(); return; }
+      $("#chips-" + f.dataset.chips).textContent = data.toLocaleString("ko-KR");
+      f.reset(); fieldError(input, "");
+      announce(`${f.dataset.name} 칩 ${delta > 0 ? "+" : ""}${delta}, 잔액 ${data}`);
+      toast(`${f.dataset.name} 칩 ${delta > 0 ? "+" : ""}${delta} → 잔액 ${data.toLocaleString("ko-KR")}`);
+      if (state.mine.some(m => m.uuid === f.dataset.chips)){ await loadMine(); renderAccount(); }
+    });
+  }
+});
+admPanel().addEventListener("change", async e => {
+  const sel = e.target.closest("[data-owner]");
+  if (!sel) return;
+  const { error } = await sb.rpc("admin_set_owner", { p_character: sel.dataset.owner, p_owner: sel.value || null });
+  if (error){ sel.value = sel.dataset.prev; toast(errMsg(error)); return; }
+  sel.dataset.prev = sel.value;
+  announce(sel.value ? "소유 멤버를 지정했습니다" : "소유 멤버를 해제했습니다");
+  toast("저장했습니다");
+  if (sel.value === state.session?.user.id || state.mine.some(m => m.uuid === sel.dataset.owner)){ await loadMine(); renderAccount(); }
+  admMembers().then(() => $("#own-" + sel.dataset.owner)?.focus());   // 위쪽 멤버 표의 소유 캐릭터 갱신
+});
+admPanel().addEventListener("input", e => { if (e.target.closest("#adm-form, #inv-rows")) ADM.dirty = true; });
+admPanel().addEventListener("change", e => {
+  const file = e.target.closest('#adm-form input[type="file"]');
+  if (!file) return;
+  ADM.dirty = true;
+  const f = file.files[0], prev = document.getElementById(file.id + "-prev");
+  if (!f) return;
+  if (!/^image\//.test(f.type)){ fieldError(file, "이미지 파일만 올릴 수 있습니다."); file.value = ""; return; }
+  fieldError(file, "");
+  const url = URL.createObjectURL(f);
+  prev.innerHTML = `<img src="${url}" alt="새로 올릴 이미지 미리보기">`;
+});
+
 /* ---------- boot ---------- */
 applyCalm();          // 저장된 '애니메이션 끄기'를 인트로보다 먼저 적용
 runIntro();
 bindHero(); bindSpots(); bindMagnetic();
-applyAdmin();
 
 (async () => {
+  // Supabase 라이브러리가 막혔거나(SRI 불일치·네트워크) 없으면 더미 화면으로 조용히 넘어가지 않고 오류 표시
+  if (DB_CONFIGURED && !USE_DB){ showBootError(new Error("supabase-js failed to load")); return; }
   // 로딩 표시는 인트로 아래에 깔려 있다가, 인트로가 먼저 끝나면 드러남
   if (USE_DB){
-    try { Object.assign(DATA, await loadAll()); }
-    catch (err){ showBootError(err); return; }
+    try {
+      const [data, { data: { session } }] = await Promise.all([loadAll(), sb.auth.getSession()]);
+      Object.assign(DATA, data);
+      await refreshAuth(session);
+    } catch (err){ showBootError(err); return; }
+
+    // 메일 링크(초대·재설정)로 들어온 경우: 토큰이 담긴 주소를 정리하고 알맞은 화면으로
+    if (AUTH_HASH){
+      let to = "#home";
+      if (AUTH_HASH.error){ state.loginNotice = errMsg({ message: `${AUTH_HASH.error} ${AUTH_HASH.errorText || ""}` }); to = "#login"; }
+      else if (["invite", "recovery"].includes(AUTH_HASH.type) && state.session){ state.pwMode = AUTH_HASH.type; to = "#password"; }
+      history.replaceState(null, "", location.pathname + location.search + to);
+    }
+    sb.auth.onAuthStateChange((event, session) => {
+      if (event === "INITIAL_SESSION") return;
+      if (event === "PASSWORD_RECOVERY") state.pwMode = "recovery";
+      setTimeout(() => refreshAuth(session), 0);   // 콜백 안에서 바로 DB를 부르면 교착될 수 있어 한 박자 뒤에
+    });
+    subscribeNotices();
   }
-  renderHome(); renderCast(); renderWorld(); renderStory(); renderShop(); renderSettings(); renderAdmin(); renderNoticeSeg();
+  renderHome(); renderCast(); renderWorld(); renderStory(); renderShop(); renderNoticeSeg(); renderAccount();
   state.ready = true;
   route();
   $("#boot").classList.add("hide");
