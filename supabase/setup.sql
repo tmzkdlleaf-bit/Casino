@@ -88,6 +88,17 @@ insert into public.profiles (id, email, display_name)
 select id, email, split_part(coalesce(email, ''), '@', 1) from auth.users
 on conflict (id) do update set email = excluded.email;
 
+-- 같은 이름의 기존 관리자 함수는 매개변수가 달라 덮어쓸 수 없으므로 먼저 모두 제거 (다른 오버로드 포함)
+do $$
+declare r record;
+begin
+  for r in select p.oid::regprocedure as sig from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+           where n.nspname = 'public' and p.proname in ('admin_adjust_chips', 'admin_set_owner', 'admin_set_inventory')
+  loop
+    execute format('drop function %s', r.sig);
+  end loop;
+end $$;
+
 -- 칩 지급(+) / 차감(-) — 관리자만. 잔액이 음수가 되면 거절. 새 잔액을 돌려줌
 create or replace function public.admin_adjust_chips(p_character uuid, p_amount integer, p_reason text default null)
 returns integer language plpgsql security definer set search_path = public as $$
