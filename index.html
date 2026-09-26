@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>사이트명</title>
+<meta name="description" content="사이트 소개 문구 자리">
+<meta name="theme-color" content="#121110">
+<meta name="color-scheme" content="dark">
+<meta property="og:type" content="website">
+<meta property="og:title" content="사이트명">
+<meta property="og:description" content="사이트 소개 문구 자리">
+<meta property="og:locale" content="ko_KR">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%238C1C26'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23EDE3C8' stroke-width='2' stroke-dasharray='3 3'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&family=IBM+Plex+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
@@ -17,6 +25,13 @@
   --velvet:#8C1C26; --red:#B8323A;
   --ivory:#EDE3C8; --smoke:#9A9486; --gold:#C9A55A; --green-hi:#6FAF8F;
   --line:rgba(237,227,200,.14); --line-2:rgba(237,227,200,.07);
+  /* 접근성 보정 토큰 — 대비 수치는 #121110/#1B1A18 기준 */
+  --line-strong:rgba(237,227,200,.42);  /* 입력칸·스위치 경계 3.2:1 (WCAG 1.4.11) */
+  --red-text:#E0747B;                    /* 빨간 글자 6.2:1 (기존 --red 글자 3.2:1 미달) */
+  --red-hi:#D4545C;                      /* 빨간 수트 그래픽 4.3:1 */
+  --focus:var(--gold);
+  --tap:2.75rem;                         /* 44px 터치 타깃 */
+  --head-h:4.5rem;
 
   --f-serif:"Noto Serif KR","Nanum Myeongjo",serif;
   --f-sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
@@ -29,13 +44,17 @@
 }
 
 *,*::before,*::after{box-sizing:border-box}
-html{background:var(--black); scroll-behavior:smooth}
+html{background:var(--black); scroll-behavior:smooth; color-scheme:dark; scrollbar-color:#3a3733 var(--black); -webkit-text-size-adjust:100%; text-size-adjust:100%}
 body{
-  margin:0; min-height:100svh; overflow-x:hidden;
+  margin:0; min-height:100svh; overflow-x:hidden; overflow-x:clip;
   background:var(--black); color:var(--ivory);
-  font-family:var(--f-sans); font-weight:300; font-size:var(--s0); line-height:1.7; word-break:keep-all;
-  -webkit-font-smoothing:antialiased;
+  font-family:var(--f-sans); font-weight:300; font-size:var(--s0); line-height:1.7; word-break:keep-all; overflow-wrap:break-word;
+  -webkit-font-smoothing:antialiased; -webkit-tap-highlight-color:transparent;
 }
+body.menu-open{overflow:hidden}
+h1,h2,h3{text-wrap:balance}
+p{text-wrap:pretty}
+time, .qty, .price, #wallet, table.members td:last-child{font-variant-numeric:tabular-nums}
 body::after{ /* 필름 그레인 */
   content:""; position:fixed; inset:0; pointer-events:none; z-index:200; opacity:.045;
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
@@ -44,10 +63,21 @@ body::after{ /* 필름 그레인 */
 img{max-width:100%; display:block}
 a{color:inherit}
 button,input,textarea,select{font:inherit; color:inherit}
-:focus-visible{outline:1px solid var(--gold); outline-offset:4px}
+:focus-visible{outline:2px solid var(--focus); outline-offset:3px}
+[tabindex="-1"]:focus{outline:none}   /* 라우팅 시 제목으로 옮기는 프로그램 포커스는 링 없이 */
 [hidden]{display:none !important}
 .wrap{max-width:var(--wrap); margin:0 auto; padding-inline:var(--pad)}
-.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+.sr{position:absolute !important; width:1px; height:1px; margin:-1px; padding:0; border:0; overflow:hidden; clip:rect(0 0 0 0); clip-path:inset(50%); white-space:nowrap}
+.split{position:relative}
+
+/* 본문 바로가기 (WCAG 2.4.1) */
+.skip-link{
+  position:fixed; top:.75rem; left:.75rem; z-index:300; padding:.75rem 1.25rem; border-radius:999px;
+  background:var(--ivory); color:var(--black); font-weight:500; text-decoration:none;
+  transform:translateY(-200%); transition:transform .3s var(--ease);
+}
+.skip-link:focus-visible{transform:none; outline-color:var(--ivory)}
+.noscript{position:relative; z-index:300; margin:0; padding:1rem var(--pad); background:var(--velvet); text-align:center}
 
 /* 모션 끄기: OS 설정 또는 사이트 설정 */
 @media (prefers-reduced-motion: reduce){ *,*::before,*::after{animation:none !important; transition:none !important; scroll-behavior:auto !important} }
@@ -79,7 +109,7 @@ body.calm *, body.calm *::before, body.calm *::after{animation:none !important; 
 .pcard .pip{position:absolute; font-size:1rem; line-height:1}
 .pcard .pip.tl{top:.7rem; left:.7rem}
 .pcard .pip.br{bottom:.7rem; right:.7rem; transform:rotate(180deg)}
-.pcard.red-suit .pip{color:var(--red)}
+.pcard.red-suit .pip{color:var(--red-hi)}
 .pcard .face{position:absolute; inset:2.1rem 1.1rem; background:var(--black); display:grid; place-items:center; color:var(--smoke); font-size:var(--s-1)}
 
 /* 트럼프 카드 뒷면 — 펠트 + 금테 + 룰렛 링 */
@@ -100,14 +130,17 @@ body.calm *, body.calm *::before, body.calm *::after{animation:none !important; 
 
 .btn{
   position:relative; display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
-  padding:.85rem 1.6rem; border:1px solid var(--line); border-radius:999px;
-  background:transparent; color:var(--ivory); text-decoration:none; cursor:pointer; white-space:nowrap;
-  transition:background .3s, border-color .3s, color .3s, translate .5s var(--ease);
+  min-height:var(--tap); padding:.75rem 1.6rem; border:1px solid var(--line-strong); border-radius:999px;
+  background:transparent; color:var(--ivory); text-decoration:none; cursor:pointer; white-space:nowrap; line-height:1.2;
+  touch-action:manipulation;
+  transition:background .3s, border-color .3s, color .3s, translate .5s var(--ease), scale .2s var(--ease);
 }
-.btn:hover{border-color:var(--smoke); background:rgba(237,227,200,.05)}
+.btn:hover{border-color:var(--ivory); background:rgba(237,227,200,.06)}
+.btn:active:not([disabled]){scale:.97}
 .btn.primary{background:var(--velvet); border-color:var(--velvet)}
 .btn.primary:hover{background:var(--red); border-color:var(--red)}
-.btn[disabled]{opacity:.35; cursor:not-allowed}
+.btn[disabled]{opacity:.4; cursor:not-allowed; border-style:dashed}
+.btn[disabled]:hover{background:transparent; border-color:var(--line-strong)}
 .btn.magnetic{translate:var(--tx,0) var(--ty,0)}
 
 /* 스크롤 등장 — 스크롤 연동 애니메이션 지원 브라우저만. 미지원 시 그대로 보임 */
@@ -134,21 +167,49 @@ body.calm *, body.calm *::before, body.calm *::after{animation:none !important; 
   border-bottom:1px solid transparent;
 }
 .site-head.scrolled{background:rgba(18,17,16,.72); backdrop-filter:blur(14px) saturate(1.2); border-color:var(--line-2)}
-.site-head .inner{display:flex; align-items:center; gap:2rem; height:4.5rem}
-.mark{display:flex; align-items:center; gap:.6rem; font-family:var(--f-serif); font-weight:900; font-size:var(--s1); text-decoration:none; white-space:nowrap}
+.site-head .inner{display:flex; align-items:center; gap:2rem; height:var(--head-h)}
+.mark{display:flex; align-items:center; gap:.6rem; min-height:var(--tap); font-family:var(--f-serif); font-weight:900; font-size:var(--s1); text-decoration:none; white-space:nowrap}
 .mark .chip{--size:1.5rem; box-shadow:none}
 .mark .chip::before{border-width:1px}
-.nav{position:relative; display:flex; gap:.1rem; overflow-x:auto; scrollbar-width:none; margin-left:auto}
-.nav::-webkit-scrollbar{display:none}
-.nav a{padding:.5rem .85rem; white-space:nowrap; color:var(--smoke); text-decoration:none; font-size:.9375rem; transition:color .3s}
+.nav{position:relative; display:flex; gap:.1rem; margin-left:auto}
+.nav a{display:inline-flex; align-items:center; min-height:var(--tap); padding:0 .85rem; white-space:nowrap; color:var(--smoke); text-decoration:none; font-size:.9375rem; transition:color .3s}
 .nav a:hover, .nav a[aria-current="page"]{color:var(--ivory)}
 .nav a.admin{color:#9c7a74}
-.nav-ink{position:absolute; bottom:.2rem; left:0; height:2px; width:0; background:var(--red); transition:left .5s var(--ease), width .5s var(--ease)}
-@media (max-width:760px){
-  .site-head .inner{flex-direction:column; align-items:stretch; gap:0; height:auto; padding-top:.75rem}
-  .nav{margin-left:0; margin-inline:calc(var(--pad) * -1); padding:0 var(--pad) .25rem}
-  .site-head{background:rgba(18,17,16,.72); backdrop-filter:blur(14px)}
+.nav-ink{position:absolute; bottom:.35rem; left:0; height:2px; width:0; background:var(--red); transition:left .5s var(--ease), width .5s var(--ease)}
+
+/* 모바일 메뉴 버튼 */
+.menu-btn{
+  display:none; align-items:center; gap:.6rem; margin-left:auto; min-height:var(--tap); padding:0 1rem 0 .85rem;
+  border:1px solid var(--line-strong); border-radius:999px; background:transparent; color:var(--ivory); cursor:pointer; font-size:.9375rem;
 }
+.menu-icon{position:relative; width:1.1rem; height:.7rem}
+.menu-icon::before, .menu-icon::after{content:""; position:absolute; left:0; right:0; height:1.5px; background:currentColor; transition:transform .45s var(--ease), top .45s var(--ease)}
+.menu-icon::before{top:0} .menu-icon::after{top:calc(100% - 1.5px)}
+.menu-btn[aria-expanded="true"] .menu-icon::before{top:calc(50% - .75px); transform:rotate(45deg)}
+.menu-btn[aria-expanded="true"] .menu-icon::after{top:calc(50% - .75px); transform:rotate(-45deg)}
+
+@media (max-width:860px){
+  :root{--head-h:4rem}
+  .site-head{background:rgba(18,17,16,.94)}
+  .menu-btn{display:inline-flex}
+  .nav{
+    position:fixed; inset:var(--head-h) 0 0; display:none; flex-direction:column; gap:0; margin:0;
+    padding:1rem var(--pad) calc(2rem + env(safe-area-inset-bottom)); overflow-y:auto; overscroll-behavior:contain;
+    background:var(--black); border-top:1px solid var(--line-2);
+  }
+  .site-head.open .nav{display:flex; animation:menu-in .5s var(--ease) both}
+  .nav a{
+    justify-content:space-between; min-height:3.75rem; padding:0; border-bottom:1px solid var(--line-2);
+    font-family:var(--f-serif); font-weight:900; font-size:clamp(1.6rem, 7vw, 2.25rem); line-height:1.3; color:var(--ivory);
+  }
+  .site-head.open .nav a{animation:menu-item .6s var(--ease) both; animation-delay:calc(var(--k, 0) * 35ms + 60ms)}
+  .nav a[aria-current="page"]{color:var(--gold)}
+  .nav a[aria-current="page"]::after{content:"♦"; font-size:1rem; color:var(--red-hi)}  /* 색 외의 현재 위치 표시 (1.4.1) */
+  .nav a.admin{color:#c79a93}
+  .nav-ink{display:none}
+}
+@keyframes menu-in{from{opacity:0}}
+@keyframes menu-item{from{opacity:0; transform:translateY(.75rem)}}
 
 /* =========================================================
    3. PAGE SHELL
@@ -197,7 +258,8 @@ h2.h{font-family:var(--f-serif); font-weight:900; font-size:var(--s3); line-heig
 }
 .hero-meta{grid-column:1 / -1; display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; font-size:var(--s-1); color:var(--smoke)}
 .hero-meta .scroll-cue{display:flex; align-items:center; gap:.75rem}
-.hero-meta .scroll-cue::after{content:""; width:1px; height:2.5rem; background:linear-gradient(var(--ivory), transparent); animation:cue 2.4s var(--ease-io) infinite}
+/* 1.5회만 재생 후 선이 보이는 상태로 정지 — 5초 넘게 반복되는 움직임 없음 (WCAG 2.2.2) */
+.hero-meta .scroll-cue::after{content:""; width:1px; height:2.5rem; background:linear-gradient(var(--ivory), transparent); animation:cue 2.4s var(--ease-io) 1.5 forwards}
 @keyframes cue{0%{transform:scaleY(0); transform-origin:top} 45%{transform:scaleY(1); transform-origin:top} 55%{transform:scaleY(1); transform-origin:bottom} 100%{transform:scaleY(0); transform-origin:bottom}}
 
 .hero-main{grid-column:1 / span 7; align-self:end}
@@ -218,26 +280,27 @@ h2.h{font-family:var(--f-serif); font-weight:900; font-size:var(--s3); line-heig
 @keyframes panel-in{from{opacity:0; transform:translateX(2rem)}}
 .g-head{display:flex; justify-content:space-between; align-items:baseline; gap:1rem; margin-bottom:.6rem}
 .g-head h2{margin:0; font-family:var(--f-serif); font-weight:900; font-size:var(--s1)}
-.g-head a{font-size:var(--s-1); color:var(--smoke); text-decoration:none; transition:color .3s}
-.g-head a:hover{color:var(--ivory)}
-.g-panel.latest{display:block; text-decoration:none; background:radial-gradient(ellipse at 30% 0%, var(--felt), var(--felt-deep)); border-color:rgba(201,165,90,.4); transition:transform .6s var(--ease)}
-.g-panel.latest:hover{transform:translateY(-.3rem)}
+.g-head a{display:inline-flex; align-items:center; min-height:1.75rem; padding-inline:.25rem; margin-right:-.25rem; font-size:var(--s-1); color:var(--smoke); text-decoration:none; transition:color .3s}
+.g-head a:hover{color:var(--ivory); text-decoration:underline; text-underline-offset:.25em}
+.g-panel.latest{display:block; text-decoration:none; background:radial-gradient(ellipse at 30% 0%, var(--felt), var(--felt-deep)); border-color:rgba(201,165,90,.4); transition:transform .6s var(--ease), border-color .4s}
+.g-panel.latest:hover{transform:translateY(-.3rem); border-color:rgba(201,165,90,.75)}
+.g-panel.latest:focus-visible{outline-offset:-5px}
 .g-panel.latest .ep{font-family:var(--f-serif); font-weight:700; color:var(--gold); font-size:var(--s-1)}
-.g-panel.latest h3{font-family:var(--f-serif); font-weight:900; font-size:var(--s2); margin:.15rem 0 .25rem; line-height:1.3}
+.g-panel.latest .g-title{font-family:var(--f-serif); font-weight:900; font-size:var(--s2); margin:.15rem 0 .25rem; line-height:1.3}
 .g-panel.latest p{margin:0; color:rgba(237,227,200,.72); font-size:.9375rem}
 .g-panel.next{display:flex; align-items:center; gap:1rem}
 .g-panel.next .chip{--size:2.4rem; flex:none}
-.g-panel.next strong{display:block; font-family:var(--f-serif); font-weight:700}
+.g-panel.next h2{display:block; margin:0; font-size:var(--s0); line-height:1.5; font-family:var(--f-serif); font-weight:700}
 .g-panel.next span{font-size:var(--s-1); color:var(--smoke)}
 
 @media (max-width:1100px){ .hero-main{grid-column:1 / span 6} .glance{grid-column:7 / -1} }
 @media (max-width:820px){
   /* 모바일: 제목 바로 아래에 공지·이야기·게임 카드를 가로로 넘기는 띠 */
-  .hero{display:flex; flex-direction:column; min-height:auto; padding-top:7rem; padding-bottom:2.5rem; gap:1.25rem}
+  .hero{display:flex; flex-direction:column; min-height:auto; padding-top:6rem; padding-bottom:2.5rem; gap:1.25rem}
   .hero-main{display:contents}
   .hero-meta{order:0} .hero-title{order:1; margin:0; font-size:clamp(3.5rem, 17vw, 5.5rem)}
   .glance{order:2; align-self:stretch; min-width:0; display:flex; gap:.75rem; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none;
-    margin-inline:calc(var(--pad) * -1); padding:0 var(--pad) .25rem; scroll-padding-inline:var(--pad)}
+    margin-inline:calc(var(--pad) * -1); padding:.35rem var(--pad) .5rem; scroll-padding-inline:var(--pad)}  /* 세로 여백: 스크롤 컨테이너에 포커스 링이 잘리지 않게 */
   .glance::-webkit-scrollbar{display:none}
   .g-panel{flex:0 0 82%; scroll-snap-align:start; animation-name:panel-in-m}
   .hero-main .intro{order:3; margin:0; font-size:var(--s0)}
@@ -255,10 +318,22 @@ h2.h{font-family:var(--f-serif); font-weight:900; font-size:var(--s3); line-heig
 /* 인트로가 떠 있는 동안 히어로 애니메이션 대기 */
 body.intro-on .hero *, body.intro-on .hero *::after{animation-play-state:paused !important}
 
-/* 4-2 marquee */
+/* 4-2 marquee — 무한 반복이라 정지 버튼 제공 (WCAG 2.2.2) */
+.marquee-wrap{position:relative; overflow-x:clip}   /* 기울인 띠가 모바일에서 가로 스크롤을 만들던 문제 */
 .marquee{position:relative; overflow:hidden; background:var(--velvet); color:var(--ivory); padding:1rem 0; transform:rotate(-1.2deg); margin:3rem -1rem; box-shadow:0 20px 50px rgba(0,0,0,.4)}
 .marquee .track{display:flex; width:max-content; animation:slide 38s linear infinite}
-.marquee:hover .track{animation-play-state:paused}
+.marquee:hover .track, .marquee-wrap.paused .track{animation-play-state:paused}
+.marquee-toggle{
+  position:absolute; right:var(--pad); top:50%; z-index:2; translate:0 -50%;
+  display:grid; place-items:center; width:var(--tap); height:var(--tap); padding:0; border-radius:50%;
+  border:1px solid rgba(237,227,200,.6); background:var(--black); color:var(--ivory); cursor:pointer;
+  box-shadow:0 6px 18px rgba(0,0,0,.45); transition:border-color .3s, background .3s;
+}
+.marquee-toggle:hover{border-color:var(--ivory); background:var(--black-3)}
+.marquee-toggle .ico{width:.75rem; height:.8rem; border-inline:.22rem solid currentColor}                     /* 일시정지 모양 */
+.marquee-toggle[aria-pressed="true"] .ico{width:0; height:0; border:.45rem solid transparent; border-left:.7rem solid currentColor; border-right:0; margin-left:.2rem}  /* 재생 모양 */
+body.calm .marquee-toggle{display:none}
+@media (prefers-reduced-motion: reduce){ .marquee-toggle{display:none} }
 .marquee span{font-family:var(--f-serif); font-weight:900; font-size:clamp(1.5rem, 3.5vw, 2.6rem); line-height:1; padding-inline:1.5rem; white-space:nowrap}
 .marquee i{font-style:normal; opacity:.55}
 @keyframes slide{to{transform:translateX(-50%)}}
@@ -310,6 +385,7 @@ body.intro-on .hero *, body.intro-on .hero *::after{animation-play-state:paused 
   transition:padding .5s var(--ease), background .3s;
 }
 .row-list li a:hover{padding-inline:.5rem; background:rgba(237,227,200,.03)}
+.row-list li a:focus-visible{outline-offset:-2px}
 .row-list time{color:var(--smoke); font-size:var(--s-1)}
 .row-list .suit{color:var(--smoke); transition:color .3s, transform .5s var(--ease)}
 .row-list li a:hover .suit{color:var(--red); transform:rotate(180deg)}
@@ -317,14 +393,19 @@ body.intro-on .hero *, body.intro-on .hero *::after{animation-play-state:paused 
 /* footer */
 .site-foot{position:relative; z-index:1; border-top:1px solid var(--line); padding-block:4rem 2rem; overflow:hidden}
 .site-foot .big{font-family:var(--f-serif); font-weight:900; font-size:clamp(4rem, 16vw, 14rem); line-height:.9; letter-spacing:-.05em; color:transparent; -webkit-text-stroke:1px rgba(237,227,200,.22); margin:0 0 2rem; white-space:nowrap}
-.site-foot .fine{display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; font-size:var(--s-1); color:var(--smoke)}
+.site-foot .fine{display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; font-size:var(--s-1); color:var(--smoke); padding-top:1.5rem; border-top:1px solid var(--line-2)}
+.foot-row{display:flex; justify-content:space-between; align-items:flex-start; gap:2rem; flex-wrap:wrap; margin-bottom:3rem}
+.foot-nav ul{display:flex; flex-wrap:wrap; gap:.25rem 1.75rem; list-style:none; margin:0; padding:0}
+.foot-nav a{display:inline-flex; align-items:center; min-height:var(--tap); color:var(--smoke); text-decoration:none; transition:color .3s}
+.foot-nav a:hover{color:var(--ivory)}
 
 /* =========================================================
    5. CHARACTERS
    ========================================================= */
 .seg{display:inline-flex; padding:.3rem; border:1px solid var(--line); border-radius:999px; margin-bottom:3rem; position:relative}
-.seg button{position:relative; z-index:1; border:0; background:none; padding:.55rem 1.2rem; border-radius:999px; color:var(--smoke); cursor:pointer; transition:color .3s}
-.seg button[aria-pressed="true"]{color:var(--ivory)}
+.seg button{position:relative; z-index:1; min-height:2.5rem; border:0; background:none; padding:.5rem 1.2rem; border-radius:999px; color:var(--smoke); cursor:pointer; transition:color .3s}
+.seg button:hover{color:var(--ivory)}
+.seg button[aria-pressed="true"]{color:var(--ivory); font-weight:500}
 .seg .seg-ink{position:absolute; top:.3rem; bottom:.3rem; left:0; width:0; border-radius:999px; background:var(--velvet); transition:left .5s var(--ease), width .5s var(--ease)}
 
 .page-head.compact{margin-bottom:0; border-bottom:0; padding-bottom:2rem}
@@ -348,6 +429,7 @@ body.intro-on .hero *, body.intro-on .hero *::after{animation-play-state:paused 
   transition-property:flex-grow, clip-path; transition-duration:.9s, 1.1s; transition-timing-function:var(--ease); transition-delay:0s, var(--delay);
 }
 .strip.dealt{clip-path:inset(0 0 0 0)}
+.strip:focus-visible{outline-offset:-6px}   /* clip-path가 바깥 포커스 링을 잘라내므로 안쪽에 그림 */
 .strip:hover, .strip:focus-visible{flex-grow:2.8}
 .strip .img{
   position:absolute; inset:0; z-index:-2; display:grid; place-items:center; color:var(--smoke); font-size:var(--s-1);
@@ -368,7 +450,7 @@ body.intro-on .hero *, body.intro-on .hero *::after{animation-play-state:paused 
 .strip.dealer::before{content:""; position:absolute; inset:.6rem; border:1px solid rgba(237,227,200,.32); border-radius:.4rem; pointer-events:none; transition:inset .6s var(--ease), border-color .4s}
 .strip.dealer:hover::before{inset:.9rem; border-color:rgba(201,165,90,.7)}
 .strip .pip{position:absolute; top:1.1rem; left:1.1rem; font-size:1.25rem; line-height:1}
-.strip.red-suit .pip{color:var(--red)}
+.strip.red-suit .pip{color:var(--red-hi)}
 /* 참가자: 칩 배지 + 하단 색 띠 */
 .strip.player::before{content:""; position:absolute; left:0; right:0; bottom:0; height:4px; background:var(--band); transition:height .5s var(--ease)}
 .strip.player:hover::before{height:8px}
@@ -395,7 +477,7 @@ body.intro-on .hero *, body.intro-on .hero *::after{animation-play-state:paused 
 .pf-visual::after{content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(90deg, transparent 70%, rgba(18,17,16,.6)); pointer-events:none}
 .pf-visual.dealer::before{content:""; position:absolute; inset:1.25rem; top:5.75rem; border:1px solid rgba(201,165,90,.5); border-radius:.6rem; pointer-events:none}
 .pf-visual .pip{position:absolute; top:6.75rem; left:2.25rem; font-size:2rem; line-height:1}
-.pf-visual.red-suit .pip{color:var(--red)}
+.pf-visual.red-suit .pip{color:var(--red-hi)}
 .pf-visual .badge{position:absolute; top:6.5rem; left:2rem; --size:3.2rem}
 .pf-visual.player::before{content:""; position:absolute; left:0; right:0; bottom:0; height:6px; background:var(--band)}
 
@@ -414,8 +496,7 @@ body.intro-on .hero *, body.intro-on .hero *::after{animation-play-state:paused 
 
 /* 성격 키워드 */
 .kw{display:flex; flex-wrap:wrap; gap:.5rem; list-style:none; margin:0; padding:0}
-.kw li{padding:.35rem .9rem; border:1px solid var(--line); border-radius:999px; font-size:.9375rem; transition:border-color .3s, background .3s}
-.kw li:hover{border-color:rgba(201,165,90,.6); background:rgba(201,165,90,.06)}
+.kw li{padding:.35rem .9rem; border:1px solid rgba(201,165,90,.45); border-radius:999px; font-size:.9375rem; background:rgba(201,165,90,.05)}  /* 클릭 불가 요소라 호버 효과 제거 */
 
 /* 소지품 인벤토리 */
 .inv{display:grid; grid-template-columns:repeat(6, 1fr); gap:.5rem}
@@ -423,13 +504,14 @@ body.intro-on .hero *, body.intro-on .hero *::after{animation-play-state:paused 
 .slot{
   position:relative; aspect-ratio:1; border-radius:.6rem; border:1px solid var(--line-2);
   background:repeating-linear-gradient(45deg, transparent 0 6px, rgba(237,227,200,.02) 6px 12px), var(--black-2);
-  display:grid; place-items:center; padding:0; color:var(--smoke); font-size:.6875rem;
+  display:grid; place-items:center; padding:0; color:var(--smoke); font-size:.75rem;
 }
-button.slot{cursor:pointer; border-color:var(--line); background:var(--black-3); transition:border-color .3s, transform .4s var(--ease)}
+button.slot{cursor:pointer; border-color:var(--line-strong); background:var(--black-3); transition:border-color .3s, transform .4s var(--ease)}
+button.slot:focus-visible{outline-offset:2px}
 button.slot:hover{transform:translateY(-2px); border-color:var(--smoke)}
 button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset, 0 0 18px rgba(201,165,90,.18)}
 .slot img{width:78%; height:78%; object-fit:contain}
-.slot .qty{position:absolute; right:.3rem; bottom:.2rem; font-size:.6875rem; color:var(--ivory); font-variant-numeric:tabular-nums}
+.slot .qty{position:absolute; right:.3rem; bottom:.2rem; font-size:.75rem; color:var(--ivory); font-variant-numeric:tabular-nums}
 .inv-detail{margin-top:1rem; padding:1rem 1.25rem; border:1px solid var(--line); border-radius:.9rem; background:var(--black-2); min-height:5.5rem}
 .inv-detail .top{display:flex; justify-content:space-between; align-items:baseline; gap:1rem}
 .inv-detail strong{font-family:var(--f-serif); font-weight:700; font-size:var(--s1)}
@@ -438,14 +520,14 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:0 0 0 1px 
 .inv-detail .note{color:var(--gold)}
 
 /* 공지 태그 */
-.tag{display:inline-flex; align-items:center; padding:.05rem .5rem; margin-right:.5rem; border:1px solid var(--line); border-radius:999px; font-size:.6875rem; line-height:1.6; color:var(--smoke); vertical-align:.1em; white-space:nowrap}
+.tag{display:inline-flex; align-items:center; padding:.05rem .55rem; margin-right:.5rem; border:1px solid var(--line-strong); border-radius:999px; font-size:.75rem; line-height:1.6; color:var(--smoke); vertical-align:.1em; white-space:nowrap}
 .tag.pin{border-color:rgba(184,50,58,.6); color:#E0747B}
 .row-list li.pinned a{background:rgba(140,28,38,.07)}
 .notice-tools{margin-bottom:2rem}
 .glance .row-list .tag:not(.pin){display:none}
 .glance .row-list li a > span:nth-child(2){min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .pager{display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--line)}
-.pager a{display:block; padding:.25rem 0; text-decoration:none; transition:color .3s}
+.pager a{display:block; padding:.5rem 0; text-decoration:none; transition:color .3s}
 .pager a:last-child{text-align:right}
 .pager small{display:block; font-size:var(--s-1); color:var(--smoke)}
 .pager strong{display:block; font-family:var(--f-serif); font-weight:700; transition:color .3s}
@@ -475,15 +557,19 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:0 0 0 1px 
 .notice-article h1{margin:0 0 2.5rem; font-family:var(--f-serif); font-weight:900; font-size:clamp(2.2rem, 4.5vw, 3.6rem); line-height:1.2; letter-spacing:-.02em}
 .notice-article .body{padding-top:2rem; border-top:1px solid var(--line)}
 .notice-article .body p{color:var(--smoke)}
-.link-back{display:inline-flex; font-size:var(--s-1); color:var(--smoke); text-decoration:none; transition:color .3s}
+.link-back{display:inline-flex; align-items:center; gap:.5rem; min-height:var(--tap); font-size:var(--s-1); color:var(--smoke); text-decoration:none; transition:color .3s}
+.link-back::before{content:"←"; transition:transform .4s var(--ease)}
 .link-back:hover{color:var(--ivory)}
+.link-back:hover::before{transform:translateX(-.25rem)}
 
 /* =========================================================
    6. WORLD
    ========================================================= */
 .world{display:grid; grid-template-columns:repeat(12, 1fr); gap:1.5rem}
-.world-toc{grid-column:1 / span 3; position:sticky; top:8rem; align-self:start; list-style:none; margin:0; padding:0}
-.world-toc a{position:relative; display:block; padding:.55rem 0 .55rem 1.25rem; color:var(--smoke); text-decoration:none; transition:color .3s, padding .5s var(--ease)}
+.world-nav{grid-column:1 / span 3; position:sticky; top:8rem; align-self:start}
+.world-toc{list-style:none; margin:0; padding:0}
+.world-toc a{position:relative; display:block; padding:.6rem 0 .6rem 1.25rem; color:var(--smoke); text-decoration:none; transition:color .3s, padding .5s var(--ease)}
+.world-toc a:hover{color:var(--ivory)}
 .world-toc a::before{content:""; position:absolute; left:0; top:50%; width:.5rem; height:1px; background:currentColor; transition:width .5s var(--ease)}
 .world-toc a.active{color:var(--ivory); padding-left:2rem}
 .world-toc a.active::before{width:1.25rem; background:var(--red)}
@@ -492,19 +578,23 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:0 0 0 1px 
 .world-body section:last-child{border-bottom:0}
 .world-body .figure{aspect-ratio:16/9; background:var(--black-2); border:1px solid var(--line); display:grid; place-items:center; color:var(--smoke); font-size:var(--s-1); margin:2rem 0; border-radius:1rem}
 .world-body p{color:var(--smoke); max-width:38rem}
-@media (max-width:860px){ .world-toc{grid-column:1 / -1; position:static; display:flex; flex-wrap:wrap; gap:0 1.5rem} .world-body{grid-column:1 / -1} }
+.world-body section h2:focus{outline:none}
+@media (max-width:860px){ .world-nav{grid-column:1 / -1; position:static} .world-toc{display:flex; flex-wrap:wrap; gap:0 1.5rem} .world-body{grid-column:1 / -1} }
 
 /* =========================================================
    7. STORY — 타임라인
    ========================================================= */
-.timeline{position:relative; list-style:none; margin:0; padding:0 0 0 clamp(2.5rem, 8vw, 6rem); max-width:56rem}
-.timeline::before, .timeline .fill{content:""; position:absolute; left:clamp(.75rem, 3vw, 2rem); top:0; bottom:0; width:1px}
-.timeline::before{background:var(--line)}
-.timeline .fill{background:linear-gradient(var(--red), var(--gold)); transform-origin:top; transform:scaleY(1)}
+/* 진행선은 <ol> 밖 래퍼에 둠 — <ol>의 자식은 <li>만 허용 */
+.timeline-wrap{position:relative; max-width:56rem}
+.timeline{position:relative; list-style:none; margin:0; padding:0 0 0 clamp(2.5rem, 8vw, 6rem)}
+.timeline-wrap::before, .timeline-wrap .fill{content:""; position:absolute; left:clamp(.75rem, 3vw, 2rem); top:0; bottom:0; width:1px}
+.timeline-wrap::before{background:var(--line)}
+.timeline-wrap .fill{background:linear-gradient(var(--red), var(--gold)); transform-origin:top; transform:scaleY(1)}
+.timeline-wrap:has(.slot-note)::before{display:none}
 @keyframes fill{from{transform:scaleY(0)}}
 @supports (animation-timeline: view()){
   @media (prefers-reduced-motion: no-preference){
-    .timeline .fill{animation:fill linear both; animation-timeline:view(); animation-range:cover 15% cover 75%}
+    .timeline-wrap .fill{animation:fill linear both; animation-timeline:view(); animation-range:cover 15% cover 75%}
   }
 }
 .timeline li{position:relative; padding:0 0 4rem}
@@ -512,8 +602,8 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:0 0 0 1px 
   content:""; position:absolute; left:calc(clamp(.75rem, 3vw, 2rem) - clamp(2.5rem, 8vw, 6rem) - .45rem); top:.45rem;
   width:.9rem; height:.9rem; border-radius:50%; background:var(--black); border:1px solid var(--gold);
 }
-.timeline .ep{font-family:var(--f-serif); font-weight:700; color:var(--red)}
-.timeline h3{font-family:var(--f-serif); font-weight:900; font-size:var(--s3); margin:.25rem 0 .5rem; line-height:1.25}
+.timeline .ep{font-family:var(--f-serif); font-weight:700; color:var(--red-text)}
+.timeline h2{font-family:var(--f-serif); font-weight:900; font-size:var(--s3); margin:.25rem 0 .5rem; line-height:1.25}
 .timeline time{font-size:var(--s-1); color:var(--smoke)}
 .timeline p{color:var(--smoke); margin:.75rem 0 0; max-width:36rem}
 
@@ -525,8 +615,9 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:0 0 0 1px 
 .shop-bar .chip{--size:2.2rem}
 .shop-bar strong{font-family:var(--f-serif); font-weight:900; font-size:var(--s3); line-height:1}
 .shop{display:grid; grid-template-columns:repeat(12, 1fr); gap:1.5rem}
-.item{grid-column:span 4; position:relative; display:flex; flex-direction:column; gap:.75rem; padding:1rem 1rem 1.25rem; border:1px solid var(--line); border-radius:1.25rem; background:var(--black-2); transition:transform .6s var(--ease), border-color .4s}
-.item:hover{transform:translateY(-.5rem); border-color:rgba(201,165,90,.45)}
+.item{grid-column:span 4; position:relative; display:flex; flex-direction:column; gap:.75rem; padding:1rem 1rem 1.25rem; border:1px solid var(--line); border-radius:1.25rem; background:var(--black-2); transition:border-color .4s}
+.item:hover{border-color:rgba(201,165,90,.45)}   /* 카드 자체는 클릭 불가 — 떠오르는 효과 제거 */
+.item .desc{margin:0; color:var(--smoke); font-size:.9375rem}
 .item.wide{grid-column:span 8}
 .item .thumb{aspect-ratio:4/3; border-radius:.75rem; background:var(--black); display:grid; place-items:center; color:var(--smoke); font-size:var(--s-1); overflow:hidden}
 .item.wide .thumb{aspect-ratio:auto; flex:1; min-height:12rem}
@@ -561,15 +652,24 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:0 0 0 1px 
    10. SETTINGS / ADMIN
    ========================================================= */
 .form{max-width:36rem; display:grid; gap:1.75rem}
-.field label{display:block; margin-bottom:.5rem}
+.field label{display:block; margin-bottom:.5rem; font-weight:400}
 .hint{display:block; color:var(--smoke); font-size:var(--s-1); margin-top:.25rem}
-.input{width:100%; padding:.85rem 1rem; background:var(--black-2); border:1px solid var(--line); border-radius:.6rem; transition:border-color .3s, box-shadow .3s}
-.input:focus{outline:none; border-color:var(--gold); box-shadow:0 0 0 4px rgba(201,165,90,.12)}
-.switch{display:flex; align-items:flex-start; justify-content:space-between; gap:1.5rem; padding:1.25rem 0; border-block:1px solid var(--line)}
-.switch input{appearance:none; flex:none; width:3rem; height:1.7rem; border-radius:999px; background:var(--black-3); border:1px solid var(--line); position:relative; cursor:pointer; transition:background .3s}
-.switch input::after{content:""; position:absolute; top:.2rem; left:.2rem; width:1.2rem; height:1.2rem; border-radius:50%; background:var(--ivory); transition:transform .5s var(--ease)}
-.switch input:checked{background:var(--velvet)}
-.switch input:checked::after{transform:translateX(1.3rem)}
+.input{width:100%; min-height:var(--tap); padding:.8rem 1rem; background:var(--black-2); border:1px solid var(--line-strong); border-radius:.6rem; transition:border-color .3s, box-shadow .3s}
+.input:hover{border-color:var(--smoke)}
+.input:focus{outline:2px solid var(--focus); outline-offset:1px; border-color:var(--gold)}
+textarea.input{resize:vertical; min-height:8rem}
+select.input{
+  appearance:none; padding-right:2.75rem; cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23EDE3C8' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 1rem center; background-size:.75rem;
+}
+select.input option{background:var(--black-2); color:var(--ivory)}
+.switch{display:flex; align-items:center; justify-content:space-between; gap:1.5rem; padding:1.25rem 0; border-block:1px solid var(--line)}
+.switch label{display:block; cursor:pointer}
+.switch input{appearance:none; flex:none; margin:0; width:3rem; height:1.75rem; border-radius:999px; background:var(--black-3); border:1px solid var(--line-strong); position:relative; cursor:pointer; transition:background .3s, border-color .3s}
+.switch input::after{content:""; position:absolute; top:calc(50% - .6rem); left:.2rem; width:1.2rem; height:1.2rem; border-radius:50%; background:var(--smoke); transition:transform .5s var(--ease), background .3s}
+.switch input:checked{background:var(--velvet); border-color:var(--red)}
+.switch input:checked::after{transform:translateX(1.25rem); background:var(--ivory)}
 
 .admin-grid{display:grid; grid-template-columns:repeat(12, 1fr); gap:1.5rem}
 .admin-grid .panel{grid-column:span 6; padding:1.75rem; border:1px solid var(--line); border-radius:1.25rem; background:var(--black-2)}
@@ -577,6 +677,7 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:0 0 0 1px 
 @media (max-width:860px){ .admin-grid .panel{grid-column:1 / -1} }
 .admin-grid h2{font-family:var(--f-serif); font-weight:900; font-size:var(--s2); margin:0 0 1.25rem}
 table.members{width:100%; border-collapse:collapse; font-size:.9375rem}
+table.members td:last-child, table.members th:last-child{text-align:right}
 table.members th{text-align:left; font-weight:400; color:var(--smoke); padding:.6rem 0; border-bottom:1px solid var(--line)}
 table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
 .tag-d{color:#E0747B} .tag-p{color:var(--green-hi)}
@@ -612,7 +713,7 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
 .icard .side{position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden}
 .icard .card-back{transform:rotateY(180deg); box-shadow:0 18px 40px rgba(0,0,0,.6)}
 .icard .pcard{display:grid; place-items:center}
-.icard .pcard .big{font-size:clamp(2.5rem, 5vw, 3.5rem); line-height:1; color:var(--red)}
+.icard .pcard .big{font-size:clamp(2.5rem, 5vw, 3.5rem); line-height:1; color:var(--red-hi)}
 
 .intro-name{margin:0; font-family:var(--f-serif); font-weight:900; font-size:clamp(2.5rem, 7vw, 5rem); line-height:1; letter-spacing:-.03em}
 .intro-name .ch{animation-delay:calc(var(--i) * 70ms + 2.3s)}
@@ -621,7 +722,7 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
 @keyframes bar{from{transform:scaleX(0)}}
 .intro-skip{
   position:absolute; right:var(--pad); bottom:2rem; z-index:2;
-  border:1px solid var(--line); border-radius:999px; background:transparent; padding:.55rem 1.1rem; font-size:var(--s-1); color:var(--smoke); cursor:pointer;
+  min-height:var(--tap); border:1px solid var(--line-strong); border-radius:999px; background:transparent; padding:.55rem 1.25rem; font-size:var(--s-1); color:var(--smoke); cursor:pointer;
   transition:color .3s, border-color .3s; animation:stage-out .3s 3.25s forwards;
 }
 .intro-skip:hover{color:var(--ivory); border-color:var(--smoke)}
@@ -652,28 +753,52 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
 .empty-note{padding:3rem var(--pad); color:var(--smoke); text-align:center; border-block:1px solid var(--line-2)}
 .notice-article .body p{white-space:pre-line}
 .item .thumb img{width:100%; height:100%; object-fit:cover}
+.boot-error h2:focus{outline:none}
+
+/* =========================================================
+   14. 고대비 모드 (Windows 강제 색상) — 배경색으로만 그린 표시가 사라지지 않게
+   ========================================================= */
+@media (forced-colors: active){
+  .nav-ink, .seg .seg-ink{forced-color-adjust:none; background:Highlight}
+  .seg button[aria-pressed="true"]{outline:2px solid Highlight; outline-offset:-2px}
+  .nav a[aria-current="page"]{text-decoration:underline; text-underline-offset:.35em}
+  .switch input{forced-color-adjust:none; border-color:ButtonText; background:Canvas}
+  .switch input::after{background:ButtonText}
+  .switch input:checked{background:Highlight}
+  .switch input:checked::after{background:HighlightText}
+  button.slot[aria-pressed="true"]{outline:3px solid Highlight}
+  .g-panel, .item, .table, .pcard, .card-back{border:1px solid CanvasText}
+  body::after, .hero::before, .table::before{display:none}
+}
 </style>
 </head>
 <body class="intro-on">
+<noscript><style>.boot,.opening{display:none}</style><p class="noscript">이 사이트는 자바스크립트가 켜져 있어야 정상적으로 표시됩니다.</p></noscript>
 
-<div class="boot" id="boot" aria-live="polite"><span class="chip red" aria-hidden="true"></span><span class="sr">불러오는 중</span></div>
+<div class="boot" id="boot" role="status"><span class="chip red" aria-hidden="true"></span><span class="sr">불러오는 중</span></div>
 
+<!-- 인트로: 장식용. 재생 중에는 뒤쪽 화면을 inert로 막고 '건너뛰기'만 조작 가능 -->
 <div class="opening" id="intro">
   <div class="intro-half top"></div>
   <div class="intro-half bottom"></div>
-  <div class="intro-stage">
-    <div class="deck" id="deck" aria-hidden="true"></div>
+  <div class="intro-stage" aria-hidden="true">
+    <div class="deck" id="deck"></div>
     <p class="intro-name split">사이트명</p>
-    <span class="intro-bar" aria-hidden="true"></span>
+    <span class="intro-bar"></span>
   </div>
-  <button class="intro-skip" type="button" id="intro-skip">건너뛰기</button>
+  <button class="intro-skip" type="button" id="intro-skip">인트로 건너뛰기</button>
 </div>
+
+<a class="skip-link" id="skip-link" href="#app">본문 바로가기</a>
 
 <div class="progress" aria-hidden="true"></div>
 
 <header class="site-head" id="site-head">
   <div class="inner wrap">
     <a class="mark" href="#home"><span class="chip red" aria-hidden="true"></span>사이트명</a>
+    <button class="menu-btn" type="button" id="menu-btn" aria-expanded="false" aria-controls="nav">
+      <span class="menu-icon" aria-hidden="true"></span><span>메뉴</span>
+    </button>
     <nav class="nav" id="nav" aria-label="주 메뉴">
       <a href="#home">홈</a>
       <a href="#characters">캐릭터</a>
@@ -688,7 +813,10 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
   </div>
 </header>
 
-<main id="app">
+<!-- 화면 밖 공지용 라이브 영역: 필터 결과 수 등 -->
+<div class="sr" id="sr-status" role="status" aria-live="polite"></div>
+
+<main id="app" tabindex="-1">
 
   <!-- ===================== 홈 ===================== -->
   <section data-page="home">
@@ -716,16 +844,21 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
         <a class="g-panel latest" href="#story" style="--n:1" id="latest-card"></a>
         <div class="g-panel next" style="--n:2">
           <span class="chip red" aria-hidden="true"></span>
-          <div><strong>다음 게임</strong><span>게임 일정이 들어갈 자리입니다.</span></div>
+          <div><h2>다음 게임</h2><span>게임 일정이 들어갈 자리입니다.</span></div>
         </div>
       </aside>
     </div>
 
-    <div class="marquee" aria-hidden="true"><div class="track" id="marquee"></div></div>
+    <div class="marquee-wrap" id="marquee-wrap">
+      <div class="marquee" aria-hidden="true"><div class="track" id="marquee"></div></div>
+      <button class="marquee-toggle" type="button" id="marquee-toggle" aria-pressed="false">
+        <span class="ico" aria-hidden="true"></span><span class="sr">흐르는 문구 멈추기</span>
+      </button>
+    </div>
 
     <div class="wrap">
       <div class="intro-block">
-        <p class="statement reveal">대표 문구가 들어갈 자리입니다. 두 줄 정도의 분량을 기준으로 잡았습니다.</p>
+        <h2 class="statement reveal">대표 문구가 들어갈 자리입니다. 두 줄 정도의 분량을 기준으로 잡았습니다.</h2>
         <div class="body">
           <article class="reveal"><h3>소제목 자리</h3><p>본문 자리입니다. 세계관 요약이나 커뮤 소개가 들어갈 수 있습니다.</p></article>
           <article class="reveal"><h3>소제목 자리</h3><p>본문 자리입니다.</p></article>
@@ -791,7 +924,7 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
         <dl class="pf-dl" id="pf-dl"></dl>
         <section class="pf-block"><h2>성격</h2><ul class="kw" id="pf-kw"></ul></section>
         <section class="pf-block"><h2>설명</h2><p class="pf-desc" id="pf-desc"></p></section>
-        <section class="pf-block"><h2>소지품</h2><div class="inv" id="pf-inv"></div><div class="inv-detail" id="pf-inv-detail" aria-live="polite"></div></section>
+        <section class="pf-block"><h2 id="pf-inv-h">소지품</h2><div class="inv" id="pf-inv" role="group" aria-labelledby="pf-inv-h"></div><div class="inv-detail" id="pf-inv-detail" aria-live="polite"></div></section>
         <nav class="pager" id="pf-pager" aria-label="다른 캐릭터"></nav>
       </div>
     </div>
@@ -826,7 +959,7 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
         <p class="page-lede">세계관 페이지 안내 문구 자리입니다.</p>
       </header>
       <div class="world">
-        <ul class="world-toc" id="world-toc"></ul>
+        <nav class="world-nav" aria-label="세계관 목차"><ul class="world-toc" id="world-toc"></ul></nav>
         <div class="world-body" id="world-body"></div>
       </div>
     </div>
@@ -839,7 +972,7 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
         <h1 class="page-title split">지난 이야기</h1>
         <p class="page-lede">진행된 이야기가 순서대로 쌓이는 페이지입니다.</p>
       </header>
-      <ol class="timeline" id="timeline"></ol>
+      <div class="timeline-wrap" id="timeline-wrap"></div>
     </div>
   </section>
 
@@ -851,9 +984,11 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
         <p class="page-lede">상점 안내 문구 자리입니다.</p>
       </header>
       <div class="table shop-bar" data-spot>
-        <span>보유 칩</span>
-        <span class="wallet"><span class="chip red" aria-hidden="true"></span><strong id="wallet">0</strong></span>
+        <span id="wallet-label">보유 칩</span>
+        <span class="wallet"><span class="chip red" aria-hidden="true"></span><strong id="wallet" aria-describedby="wallet-label">0</strong></span>
       </div>
+      <h2 class="sr">상품 목록</h2>
+      <p class="sr" id="buy-note">구매 기능은 준비 중입니다.</p>
       <div class="shop" id="shop"></div>
     </div>
   </section>
@@ -886,16 +1021,19 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
       <form class="form" id="settings-form">
         <div class="field">
           <label for="set-name">표시 이름</label>
-          <input class="input" id="set-name" type="text" autocomplete="off">
+          <input class="input" id="set-name" name="nickname" type="text" autocomplete="nickname" maxlength="30">
         </div>
         <div class="field">
           <label for="set-char">연결된 캐릭터</label>
-          <select class="input" id="set-char"></select>
+          <select class="input" id="set-char" name="character"></select>
         </div>
-        <label class="switch">
-          <span>애니메이션 끄기<span class="hint">칩 낙하, 카드 뒤집기, 탭 전환 효과를 멈춥니다.</span></span>
-          <input type="checkbox" id="set-calm">
-        </label>
+        <div class="switch">
+          <div>
+            <label for="set-calm">애니메이션 끄기</label>
+            <span class="hint" id="set-calm-hint">칩 낙하, 카드 뒤집기, 탭 전환 효과를 멈춥니다. 이 기기에 저장됩니다.</span>
+          </div>
+          <input type="checkbox" role="switch" id="set-calm" name="calm" aria-describedby="set-calm-hint">
+        </div>
         <div><button class="btn primary" type="submit">설정 저장</button></div>
       </form>
     </div>
@@ -912,9 +1050,9 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
         <div class="panel">
           <h2>공지 작성</h2>
           <div class="form">
-            <div class="field"><label for="ad-title">제목</label><input class="input" id="ad-title"></div>
+            <div class="field"><label for="ad-title">제목</label><input class="input" id="ad-title" type="text"></div>
             <div class="field"><label for="ad-body">내용</label><textarea class="input" id="ad-body" rows="5"></textarea></div>
-            <div><button class="btn primary" type="button" disabled>공지 올리기</button></div>
+            <div><button class="btn primary" type="button" disabled aria-describedby="ad-note">공지 올리기</button><span class="hint" id="ad-note">작성 기능 연결 전입니다.</span></div>
           </div>
         </div>
         <div class="panel">
@@ -925,7 +1063,8 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
           <h2>멤버 관리</h2>
           <div class="table-scroll">
             <table class="members">
-              <thead><tr><th>이름</th><th>구분</th><th>칩</th></tr></thead>
+              <caption class="sr">멤버 목록 — 이름, 구분, 보유 칩</caption>
+              <thead><tr><th scope="col">이름</th><th scope="col">구분</th><th scope="col">칩</th></tr></thead>
               <tbody id="admin-members"></tbody>
             </table>
           </div>
@@ -939,6 +1078,21 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
 <footer class="site-foot">
   <div class="wrap">
     <p class="big" aria-hidden="true">사이트명</p>
+    <div class="foot-row">
+      <nav class="foot-nav" aria-label="바닥글 메뉴">
+        <ul>
+          <li><a href="#home">홈</a></li>
+          <li><a href="#notices">공지</a></li>
+          <li><a href="#characters">캐릭터</a></li>
+          <li><a href="#world">세계관</a></li>
+          <li><a href="#story">지난 이야기</a></li>
+          <li><a href="#shop">상점</a></li>
+          <li><a href="#game">게임</a></li>
+          <li><a href="#settings">설정</a></li>
+        </ul>
+      </nav>
+      <button class="btn" type="button" id="to-top">맨 위로</button>
+    </div>
     <div class="fine"><span>푸터 문구 자리</span><span>연락처 자리</span></div>
   </div>
 </footer>
@@ -959,9 +1113,16 @@ const CONFIG = {
   DEV_SHOW_ADMIN: true   // 뼈대 확인용. 운영 전 false
 };
 
+const SITE_NAME = "사이트명";   // 문서 제목(탭 이름)에 쓰임
+const PAGE_TITLES = { home: "", characters: "캐릭터", world: "세계관", story: "지난 이야기", shop: "상점", game: "게임", settings: "설정", admin: "관리", notices: "공지" };
+const setTitle = t => { document.title = t ? `${t} | ${SITE_NAME}` : SITE_NAME; };
+
 const mqReduce = matchMedia("(prefers-reduced-motion: reduce)");
 const mqFine = matchMedia("(hover: hover) and (pointer: fine)");
+const mqMobileNav = matchMedia("(max-width: 860px)");
+const CALM_KEY = "comu-calm";
 const state = { isAdmin: CONFIG.DEV_SHOW_ADMIN, calm: false, filter: "all" };
+try { state.calm = localStorage.getItem(CALM_KEY) === "1"; } catch (_) {}
 const motionOK = () => !mqReduce.matches && !state.calm;
 
 /* ---------- 더미 데이터 (Supabase 테이블로 교체) ---------- */
@@ -1015,15 +1176,26 @@ function toast(msg){
   clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2200);
 }
 
-/* 글자 단위로 쪼개 순차 등장 */
+/* 화면 밖 공지 (스크린리더) */
+function announce(msg){
+  const r = $("#sr-status");
+  r.textContent = "";
+  setTimeout(() => { r.textContent = msg; }, 60);
+}
+
+/* 글자 단위로 쪼개 순차 등장
+   aria-label 대신 숨김 텍스트를 둠 — <p> 등 일반 요소의 aria-label은 ARIA 1.2에서 금지 */
 function splitText(el){
   if (!el.dataset.text) el.dataset.text = el.textContent.trim();
   const text = el.dataset.text;
-  el.setAttribute("aria-label", text);
-  el.innerHTML = [...text].map((ch, i) =>
-    ch === " " ? " " : `<span class="clip" aria-hidden="true"><span class="ch" style="--i:${i}">${esc(ch)}</span></span>`
-  ).join("");
+  el.removeAttribute("aria-label");
+  el.innerHTML = `<span class="sr">${esc(text)}</span><span aria-hidden="true">` + [...text].map((ch, i) =>
+    ch === " " ? " " : `<span class="clip"><span class="ch" style="--i:${i}">${esc(ch)}</span></span>`
+  ).join("") + `</span>`;
 }
+
+/* 이미지가 없을 때 보이는 자리표시 글자는 보조기기에서 숨김 */
+const ph = (t = "이미지") => `<span aria-hidden="true">${t}</span>`;
 
 /* ---------- render ---------- */
 function renderHero(){
@@ -1036,21 +1208,29 @@ function renderHero(){
 }
 
 // 고정글 먼저(pin 순서) → 나머지는 기존 순서(최신순)
-const sortedNotices = () => [...DATA.notices].sort((a, b) => (b.pinned - a.pinned) || (a.pinned && b.pinned ? a.pinOrder - b.pinOrder : 0));
+// pinOrder가 null(DB 기본값)이어도 정렬이 깨지지 않도록 ?? 0
+const sortedNotices = () => [...DATA.notices].sort((a, b) => (b.pinned - a.pinned) || (a.pinned && b.pinned ? (a.pinOrder ?? 0) - (b.pinOrder ?? 0) : 0));
 let noticeFilter = "전체";
 
+const timeTag = (label, iso) => `<time${iso ? ` datetime="${esc(iso)}"` : ""}>${esc(label)}</time>`;
 const noticeRow = (n, i) =>
-  `<li class="${n.pinned ? "pinned" : ""}"><a href="#notices/${n.id}"><time>${esc(n.date)}</time><span>${n.pinned ? `<span class="tag pin">고정</span>` : ""}${n.category ? `<span class="tag">${esc(n.category)}</span>` : ""}${esc(n.title)}</span><span class="suit" aria-hidden="true">${SUITS[i % 4]}</span></a></li>`;
+  `<li class="${n.pinned ? "pinned" : ""}"><a href="#notices/${n.id}">${timeTag(n.date, n.iso)}<span>${n.pinned ? `<span class="tag pin">고정</span>` : ""}${n.category ? `<span class="tag">${esc(n.category)}</span>` : ""}${esc(n.title)}</span><span class="suit" aria-hidden="true">${SUITS[i % 4]}</span></a></li>`;
 
-function renderNoticeList(){
+/* 분류 버튼은 한 번만 그림 — 클릭할 때마다 다시 그리면 키보드 포커스가 사라짐 (WCAG 2.4.3) */
+function renderNoticeSeg(){
   const cats = ["전체", ...DATA.categories];
   $("#notice-seg").innerHTML = cats.map(c => `<button type="button" data-cat="${esc(c)}" aria-pressed="${c === noticeFilter}">${esc(c)}</button>`).join("") + `<span class="seg-ink" aria-hidden="true"></span>`;
+}
+function placeSegInk(seg){
+  const a = $('button[aria-pressed="true"]', seg), ink = $(".seg-ink", seg);
+  if (a && ink){ ink.style.left = a.offsetLeft + "px"; ink.style.width = a.offsetWidth + "px"; }
+}
+function renderNoticeList(){
+  $$("#notice-seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.cat === noticeFilter));
   const list = sortedNotices().filter(n => noticeFilter === "전체" || n.category === noticeFilter);
-  $("#notice-all").innerHTML = list.map(noticeRow).join("");
-  requestAnimationFrame(() => {
-    const seg = $("#notice-seg"), a = $('button[aria-pressed="true"]', seg), ink = $(".seg-ink", seg);
-    if (a){ ink.style.left = a.offsetLeft + "px"; ink.style.width = a.offsetWidth + "px"; }
-  });
+  $("#notice-all").innerHTML = list.length ? list.map(noticeRow).join("") : `<li class="empty-note">해당 분류의 공지가 없습니다.</li>`;
+  requestAnimationFrame(() => placeSegInk($("#notice-seg")));
+  return list.length;
 }
 
 function renderHome(){
@@ -1060,9 +1240,9 @@ function renderHome(){
   const mid = (DATA.dealers.length - 1) / 2;
   $("#fan").innerHTML = DATA.dealers.map((c, i) => {
     const off = i - mid;
-    return `<a class="fan-card" href="#characters/${c.id}" style="--rot:${off * 7}deg;--lift:${Math.abs(off) * .35}rem;z-index:${i}" aria-label="${esc(c.name)}">
-      <span class="pcard ${isRed(c.suit) ? "red-suit" : ""}">
-        <span class="pip tl">${c.suit}</span><span class="face">이미지</span><span class="pip br">${c.suit}</span>
+    return `<a class="fan-card" href="#characters/${c.id}" style="--rot:${off * 7}deg;--lift:${Math.abs(off) * .35}rem;z-index:${i}" aria-label="${esc(c.name)} 프로필">
+      <span class="pcard ${isRed(c.suit) ? "red-suit" : ""}" aria-hidden="true">
+        <span class="pip tl">${c.suit}</span><span class="face">${c.img ? `<img src="${esc(c.img)}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover">` : "이미지"}</span><span class="pip br">${c.suit}</span>
       </span></a>`;
   }).join("");
 
@@ -1072,13 +1252,13 @@ function renderHome(){
 
   const last = DATA.chapters[DATA.chapters.length - 1];
   $("#latest-card").innerHTML = last
-    ? `<span class="ep">최근 이야기 / 제${last.number}화</span><h3>${esc(last.title)}</h3><p>${esc(last.summary)}</p>`
-    : `<span class="ep">최근 이야기</span><h3>아직 기록이 없습니다</h3>`;
+    ? `<span class="ep">최근 이야기 / 제${last.number}화</span><h2 class="g-title">${esc(last.title)}</h2><p>${esc(last.summary)}</p>`
+    : `<span class="ep">최근 이야기</span><h2 class="g-title">아직 기록이 없습니다</h2>`;
   $("#roster-meta").textContent = `딜러 ${DATA.dealers.length}명 / 참가자 ${DATA.players.length}명`;
   if (!DATA.notices.length) $("#notice-list").innerHTML = `<li class="slot-note" style="padding:.55rem 0">등록된 공지가 없습니다.</li>`;
 }
 
-const imgSlot = c => c.img ? `<img src="${esc(c.img)}" alt="" loading="lazy">` : "이미지";
+const imgSlot = (c, alt = "", lazy = true) => c.img ? `<img src="${esc(c.img)}" alt="${esc(alt)}"${lazy ? ` loading="lazy"` : ""} decoding="async">` : ph();
 
 function renderCast(){
   $("#count-dealer").textContent = DATA.dealers.length + "명";
@@ -1112,7 +1292,7 @@ function renderProfile(id){
   const v = $("#pf-visual");
   v.className = "pf-visual " + (dealer ? "dealer" : "player") + (dealer && isRed(c.suit) ? " red-suit" : "");
   v.style.setProperty("--band", c.chip === "red" ? "var(--velvet)" : "var(--felt)");
-  v.innerHTML = `<span class="img">${imgSlot(c)}</span>` +
+  v.innerHTML = `<span class="img">${imgSlot(c, `${c.name} 캐릭터 이미지`, false)}</span>` +
     (dealer ? `<span class="pip" aria-hidden="true">${c.suit}</span>` : `<span class="chip ${c.chip} badge" aria-hidden="true"></span>`);
 
   const role = $("#pf-role");
@@ -1131,19 +1311,20 @@ function renderProfile(id){
   $("#pf-pager").innerHTML = `
     <a href="#characters/${prev.id}"><small>이전 캐릭터</small><strong>${esc(prev.name)}</strong></a>
     <a href="#characters/${next.id}"><small>다음 캐릭터</small><strong>${esc(next.name)}</strong></a>`;
-  document.title = `${c.name} | 사이트명`;
+  setTitle(c.name);
   return true;
 }
 
+let invItems = [];
 function renderInventory(inv, selected = 0){
+  invItems = inv;
   const filled = inv.map((it, i) => `
-    <button class="slot" type="button" data-slot="${i}" aria-pressed="${i === selected}" aria-label="${esc(it.name)} ${it.quantity}개">
-      ${it.img ? `<img src="${esc(it.img)}" alt="">` : "이미지"}
-      ${it.quantity > 1 ? `<span class="qty">×${it.quantity}</span>` : ""}
+    <button class="slot" type="button" data-slot="${i}" aria-pressed="${i === selected}" aria-controls="pf-inv-detail" aria-label="${esc(it.name)}, ${it.quantity}개">
+      ${it.img ? `<img src="${esc(it.img)}" alt="">` : ph()}
+      ${it.quantity > 1 ? `<span class="qty" aria-hidden="true">×${it.quantity}</span>` : ""}
     </button>`).join("");
   const empty = Array.from({ length: Math.max(0, INVENTORY_SLOTS - inv.length) }, () => `<span class="slot" aria-hidden="true"></span>`).join("");
   $("#pf-inv").innerHTML = filled + empty;
-  $("#pf-inv").dataset.items = JSON.stringify(inv);
 
   const it = inv[selected];
   $("#pf-inv-detail").innerHTML = it
@@ -1158,50 +1339,52 @@ function renderNotice(id){
   const n = list[idx], newer = list[idx - 1], older = list[idx + 1];
   $("#notice-article").innerHTML = `
     <a class="link-back" href="#notices">공지 목록으로</a>
-    <div class="meta">${n.pinned ? `<span class="tag pin">고정</span>` : ""}${n.category ? `<span class="tag">${esc(n.category)}</span>` : ""}<time>${esc(n.date)}</time></div>
+    <div class="meta">${n.pinned ? `<span class="tag pin">고정</span>` : ""}${n.category ? `<span class="tag">${esc(n.category)}</span>` : ""}${timeTag(n.date, n.iso)}</div>
     <h1>${esc(n.title)}</h1>
     <div class="body"><p>${esc(n.body)}</p></div>
     <nav class="pager" aria-label="다른 공지">
       ${older ? `<a href="#notices/${older.id}"><small>아래 공지</small><strong>${esc(older.title)}</strong></a>` : "<span></span>"}
       ${newer ? `<a href="#notices/${newer.id}"><small>위 공지</small><strong>${esc(newer.title)}</strong></a>` : "<span></span>"}
     </nav>`;
-  document.title = `${n.title} | 사이트명`;
+  setTitle(n.title);
   return true;
 }
 
 function renderWorld(){
   $("#world-toc").innerHTML = DATA.world.map(w => `<li><a href="#world" data-jump="${w.id}">${esc(w.title)}</a></li>`).join("");
   $("#world-body").innerHTML = DATA.world.map(w => `
-    <section id="${w.id}" class="reveal">
-      <h2 class="h">${esc(w.title)}</h2>
+    <section id="${w.id}" class="reveal" aria-labelledby="${w.id}-h">
+      <h2 class="h" id="${w.id}-h" tabindex="-1">${esc(w.title)}</h2>
       <p>본문 자리입니다.</p>
-      <div class="figure">이미지 자리</div>
+      <div class="figure">${ph("이미지 자리")}</div>
       <p>본문 자리입니다.</p>
     </section>`).join("");
 }
 
 function renderStory(){
-  if (!DATA.chapters.length){ $("#timeline").innerHTML = `<p class="slot-note">아직 기록이 없습니다.</p>`; return; }
-  $("#timeline").innerHTML = `<span class="fill" aria-hidden="true"></span>` + DATA.chapters.map((c, i) => `
+  const wrap = $("#timeline-wrap");
+  if (!DATA.chapters.length){ wrap.innerHTML = `<p class="slot-note">아직 기록이 없습니다.</p>`; return; }
+  wrap.innerHTML = `<span class="fill" aria-hidden="true"></span><ol class="timeline" id="timeline">` + DATA.chapters.map(c => `
     <li class="reveal">
       <span class="ep">제${c.number}화</span>
-      <h3>${esc(c.title)}</h3>
-      <time>${esc(c.date)}</time>
+      <h2>${esc(c.title)}</h2>
+      ${timeTag(c.date, c.iso)}
       <p>${esc(c.summary)}</p>
-    </li>`).join("");
+    </li>`).join("") + `</ol>`;
 }
 
 function renderShop(){
   if (!DATA.items.length){ $("#shop").innerHTML = `<p class="empty-note" style="grid-column:1 / -1">판매 중인 아이템이 없습니다.</p>`; return; }
   $("#shop").innerHTML = DATA.items.map((it, i) => `
-    <div class="item reveal ${i === 0 ? "wide" : ""}">
-      <div class="thumb">${it.img ? `<img src="${esc(it.img)}" alt="" loading="lazy">` : "이미지"}</div>
+    <article class="item reveal ${i === 0 ? "wide" : ""}">
+      <div class="thumb">${it.img ? `<img src="${esc(it.img)}" alt="" loading="lazy" decoding="async">` : ph()}</div>
       <div class="row">
         <h3>${esc(it.name)}</h3>
-        <span class="price"><span class="chip red" aria-hidden="true"></span>${it.price}</span>
+        <span class="price"><span class="chip red" aria-hidden="true"></span>${esc(it.price)}<span class="sr">칩</span></span>
       </div>
-      <button class="btn" type="button" disabled>구매하기</button>
-    </div>`).join("");
+      ${it.description ? `<p class="desc">${esc(it.description)}</p>` : ""}
+      <button class="btn" type="button" disabled aria-describedby="buy-note">구매하기</button>
+    </article>`).join("");
 }
 
 function renderSettings(){
@@ -1228,7 +1411,6 @@ function moveNavInk(){
   const pad = parseFloat(getComputedStyle(a).paddingLeft);
   ink.style.left = (a.offsetLeft + pad) + "px";
   ink.style.width = (a.offsetWidth - pad * 2) + "px";
-  a.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
 /* 헤더 배경 */
@@ -1308,7 +1490,11 @@ function bindSpy(){
   spyIO = new IntersectionObserver(entries => {
     entries.forEach(en => {
       if (!en.isIntersecting) return;
-      $$("#world-toc a").forEach(a => a.classList.toggle("active", a.dataset.jump === en.target.id));
+      $$("#world-toc a").forEach(a => {
+        const on = a.dataset.jump === en.target.id;
+        a.classList.toggle("active", on);
+        on ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current");
+      });
     });
   }, { rootMargin: "-40% 0px -55% 0px" });
   $$("#world-body section").forEach(s => spyIO.observe(s));
@@ -1318,9 +1504,24 @@ function bindSpy(){
 function applyFilter(){
   $$("#seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.filter === state.filter));
   $$(".cast-group").forEach(g => g.hidden = !(state.filter === "all" || g.dataset.group === state.filter));
-  const active = $('#seg button[aria-pressed="true"]'), ink = $(".seg-ink", $("#seg"));
-  ink.style.left = active.offsetLeft + "px";
-  ink.style.width = active.offsetWidth + "px";
+  placeSegInk($("#seg"));
+}
+function filterSummary(){
+  const d = DATA.dealers.length, p = DATA.players.length;
+  return state.filter === "dealer" ? `딜러 ${d}명 표시` : state.filter === "player" ? `참가자 ${p}명 표시` : `전체 ${d + p}명 표시`;
+}
+
+/* ---------- 모바일 메뉴 ---------- */
+const SHELL = () => [$("#app"), $(".site-foot"), $("#skip-link")];
+function setMenu(open, { restoreFocus = true } = {}){
+  const head = $("#site-head"), btn = $("#menu-btn");
+  if (open === head.classList.contains("open")) return;
+  head.classList.toggle("open", open);
+  btn.setAttribute("aria-expanded", open);
+  document.body.classList.toggle("menu-open", open);
+  SHELL().forEach(el => el.inert = open);     // 메뉴가 열린 동안 뒤쪽 콘텐츠로 포커스가 새지 않게
+  if (open) $("#nav a:not([hidden])")?.focus();
+  else if (restoreFocus) btn.focus();
 }
 
 /* ---------- router ----------
@@ -1354,12 +1555,14 @@ function route(){
     if (view === "profile"){ src = $(`.strip[data-id="${param}"] .img`); if (src) src.style.viewTransitionName = "portrait"; }
   }
 
+  setMenu(false, { restoreFocus: false });
+
   const swap = () => {
     if (src) src.style.viewTransitionName = "";
     current = view; currentKey = key;
     $$("[data-page]").forEach(s => s.hidden = s.dataset.page !== view);
-    $$("#nav a").forEach(a => navKey && a.getAttribute("href") === "#" + navKey ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
-    document.title = "사이트명";
+    $$("#nav a, .foot-nav a").forEach(a => navKey && a.getAttribute("href") === "#" + navKey ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+    setTitle(PAGE_TITLES[view] ?? "");
 
     if (view === "profile"){ renderProfile(param); lastProfile = param; }
     if (view === "notice") renderNotice(param);
@@ -1381,6 +1584,8 @@ function route(){
     if (view === "world") bindSpy();
     moveNavInk();
     onScroll();
+    // SPA 화면 전환을 보조기기에 알림: 새 화면의 h1으로 포커스 이동 (첫 로드는 제외)
+    if (from !== null) focusHeading(section);
   };
 
   const clearNames = () => $$(".strip .img").forEach(el => el.style.viewTransitionName = "");
@@ -1389,20 +1594,43 @@ function route(){
   } else { swap(); clearNames(); }
 }
 
+function focusHeading(scope){
+  const h = scope && $("h1", scope);
+  const target = h || $("#app");
+  if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+  target.focus({ preventScroll: true });
+}
+
 function applyAdmin(){ $$("#nav [data-admin-only]").forEach(el => el.hidden = !state.isAdmin); }
+
+function applyCalm(){
+  document.body.classList.toggle("calm", state.calm);
+  $("#set-calm").checked = state.calm;
+  if (state.calm) $$(".strip").forEach(m => m.classList.add("dealt"));
+}
 
 /* ---------- events ---------- */
 document.addEventListener("click", e => {
+  // 본문 바로가기: 해시 라우터가 #app을 페이지로 해석하지 않도록 직접 처리
+  if (e.target.closest("#skip-link")){ e.preventDefault(); focusHeading($(`[data-page="${current}"]`)); $(`[data-page="${current}"]`)?.scrollIntoView(); return; }
+
   const jump = e.target.closest("[data-jump]");
-  if (jump){ e.preventDefault(); document.getElementById(jump.dataset.jump)?.scrollIntoView({ behavior: motionOK() ? "smooth" : "auto" }); return; }
+  if (jump){
+    e.preventDefault();
+    const sec = document.getElementById(jump.dataset.jump);
+    sec?.scrollIntoView({ behavior: motionOK() ? "smooth" : "auto" });
+    $("h2", sec)?.focus({ preventScroll: true });   // 포커스도 함께 이동 (WCAG 2.4.3)
+    return;
+  }
 
   const slot = e.target.closest("#pf-inv button.slot");
-  if (slot){ renderInventory(JSON.parse($("#pf-inv").dataset.items), +slot.dataset.slot); $(`#pf-inv [data-slot="${slot.dataset.slot}"]`).focus(); return; }
+  if (slot){ renderInventory(invItems, +slot.dataset.slot); $(`#pf-inv [data-slot="${slot.dataset.slot}"]`).focus(); return; }
 
   const cat = e.target.closest("#notice-seg button");
   if (cat){
     noticeFilter = cat.dataset.cat;
-    if (document.startViewTransition && motionOK()) document.startViewTransition(renderNoticeList); else renderNoticeList();
+    const run = () => announce(`${noticeFilter} 공지 ${renderNoticeList()}건`);
+    if (document.startViewTransition && motionOK()) document.startViewTransition(run); else run();
     return;
   }
 
@@ -1410,7 +1638,25 @@ document.addEventListener("click", e => {
   if (f){
     state.filter = f.dataset.filter;
     if (document.startViewTransition && motionOK()) document.startViewTransition(applyFilter); else applyFilter();
+    announce(filterSummary());
   }
+});
+
+$("#menu-btn").addEventListener("click", () => setMenu(!$("#site-head").classList.contains("open")));
+$$("#nav a").forEach((a, k) => a.style.setProperty("--k", k));
+// 같은 페이지 링크를 눌러도 메뉴는 닫힘
+$("#nav").addEventListener("click", e => { if (e.target.closest("a")) setMenu(false, { restoreFocus: false }); });
+mqMobileNav.addEventListener("change", () => setMenu(false, { restoreFocus: false }));
+
+$("#marquee-toggle").addEventListener("click", e => {
+  const b = e.currentTarget, paused = b.getAttribute("aria-pressed") !== "true";
+  b.setAttribute("aria-pressed", paused);
+  $("#marquee-wrap").classList.toggle("paused", paused);
+});
+
+$("#to-top").addEventListener("click", () => {
+  window.scrollTo({ top: 0, behavior: motionOK() ? "smooth" : "auto" });
+  $("#skip-link").focus({ preventScroll: true });
 });
 
 let spun = 0;
@@ -1422,20 +1668,26 @@ $("#spin").addEventListener("click", () => {
 $("#settings-form").addEventListener("submit", e => {
   e.preventDefault();
   state.calm = $("#set-calm").checked;
-  document.body.classList.toggle("calm", state.calm);
-  if (state.calm) $$(".strip").forEach(m => m.classList.add("dealt"));
-  // TODO: Supabase profiles 테이블에 저장
+  try { localStorage.setItem(CALM_KEY, state.calm ? "1" : "0"); } catch (_) {}
+  applyCalm();
+  // TODO: 표시 이름·연결 캐릭터는 Supabase profiles 테이블에 저장
   toast("설정을 저장했습니다");
 });
 
 window.addEventListener("hashchange", route);
 addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
+  if ($("#site-head").classList.contains("open")){ setMenu(false); return; }   // 메뉴가 먼저
+  if (e.target.closest?.("input, textarea, select")) return;
   if (current === "profile") location.hash = "#characters";
   else if (current === "notice") location.hash = "#notices";
 });
 window.addEventListener("scroll", onScroll, { passive: true });
-window.addEventListener("resize", () => { moveNavInk(); if (current === "characters") applyFilter(); });
+window.addEventListener("resize", () => {
+  moveNavInk();
+  if (current === "characters") applyFilter();
+  if (current === "notices") placeSegInk($("#notice-seg"));
+});
 
 /* ---------- intro ---------- */
 function runIntro(){
@@ -1444,13 +1696,21 @@ function runIntro(){
   try { seen = sessionStorage.getItem("intro-seen") === "1"; } catch (_) {}
   const force = new URLSearchParams(location.search).has("intro");
 
+  const shell = [$("#skip-link"), $("#site-head"), $("#app"), $(".site-foot")];
+  const onKey = e => { if (e.key === "Escape") skip(); };   // Enter/Space는 '건너뛰기' 버튼이 받음
   const finish = () => {
     document.body.classList.remove("intro-on");
+    const hadFocus = intro.contains(document.activeElement);
     intro.remove();
+    shell.forEach(el => el.inert = false);
+    removeEventListener("keydown", onKey);
+    if (hadFocus) $("#skip-link").focus({ preventScroll: true });   // 버튼이 사라져도 포커스가 문서 맨 앞에 남도록
     try { sessionStorage.setItem("intro-seen", "1"); } catch (_) {}
   };
 
   if ((seen && !force) || !motionOK()){ finish(); return; }
+  // 재생 중에는 뒤쪽 화면을 조작 불가로 — 가려진 요소에 포커스가 가지 않게 (WCAG 2.4.11)
+  shell.forEach(el => el.inert = true);
 
   // 카드 5장: 흩어진 위치에서 모였다가 부채꼴로 펼침
   const n = 5, mid = (n - 1) / 2;
@@ -1470,16 +1730,16 @@ function runIntro(){
   const release = setTimeout(() => document.body.classList.remove("intro-on"), 3500);  // 막이 열리는 순간 히어로 재생
   const end = setTimeout(() => { done = true; finish(); }, 4600);
 
-  const skip = () => {
+  function skip(){
     if (done) return; done = true;
     clearTimeout(release); clearTimeout(end);
     intro.classList.add("skip");
     document.body.classList.remove("intro-on");
     setTimeout(finish, 750);
-  };
-  $("#intro-skip").addEventListener("click", skip);
-  intro.addEventListener("click", e => { if (e.target !== $("#intro-skip")) skip(); });
-  addEventListener("keydown", e => { if (e.key === "Escape" || e.key === "Enter" || e.key === " ") skip(); }, { once: true });
+  }
+  // 기존: keydown에 { once:true } — Tab 등 다른 키를 먼저 누르면 리스너가 사라져 Esc가 먹지 않던 문제 수정
+  intro.addEventListener("click", skip);
+  addEventListener("keydown", onKey);
 }
 
 /* =========================================================
@@ -1549,10 +1809,10 @@ async function loadAll(){
     players: all.filter(c => c.role === "참가자"),
     categories: cats.map(c => c.name),
     notices: notices.map(n => ({
-      id: n.id, title: n.title, body: n.body, date: fmtDate(n.published_at),
+      id: n.id, title: n.title, body: n.body, date: fmtDate(n.published_at), iso: n.published_at,
       category: n.notice_categories?.name ?? "", pinned: n.is_pinned, pinOrder: n.pin_order
     })),
-    chapters: chapters.map(c => ({ number: c.number, title: c.title, summary: c.summary, date: fmtDate(c.played_on) })),
+    chapters: chapters.map(c => ({ number: c.number, title: c.title, summary: c.summary, date: fmtDate(c.played_on), iso: c.played_on })),
     items: items.map(it => ({ id: it.id, name: it.name, description: it.description, price: it.price, stock: it.stock, img: publicUrl("items", it.image_path) }))
   };
 }
@@ -1561,16 +1821,19 @@ function showBootError(err){
   console.error("[data] load failed:", err);
   $("#boot").classList.remove("hide");
   $("#boot").innerHTML = `
-    <div class="boot-error">
-      <h2>불러오지 못했습니다</h2>
+    <div class="boot-error" role="alert">
+      <h2 tabindex="-1">불러오지 못했습니다</h2>
       <p>잠시 후 다시 시도해 주세요.</p>
       <button class="btn" type="button" onclick="location.reload()">다시 시도</button>
     </div>`;
   document.body.classList.remove("intro-on");
   $("#intro")?.remove();
+  [$("#skip-link"), $("#site-head"), $("#app"), $(".site-foot")].forEach(el => el.inert = true);  // 오류 화면 뒤는 조작 불가
+  $("#boot .btn").focus();
 }
 
 /* ---------- boot ---------- */
+applyCalm();          // 저장된 '애니메이션 끄기'를 인트로보다 먼저 적용
 runIntro();
 bindHero(); bindSpots(); bindMagnetic();
 applyAdmin();
@@ -1581,7 +1844,7 @@ applyAdmin();
     try { Object.assign(DATA, await loadAll()); }
     catch (err){ showBootError(err); return; }
   }
-  renderHome(); renderCast(); renderWorld(); renderStory(); renderShop(); renderSettings(); renderAdmin();
+  renderHome(); renderCast(); renderWorld(); renderStory(); renderShop(); renderSettings(); renderAdmin(); renderNoticeSeg();
   state.ready = true;
   route();
   $("#boot").classList.add("hide");
