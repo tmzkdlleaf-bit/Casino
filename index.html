@@ -1136,10 +1136,10 @@ table.members .input{min-height:2.25rem; padding:.35rem .6rem}
           <form class="form" id="acct-form" novalidate hidden>
             <dl class="kv">
               <dt>이메일</dt><dd id="acct-email"></dd>
-              <dt>연결된 캐릭터</dt><dd id="acct-char"></dd>
+              <dt>내 캐릭터</dt><dd id="acct-char"></dd>
               <dt>보유 칩</dt><dd id="acct-chips"></dd>
             </dl>
-            <p class="hint">캐릭터 연결과 칩은 관리자가 관리합니다.</p>
+            <p class="hint">캐릭터 연결과 칩은 관리자가 관리합니다. 칩은 캐릭터별로 쌓입니다.</p>
             <div class="field">
               <label for="set-name">표시 이름</label>
               <input class="input" id="set-name" name="nickname" type="text" autocomplete="nickname" maxlength="30" required aria-describedby="set-name-err">
@@ -1157,7 +1157,7 @@ table.members .input{min-height:2.25rem; padding:.35rem .6rem}
           <div class="switch">
             <div>
               <label for="set-calm">애니메이션 끄기</label>
-              <span class="hint" id="set-calm-hint">칩 낙하, 카드 뒤집기, 탭 전환 효과를 멈춥니다. 바로 적용되고 이 기기에 저장됩니다.</span>
+              <span class="hint" id="set-calm-hint">칩 낙하, 카드 뒤집기, 탭 전환 효과를 멈춥니다. 바로 적용되고, 로그인 중이면 계정에도 저장됩니다.</span>
             </div>
             <input type="checkbox" role="switch" id="set-calm" name="calm" aria-describedby="set-calm-hint">
           </div>
@@ -1294,7 +1294,7 @@ const mqReduce = matchMedia("(prefers-reduced-motion: reduce)");
 const mqFine = matchMedia("(hover: hover) and (pointer: fine)");
 const mqMobileNav = matchMedia("(max-width: 860px)");
 const CALM_KEY = "comu-calm";
-const state = { isAdmin: false, session: null, profile: null, calm: false, filter: "all" };
+const state = { isAdmin: false, session: null, profile: null, mine: [], calm: false, filter: "all" };   // mine: 내 소유 캐릭터 [{uuid, balance}]
 try { state.calm = localStorage.getItem(CALM_KEY) === "1"; } catch (_) {}
 const motionOK = () => !mqReduce.matches && !state.calm;
 
@@ -1576,6 +1576,9 @@ function renderShop(){
     </article>`).join("");
 }
 
+/* 내 소유 캐릭터 + 잔액 (공개 캐릭터 데이터와 합침) */
+const myChars = () => state.mine.map(m => ({ ...ALL().find(c => c.uuid === m.uuid), balance: m.balance })).filter(c => c.name);
+
 /* 계정 영역(설정 페이지) + 상점 보유 칩 */
 function renderAccount(){
   const p = state.profile, on = !!state.session;
@@ -1584,15 +1587,17 @@ function renderAccount(){
   $$("#nav [data-guest-only]").forEach(el => el.hidden = on || !USE_DB);
   $$("#nav [data-admin-only]").forEach(el => el.hidden = !state.isAdmin);
   if (on){
-    const ch = p?.character_id ? ALL().find(c => c.uuid === p.character_id) : null;
+    const mine = myChars();
     $("#acct-email").textContent = state.session.user.email || "—";
-    $("#acct-char").textContent = ch ? `${ch.name} (${ch.role})` : "연결 안 됨";
-    $("#acct-chips").textContent = p ? `${(p.chips ?? 0).toLocaleString("ko-KR")}칩` : "—";
+    $("#acct-char").textContent = mine.length ? mine.map(c => `${c.name} (${c.role})`).join(", ") : "연결 안 됨";
+    $("#acct-chips").textContent = mine.length ? mine.map(c => `${mine.length > 1 ? c.name + " " : ""}${c.balance.toLocaleString("ko-KR")}칩`).join(", ") : "—";
     if (document.activeElement !== $("#set-name")) $("#set-name").value = p?.display_name || "";
     $("#pw-user").value = state.session.user.email || "";
   }
-  $("#wallet").textContent = on && p ? (p.chips ?? 0).toLocaleString("ko-KR") : "—";
-  $("#wallet-label").textContent = on ? "보유 칩" : "보유 칩 (로그인 필요)";
+  // 칩은 캐릭터별. 상점에는 대표 캐릭터(참가자 우선)의 잔액을 표시
+  const main = myChars().sort((a, b) => (a.role === "참가자" ? 0 : 1) - (b.role === "참가자" ? 0 : 1))[0];
+  $("#wallet").textContent = main ? main.balance.toLocaleString("ko-KR") : "—";
+  $("#wallet-label").textContent = !on ? "보유 칩 (로그인 필요)" : main ? `보유 칩 · ${main.name}` : "보유 칩 (연결된 캐릭터 없음)";
   moveNavInk();
 }
 
@@ -1879,6 +1884,11 @@ $("#set-calm").addEventListener("change", e => {
   try { localStorage.setItem(CALM_KEY, state.calm ? "1" : "0"); } catch (_) {}
   applyCalm();
   toast(state.calm ? "애니메이션을 껐습니다" : "애니메이션을 켰습니다");
+  if (USE_DB && state.session){
+    sb.from("profiles").update({ reduce_motion: state.calm }).eq("id", state.session.user.id).then(({ error }) => {
+      if (!error && state.profile) state.profile.reduce_motion = state.calm;
+    });
+  }
 });
 
 /* 소지품 칸: 방향키·Home·End로 이동 (칸 전체가 Tab 한 번) */
@@ -2151,14 +2161,31 @@ async function refreshAuth(session){
   const before = `${state.session?.user.id}|${state.isAdmin}`;
   state.session = session || null;
   if (session){
-    const { data, error } = await sb.from("profiles").select("id, email, display_name, role, chips, character_id").eq("id", session.user.id).maybeSingle();
+    const { data, error } = await sb.from("profiles").select("id, email, display_name, role, reduce_motion").eq("id", session.user.id).maybeSingle();
     state.profile = error ? null : data;
-  } else state.profile = null;
+    await loadMine();
+    // '애니메이션 끄기'는 계정 설정을 따름 (이 기기에도 저장)
+    if (state.profile && state.profile.reduce_motion !== state.calm){
+      state.calm = state.profile.reduce_motion;
+      try { localStorage.setItem(CALM_KEY, state.calm ? "1" : "0"); } catch (_) {}
+      applyCalm();
+    }
+  } else { state.profile = null; state.mine = []; }
   state.isAdmin = state.profile?.role === "admin";
   subscribeProfile();
   renderAccount();
   // 로그인 상태나 권한이 바뀌었을 때만 현재 화면을 다시 판정 (토큰 갱신 때는 그대로)
   if (state.ready && before !== `${state.session?.user.id}|${state.isAdmin}`) route();
+}
+
+async function loadMine(){
+  const uid = state.session?.user.id;
+  if (!uid){ state.mine = []; return; }
+  const { data: chars, error } = await sb.from("characters").select("id").eq("owner_id", uid);
+  if (error){ state.mine = []; return; }
+  const ids = chars.map(c => c.id);
+  const bal = ids.length ? (await sb.from("chip_balances").select("character_id, balance").in("character_id", ids)).data || [] : [];
+  state.mine = ids.map(id => ({ uuid: id, balance: bal.find(b => b.character_id === id)?.balance ?? 0 }));
 }
 
 function showLoginNotice(){
@@ -2312,6 +2339,8 @@ function subscribeProfile(){
       renderAccount();
       if (wasAdmin !== state.isAdmin) route();
     })
+    // 칩 기록은 RLS 때문에 내 캐릭터 것(관리자는 전부)만 도착함 → 잔액 다시 조회
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "chip_ledger" }, () => loadMine().then(renderAccount))
     .subscribe();
   chanProfile.uid = uid;
 }
@@ -2336,7 +2365,7 @@ const OPT = {
 };
 const SCHEMAS = {
   notices: {
-    label: "공지", key: "id", needs: ["notice_categories"],
+    label: "공지", key: "id", touch: true, needs: ["notice_categories"],
     select: "id, title, body, is_pinned, pin_order, published_at, category_id",
     order: [["is_pinned", { ascending: false }], ["published_at", { ascending: false }]],
     title: r => r.title, meta: r => [r.is_pinned ? "고정" : "", fmtDate(r.published_at)].filter(Boolean).join(" · "),
@@ -2362,7 +2391,7 @@ const SCHEMAS = {
     ]
   },
   characters: {
-    label: "캐릭터", key: "id", needs: ["items"],
+    label: "캐릭터", key: "id", touch: true, needs: ["items"],
     select: "id, slug, name, kind, suit, chip_color, image_path, thumb_path, age, height, keywords, description, sort_order",
     order: [["sort_order"]],
     title: r => r.name, meta: r => `${r.kind === "dealer" ? "딜러" : "참가자"} · ${r.slug}`,
@@ -2401,14 +2430,14 @@ const SCHEMAS = {
       </section>`
   },
   items: {
-    label: "아이템", key: "id", select: "id, name, description, image_path, price, stock, is_for_sale, sort_order", order: [["sort_order"]],
+    label: "아이템", key: "id", touch: true, select: "id, name, description, image_path, price, stock, is_for_sale, sort_order", order: [["sort_order"]],
     title: r => r.name, meta: r => [r.is_for_sale ? `판매 ${r.price ?? 0}칩` : "비매품", r.stock != null ? `재고 ${r.stock}` : ""].filter(Boolean).join(" · "),
     fields: [
       { k: "name", label: "이름", type: "text", required: true, max: 40 },
       { k: "description", label: "설명", type: "textarea" },
       { row: [
-        { k: "price", label: "가격 (칩)", type: "number", min: 0 },
-        { k: "stock", label: "재고", type: "number", min: 0, hint: "비우면 무제한" }
+        { k: "price", label: "가격 (칩)", type: "number", min: 0, nullable: true, hint: "비우면 가격 없음" },
+        { k: "stock", label: "재고", type: "number", min: 0, nullable: true, hint: "비우면 무제한" }
       ] },
       { row: [
         { k: "is_for_sale", label: "상점에 표시", type: "check" },
@@ -2418,7 +2447,7 @@ const SCHEMAS = {
     ]
   },
   chapters: {
-    label: "지난 이야기", key: "number", select: "number, title, summary, played_on", order: [["number", { ascending: false }]],
+    label: "지난 이야기", key: "id", touch: true, select: "id, number, title, summary, body, played_on", order: [["number", { ascending: false }]],
     title: r => `제${r.number}화 ${r.title || ""}`, meta: r => fmtDate(r.played_on),
     fields: [
       { row: [
@@ -2426,7 +2455,8 @@ const SCHEMAS = {
         { k: "played_on", label: "진행일", type: "date" }
       ] },
       { k: "title", label: "제목", type: "text", required: true, max: 80 },
-      { k: "summary", label: "요약", type: "textarea" }
+      { k: "summary", label: "요약", type: "textarea", hint: "지난 이야기 목록과 홈에 표시" },
+      { k: "body", label: "본문", type: "textarea", hint: "상세 기록 (현재 공개 화면에는 표시되지 않음)" }
     ]
   }
 };
@@ -2571,13 +2601,14 @@ function admCollect(form, s){
     const raw = typeof el.value === "string" ? el.value.trim() : el.value;
     switch (f.type){
       case "check": out[f.k] = el.checked; break;
-      case "number": out[f.k] = raw === "" ? null : Number(raw); break;
+      case "number": out[f.k] = raw === "" ? (f.nullable ? null : 0) : Number(raw); break;   // 대부분 NOT NULL default 0
       case "tags": out[f.k] = raw.split(/[,，、]/).map(t => t.trim()).filter(Boolean); break;
       case "datetime": out[f.k] = raw ? new Date(raw).toISOString() : (f.k === "published_at" ? new Date().toISOString() : null); break;
       case "select": case "date": out[f.k] = raw === "" ? null : raw; break;
-      default: out[f.k] = raw === "" ? null : raw;
+      default: out[f.k] = raw;   // 텍스트는 빈 문자열 그대로 (NOT NULL default '' 컬럼)
     }
   }
+  if (s.touch) out.updated_at = new Date().toISOString();
   return out;
 }
 
@@ -2701,41 +2732,59 @@ async function admSaveInventory(btn){
   });
 }
 
-/* ----- 멤버 ----- */
+/* ----- 멤버 · 캐릭터별 칩 ----- */
 async function admMembers(){
-  const { data, error } = await sb.from("profiles").select("id, email, display_name, role, chips, character_id, created_at").order("created_at");
-  if (error) throw error;
-  ADM.rows.members = data;
+  const [pr, ch, bl] = await Promise.all([
+    sb.from("profiles").select("id, email, display_name, role, created_at").order("created_at"),
+    sb.from("characters").select("id, owner_id"),
+    sb.from("chip_balances").select("character_id, balance")
+  ]);
+  const failed = [pr, ch, bl].find(r => r.error);
+  if (failed) throw failed.error;
+  const members = pr.data, owner = new Map(ch.data.map(c => [c.id, c.owner_id])), bal = new Map(bl.data.map(b => [b.character_id, b.balance ?? 0]));
   const chars = ALL();
-  const linked = new Map(data.filter(m => m.character_id).map(m => [m.character_id, m.id]));
+  const nameOf = m => m.display_name || (m.email || "").split("@")[0] || "이름 없음";
   admPanel().innerHTML = `
     <div class="card">
+      <h2 class="card-h">멤버</h2>
       <p class="form-note">새 멤버 초대: Supabase 대시보드 → Authentication → Users → <strong>Invite user</strong>. 초대받은 사람은 메일의 링크로 들어와 비밀번호를 정합니다.</p>
-      <div class="table-scroll" style="margin-top:1.5rem">
+      <div class="table-scroll" style="margin-top:1.25rem">
+        <table class="members" style="min-width:36rem">
+          <caption class="sr">멤버 목록 — 이름, 역할, 소유 캐릭터</caption>
+          <thead><tr><th scope="col">멤버</th><th scope="col">역할</th><th scope="col">소유 캐릭터</th></tr></thead>
+          <tbody>${members.map(m => `<tr>
+            <th scope="row" class="who" style="font-weight:400">${esc(nameOf(m))}<small>${esc(m.email || "")}</small></th>
+            <td class="${m.role === "admin" ? "tag-d" : ""}">${m.role === "admin" ? "관리자" : "멤버"}</td>
+            <td>${esc(chars.filter(c => owner.get(c.uuid) === m.id).map(c => c.name).join(", ") || "—")}</td>
+          </tr>`).join("") || `<tr><td colspan="3" class="muted">멤버가 없습니다.</td></tr>`}</tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card" style="margin-top:1.5rem">
+      <h2 class="card-h">캐릭터별 소유자 · 칩</h2>
+      <div class="table-scroll">
         <table class="members">
-          <caption class="sr">멤버 목록 — 이름, 역할, 연결 캐릭터, 보유 칩, 칩 지급·차감</caption>
-          <thead><tr><th scope="col">멤버</th><th scope="col">역할</th><th scope="col">연결 캐릭터</th><th scope="col">칩</th><th scope="col">칩 지급·차감</th></tr></thead>
-          <tbody>${data.length ? data.map(m => {
-            const nm = esc(m.display_name || m.email || "이름 없음");
+          <caption class="sr">캐릭터별 소유 멤버, 보유 칩, 칩 지급·차감</caption>
+          <thead><tr><th scope="col">캐릭터</th><th scope="col">소유 멤버</th><th scope="col">칩</th><th scope="col">칩 지급·차감</th></tr></thead>
+          <tbody>${chars.map(c => {
+            const nm = esc(c.name), cur = owner.get(c.uuid) || "";
             return `<tr>
-              <th scope="row" class="who" style="font-weight:400">${nm}<small>${esc(m.email || "")}</small></th>
-              <td class="${m.role === "admin" ? "tag-d" : ""}">${m.role === "admin" ? "관리자" : "멤버"}</td>
-              <td><label class="sr" for="mc-${m.id}">${nm} 연결 캐릭터</label>
-                <select class="input" id="mc-${m.id}" data-mem-char="${m.id}" data-prev="${esc(m.character_id || "")}">
-                  <option value="">연결 안 함</option>
-                  ${chars.map(c => { const other = linked.has(c.uuid) && linked.get(c.uuid) !== m.id;
-                    return `<option value="${esc(c.uuid)}"${c.uuid === m.character_id ? " selected" : ""}${other ? " disabled" : ""}>${esc(c.name)} (${c.role})${other ? " — 연결됨" : ""}</option>`; }).join("")}
+              <th scope="row" class="who" style="font-weight:400">${nm}<small>${c.role}</small></th>
+              <td><label class="sr" for="own-${c.uuid}">${nm} 소유 멤버</label>
+                <select class="input" id="own-${c.uuid}" data-owner="${c.uuid}" data-prev="${esc(cur)}">
+                  <option value="">없음</option>
+                  ${members.map(m => `<option value="${m.id}"${m.id === cur ? " selected" : ""}>${esc(nameOf(m))}</option>`).join("")}
                 </select></td>
-              <td id="chips-${m.id}">${(m.chips ?? 0).toLocaleString("ko-KR")}</td>
-              <td><form class="chip-form" data-mem-chips="${m.id}" data-name="${nm}" novalidate>
-                <label class="sr" for="cd-${m.id}">${nm} 칩 증감 (차감은 음수)</label>
-                <input class="input" type="number" inputmode="numeric" step="1" id="cd-${m.id}" name="delta" placeholder="+100 / -50" required aria-describedby="cd-${m.id}-err">
-                <label class="sr" for="cr-${m.id}">사유</label>
-                <input class="input" type="text" id="cr-${m.id}" name="reason" placeholder="사유" maxlength="60">
+              <td id="chips-${c.uuid}">${(bal.get(c.uuid) ?? 0).toLocaleString("ko-KR")}</td>
+              <td><form class="chip-form" data-chips="${c.uuid}" data-name="${nm}" novalidate>
+                <label class="sr" for="cd-${c.uuid}">${nm} 칩 증감 (차감은 음수)</label>
+                <input class="input" type="number" inputmode="numeric" step="1" id="cd-${c.uuid}" name="delta" placeholder="+100 / -50" required aria-describedby="cd-${c.uuid}-err">
+                <label class="sr" for="cr-${c.uuid}">사유</label>
+                <input class="input" type="text" id="cr-${c.uuid}" name="reason" placeholder="사유" maxlength="60">
                 <button class="btn small" type="submit">적용</button>
-                <span class="field-error" id="cd-${m.id}-err" hidden></span>
+                <span class="field-error" id="cd-${c.uuid}-err" hidden></span>
               </form></td>
-            </tr>`; }).join("") : `<tr><td colspan="5" class="muted">멤버가 없습니다.</td></tr>`}
+            </tr>`; }).join("") || `<tr><td colspan="4" class="muted">캐릭터가 없습니다.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -2807,30 +2856,31 @@ admPanel().addEventListener("submit", async e => {
   e.preventDefault();
   const f = e.target;
   if (f.id === "adm-form") return withBusy($('button[type="submit"]', f), () => admSave(f));
-  if (f.dataset.memChips){
+  if (f.dataset.chips){
     const input = f.delta, delta = parseInt(input.value, 10);
     if (!checkField(input)) return input.focus();
     if (!delta){ fieldError(input, "0이 아닌 정수를 입력해 주세요."); return input.focus(); }
     await withBusy($("button", f), async () => {
-      const { data, error } = await sb.rpc("admin_adjust_chips", { p_profile: f.dataset.memChips, p_delta: delta, p_reason: f.reason.value.trim() });
+      const { data, error } = await sb.rpc("admin_adjust_chips", { p_character: f.dataset.chips, p_amount: delta, p_reason: f.reason.value.trim() });
       if (error){ fieldError(input, errMsg(error)); input.focus(); return; }
-      $("#chips-" + f.dataset.memChips).textContent = data.toLocaleString("ko-KR");
+      $("#chips-" + f.dataset.chips).textContent = data.toLocaleString("ko-KR");
       f.reset(); fieldError(input, "");
       announce(`${f.dataset.name} 칩 ${delta > 0 ? "+" : ""}${delta}, 잔액 ${data}`);
-      toast(`칩 ${delta > 0 ? "+" : ""}${delta} → 잔액 ${data.toLocaleString("ko-KR")}`);
-      if (f.dataset.memChips === state.session?.user.id){ state.profile.chips = data; renderAccount(); }
+      toast(`${f.dataset.name} 칩 ${delta > 0 ? "+" : ""}${delta} → 잔액 ${data.toLocaleString("ko-KR")}`);
+      if (state.mine.some(m => m.uuid === f.dataset.chips)){ await loadMine(); renderAccount(); }
     });
   }
 });
 admPanel().addEventListener("change", async e => {
-  const sel = e.target.closest("[data-mem-char]");
+  const sel = e.target.closest("[data-owner]");
   if (!sel) return;
-  const { error } = await sb.rpc("admin_set_character", { p_profile: sel.dataset.memChar, p_character: sel.value || null });
+  const { error } = await sb.rpc("admin_set_owner", { p_character: sel.dataset.owner, p_owner: sel.value || null });
   if (error){ sel.value = sel.dataset.prev; toast(errMsg(error)); return; }
   sel.dataset.prev = sel.value;
-  announce(sel.value ? "캐릭터를 연결했습니다" : "캐릭터 연결을 해제했습니다");
+  announce(sel.value ? "소유 멤버를 지정했습니다" : "소유 멤버를 해제했습니다");
   toast("저장했습니다");
-  admMembers().then(() => $("#mc-" + sel.dataset.memChar)?.focus());   // 다른 줄의 '연결됨' 표시 갱신
+  if (sel.value === state.session?.user.id || state.mine.some(m => m.uuid === sel.dataset.owner)){ await loadMine(); renderAccount(); }
+  admMembers().then(() => $("#own-" + sel.dataset.owner)?.focus());   // 위쪽 멤버 표의 소유 캐릭터 갱신
 });
 admPanel().addEventListener("input", e => { if (e.target.closest("#adm-form, #inv-rows")) ADM.dirty = true; });
 admPanel().addEventListener("change", e => {
