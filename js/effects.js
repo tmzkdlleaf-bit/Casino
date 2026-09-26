@@ -19,28 +19,39 @@ export function moveNavInk(){
   ink.style.width = (a.offsetWidth - pad * 2) + "px";
 }
 
-/* 헤더 배경 */
-export function onScroll(){ $("#site-head").classList.toggle("scrolled", scrollY > 40); }
+/* 헤더 배경 — 상태가 바뀔 때만 클래스 변경 */
+let scrolled = null;
+export function onScroll(){
+  const on = scrollY > 40;
+  if (on !== scrolled){ scrolled = on; $("#site-head").classList.toggle("scrolled", on); }
+}
 
-/* 히어로: 커서 조명 + 칩 시차 */
+/* 히어로: 커서 조명 + 칩 시차
+   CSS 변수를 히어로 전체에 걸면 안쪽 모든 요소(글자 단위 제목 포함)의 스타일을 매 프레임 다시 계산함
+   → 조명 원 하나와 칩 8개의 transform만 직접 바꿈 (다시 그리기 없이 합성만) */
 export function bindHero(){
-  const hero = $("#hero");
-  let raf = 0;
+  const hero = $("#hero"), light = $(".hero-light", hero);
+  let raf = 0, last = null;
+  const place = (x, y) => { light.style.transform = `translate3d(${x}px, ${y}px, 0)`; };
+  const r0 = () => hero.getBoundingClientRect();
+  place(r0().width * .7, r0().height * .35);
   hero.addEventListener("pointermove", e => {
     if (!mqFine.matches) return;
-    cancelAnimationFrame(raf);
+    last = e;
+    if (raf) return;
     raf = requestAnimationFrame(() => {
-      const r = hero.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
-      hero.style.setProperty("--mx", x * 100 + "%");
-      hero.style.setProperty("--my", y * 100 + "%");
-      if (motionOK()){
-        hero.style.setProperty("--px", ((x - .5) * 2).toFixed(3));
-        hero.style.setProperty("--py", ((y - .5) * 2).toFixed(3));
-      }
+      raf = 0;
+      const r = r0(), x = last.clientX - r.left, y = last.clientY - r.top;
+      place(x, y);
+      if (!motionOK()) return;
+      const px = (x / r.width - .5) * 2, py = (y / r.height - .5) * 2;
+      $$("#hero-chips .float").forEach(f => {
+        const d = +f.dataset.d || 1;
+        f.style.transform = `translate3d(${(px * d).toFixed(2)}rem, ${(py * d).toFixed(2)}rem, 0)`;
+      });
     });
-  });
-  hero.addEventListener("pointerleave", () => { hero.style.setProperty("--px", 0); hero.style.setProperty("--py", 0); });
+  }, { passive: true });
+  hero.addEventListener("pointerleave", () => $$("#hero-chips .float").forEach(f => f.style.transform = ""));
 }
 
 /* 펠트 면 위 조명 */
@@ -58,10 +69,11 @@ function bindPointer(){
     rafId = 0;
     const e = lastEv, t = e.target instanceof Element ? e.target : null;
     const spot = t?.closest("[data-spot]");
-    if (spot){
+    if (spot){   // 펠트 조명: 전용 원 요소를 transform으로 이동 (테이블 안 요소들의 스타일 재계산 없음)
+      let light = spot.querySelector(":scope > .spot-light");
+      if (!light){ light = document.createElement("span"); light.className = "spot-light"; light.setAttribute("aria-hidden", "true"); spot.prepend(light); }
       const r = spot.getBoundingClientRect();
-      spot.style.setProperty("--mx", e.clientX - r.left + "px");
-      spot.style.setProperty("--my", e.clientY - r.top + "px");
+      light.style.transform = `translate3d(${e.clientX - r.left}px, ${e.clientY - r.top}px, 0)`;
     }
     const b = motionOK() ? t?.closest(".magnetic") : null;
     if (b !== pulled) release();

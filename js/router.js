@@ -46,6 +46,20 @@ export function route(){
     if (view === "profile"){ renderProfile(param); nav.lastProfile = param; }
     if (view === "notice") renderNotice(param);
 
+    // DOM 쓰기를 먼저 모두 끝내고(렌더·글자 쪼개기), 레이아웃은 스크롤에서 한 번만 계산
+    const section = $(`[data-page="${view}"]`);
+    $$(".page-title.split, .hero-title.split", section).forEach(splitText);
+    if (view === "home") renderHero();
+    if (view === "characters") applyFilter();
+    if (view === "notices") renderNoticeList();
+    if (view === "settings") renderAccount();
+    if (view === "admin") import("./admin.js").then(m => m.admOpen());
+    if (view === "login") showLoginNotice();
+    if (view === "password"){
+      $("#pw-lede").textContent = { invite: "초대를 수락했습니다. 사용할 비밀번호를 정해 주세요.", recovery: "새 비밀번호를 정해 주세요." }[state.pwMode] || "새 비밀번호를 입력해 주세요.";
+      $("#pw-form").reset(); $("#pw-error").hidden = true;
+    }
+
     // 프로필 -> 목록: 돌아갈 스트립에 공유 요소 이름을 넘기고 스크롤 위치 복원
     if (view === "characters" && from === "profile"){
       const back = $(`.strip[data-id="${nav.lastProfile}"] .img`);
@@ -55,21 +69,11 @@ export function route(){
       window.scrollTo({ top: 0, behavior: "instant" });
     }
 
-    const section = $(`[data-page="${view}"]`);
-    $$(".page-title.split, .hero-title.split", section).forEach(splitText);
-    if (view === "home") renderHero();
-    if (view === "characters") { applyFilter(); deal(); }
-    if (view === "notices") renderNoticeList();
-    if (view === "world") bindSpy();
-    if (view === "settings") renderAccount();
-    if (view === "admin") import("./admin.js").then(m => m.admOpen());
-    if (view === "login") showLoginNotice();
-    if (view === "password"){
-      $("#pw-lede").textContent = { invite: "초대를 수락했습니다. 사용할 비밀번호를 정해 주세요.", recovery: "새 비밀번호를 정해 주세요." }[state.pwMode] || "새 비밀번호를 입력해 주세요.";
-      $("#pw-form").reset(); $("#pw-error").hidden = true;
-    }
-    moveNavInk();
+    // 여기부터는 읽기 위주 (레이아웃이 이미 계산돼 있어 추가 비용 없음)
     onScroll();
+    moveNavInk();
+    if (view === "characters") deal();
+    if (view === "world") bindSpy();
     // SPA 화면 전환을 보조기기에 알림: 새 화면의 h1으로 포커스 이동 (첫 로드는 제외)
     if (from !== null) focusHeading(section);
   };

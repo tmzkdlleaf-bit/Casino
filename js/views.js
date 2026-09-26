@@ -9,7 +9,7 @@ import { DATA, nav, state } from "./state.js";
 export function renderHero(){
   $("#hero-chips").innerHTML = HERO_CHIPS.map(([l, t, s, c, r, tx, d, depth]) => `
     <span class="fall" style="left:${l}%;top:${t}%;animation-delay:${d}s">
-      <span class="float" style="--d:${depth}">
+      <span class="float" data-d="${depth}">
         <span class="chip ${c}" style="--size:${s}rem;--tx:${tx}deg;--r1:${r}deg"></span>
       </span>
     </span>`).join("");
