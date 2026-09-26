@@ -5,17 +5,36 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>사이트명</title>
 <meta name="description" content="사이트 소개 문구 자리">
-<meta name="theme-color" content="#121110">
+<meta name="theme-color" content="#0D0C0B">
 <meta name="color-scheme" content="dark">
 <meta property="og:type" content="website">
 <meta property="og:title" content="사이트명">
 <meta property="og:description" content="사이트 소개 문구 자리">
 <meta property="og:locale" content="ko_KR">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%238C1C26'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23EDE3C8' stroke-width='2' stroke-dasharray='3 3'/%3E%3C/svg%3E">
+<!-- 연결 미리 열기: 글꼴·라이브러리·데이터 -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&family=IBM+Plex+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fuyfqejfqoflygvymbhp.supabase.co" crossorigin>
+<!-- 본문: Pretendard 가변 글꼴, 화면에 쓰인 글자 묶음만 받음 (버전 고정 + SRI) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css"
+      integrity="sha384-uR1wgObmx89ZQ4VVXHdzjbDJZ1PvBK01K+E3GebmaBKdZ87qRJvBWPoPbzWeEd5T" crossorigin="anonymous">
+<!-- 제목: Noto Serif KR — 실제 쓰는 굵기(700·900)만 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700;900&display=swap">
 <link rel="stylesheet" href="css/site.css">
+<!-- 모듈 미리 받기: import 사슬을 따라 차례로 받는 대기 시간 제거 (관리 모듈은 제외 — 관리자만 필요할 때 받음) -->
+<link rel="modulepreload" href="js/main.js">
+<link rel="modulepreload" href="js/config.js">
+<link rel="modulepreload" href="js/state.js">
+<link rel="modulepreload" href="js/dom.js">
+<link rel="modulepreload" href="js/data.js">
+<link rel="modulepreload" href="js/views.js">
+<link rel="modulepreload" href="js/effects.js">
+<link rel="modulepreload" href="js/router.js">
+<link rel="modulepreload" href="js/auth.js">
+<link rel="modulepreload" href="js/forms.js">
+<link rel="modulepreload" href="js/markdown.js">
 </head>
 <body class="intro-on">
 <noscript><style>.boot,.opening{display:none}</style><p class="noscript">이 사이트는 자바스크립트가 켜져 있어야 정상적으로 표시됩니다.</p></noscript>
@@ -66,23 +85,25 @@
 
   <!-- ===================== 홈 ===================== -->
   <section data-page="home">
-    <div class="hero wrap" id="hero">
+    <div class="hero" id="hero">
       <div class="hero-chips" id="hero-chips" aria-hidden="true"></div>
-      <div class="hero-meta">
-        <span id="roster-meta"></span>
-        <span class="scroll-cue">스크롤</span>
+      <div class="hero-meta wrap">
+        <span class="label" id="roster-meta"></span>
+        <span class="label scroll-cue">스크롤</span>
       </div>
 
-      <div class="hero-main">
+      <div class="hero-stage wrap">
         <h1 class="hero-title split">사이트명</h1>
-        <p class="intro">소개 문구가 들어갈 자리입니다. 두세 문장 정도의 분량을 기준으로 잡았습니다.</p>
-        <div class="actions">
-          <a class="btn primary magnetic" href="#world">세계관 보기</a>
-          <a class="btn magnetic" href="#characters">캐릭터 보기</a>
+        <div class="hero-side">
+          <p class="intro">소개 문구가 들어갈 자리입니다. 두세 문장 정도의 분량을 기준으로 잡았습니다.</p>
+          <div class="actions">
+            <a class="btn primary magnetic" href="#world">세계관 보기</a>
+            <a class="btn magnetic" href="#characters">캐릭터 보기</a>
+          </div>
         </div>
       </div>
 
-      <aside class="glance" aria-label="한눈에 보기">
+      <aside class="glance wrap" aria-label="한눈에 보기">
         <div class="g-panel" style="--n:0">
           <div class="g-head"><h2>공지</h2><a href="#notices">전체 보기</a></div>
           <ul class="row-list" id="notice-list"></ul>
@@ -103,7 +124,7 @@
     </div>
 
     <div class="wrap">
-      <div class="intro-block">
+      <div class="intro-block" data-idx="01">
         <h2 class="statement reveal">대표 문구가 들어갈 자리입니다. 두 줄 정도의 분량을 기준으로 잡았습니다.</h2>
         <div class="body">
           <article class="reveal"><h3>소제목 자리</h3><p>본문 자리입니다. 세계관 요약이나 커뮤 소개가 들어갈 수 있습니다.</p></article>
@@ -112,6 +133,7 @@
         </div>
       </div>
 
+      <div class="home-cast" data-idx="02">
       <div class="table reveal" data-spot>
         <div class="cast-preview">
           <div class="copy">
@@ -125,6 +147,7 @@
           </div>
         </div>
       </div>
+      </div>
 
     </div>
   </section>
@@ -132,7 +155,7 @@
   <!-- ===================== 캐릭터 ===================== -->
   <section data-page="characters" class="page" hidden>
     <div class="wrap">
-      <header class="page-head compact">
+      <header class="page-head compact" data-idx="01">
         <h1 class="page-title split">캐릭터</h1>
         <div class="head-side">
           <p class="page-lede">캐릭터 페이지 안내 문구 자리입니다.</p>
@@ -200,7 +223,7 @@
   <!-- ===================== 세계관 ===================== -->
   <section data-page="world" class="page" hidden>
     <div class="wrap">
-      <header class="page-head">
+      <header class="page-head" data-idx="02">
         <h1 class="page-title split">세계관</h1>
         <p class="page-lede">세계관 페이지 안내 문구 자리입니다.</p>
       </header>
@@ -214,7 +237,7 @@
   <!-- ===================== 지난 이야기 ===================== -->
   <section data-page="story" class="page" hidden>
     <div class="wrap">
-      <header class="page-head">
+      <header class="page-head" data-idx="03">
         <h1 class="page-title split">지난 이야기</h1>
         <p class="page-lede">진행된 이야기가 순서대로 쌓이는 페이지입니다.</p>
       </header>
@@ -225,7 +248,7 @@
   <!-- ===================== 상점 ===================== -->
   <section data-page="shop" class="page" hidden>
     <div class="wrap">
-      <header class="page-head">
+      <header class="page-head" data-idx="04">
         <h1 class="page-title split">상점</h1>
         <p class="page-lede">상점 안내 문구 자리입니다.</p>
       </header>
@@ -242,7 +265,7 @@
   <!-- ===================== 게임 ===================== -->
   <section data-page="game" class="page" hidden>
     <div class="wrap">
-      <header class="page-head">
+      <header class="page-head" data-idx="05">
         <h1 class="page-title split">게임</h1>
         <p class="page-lede">게임 페이지 안내 문구 자리입니다.</p>
       </header>
@@ -260,7 +283,7 @@
   <!-- ===================== 설정 ===================== -->
   <section data-page="settings" class="page" hidden>
     <div class="wrap">
-      <header class="page-head">
+      <header class="page-head" data-idx="06">
         <h1 class="page-title split">설정</h1>
         <p class="page-lede">내 표시 정보와 화면 효과를 바꿀 수 있습니다.</p>
       </header>
@@ -360,7 +383,7 @@
   <!-- ===================== 관리 ===================== -->
   <section data-page="admin" class="page" hidden>
     <div class="wrap">
-      <header class="page-head">
+      <header class="page-head" data-idx="07">
         <h1 class="page-title split">관리</h1>
         <p class="page-lede">관리자에게만 보이는 페이지입니다.</p>
       </header>

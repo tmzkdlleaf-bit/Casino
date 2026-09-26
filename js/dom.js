@@ -30,6 +30,7 @@ export function splitText(el){
   if (!el.dataset.text) el.dataset.text = el.textContent.trim();
   const text = el.dataset.text;
   el.removeAttribute("aria-label");
+  el.style.setProperty("--len", Math.max(1, [...text.replace(/\s/g, "")].length));   // 히어로 제목: 글자 수에 맞춰 화면 폭을 채움
   el.innerHTML = `<span class="sr">${esc(text)}</span><span aria-hidden="true">` + [...text].map((ch, i) =>
     ch === " " ? " " : `<span class="clip"><span class="ch" style="--i:${i}">${esc(ch)}</span></span>`
   ).join("") + `</span>`;

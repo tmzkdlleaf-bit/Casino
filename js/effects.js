@@ -44,29 +44,40 @@ export function bindHero(){
 }
 
 /* 펠트 면 위 조명 */
-export function bindSpots(){
+export function bindSpots(){ bindPointer(); }
+export function bindMagnetic(){ bindPointer(); }
+
+/* 펠트 조명 + 자석 버튼 — 포인터 이동 처리 하나로 합치고 프레임당 1회만 계산
+   (이전: 이벤트마다 두 핸들러가 돌고, 자석 버튼은 매번 문서 전체를 검색) */
+let pointerBound = false, pulled = null, lastEv = null, rafId = 0;
+function bindPointer(){
+  if (pointerBound) return;
+  pointerBound = true;
+  const release = () => { if (pulled){ pulled.style.setProperty("--tx", "0px"); pulled.style.setProperty("--ty", "0px"); pulled = null; } };
+  const frame = () => {
+    rafId = 0;
+    const e = lastEv, t = e.target instanceof Element ? e.target : null;
+    const spot = t?.closest("[data-spot]");
+    if (spot){
+      const r = spot.getBoundingClientRect();
+      spot.style.setProperty("--mx", e.clientX - r.left + "px");
+      spot.style.setProperty("--my", e.clientY - r.top + "px");
+    }
+    const b = motionOK() ? t?.closest(".magnetic") : null;
+    if (b !== pulled) release();
+    if (b){
+      const r = b.getBoundingClientRect();
+      b.style.setProperty("--tx", (e.clientX - r.left - r.width / 2) * .25 + "px");
+      b.style.setProperty("--ty", (e.clientY - r.top - r.height / 2) * .35 + "px");
+      pulled = b;
+    }
+  };
   document.addEventListener("pointermove", e => {
     if (!mqFine.matches) return;
-    const el = e.target.closest("[data-spot]");
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    el.style.setProperty("--mx", e.clientX - r.left + "px");
-    el.style.setProperty("--my", e.clientY - r.top + "px");
+    lastEv = e;
+    if (!rafId) rafId = requestAnimationFrame(frame);
   }, { passive: true });
-}
-
-/* 자석 버튼 */
-export function bindMagnetic(){
-  document.addEventListener("pointermove", e => {
-    if (!mqFine.matches || !motionOK()) return;
-    const b = e.target.closest(".magnetic");
-    $$(".magnetic.pulled").forEach(x => { if (x !== b){ x.classList.remove("pulled"); x.style.setProperty("--tx","0px"); x.style.setProperty("--ty","0px"); }});
-    if (!b) return;
-    const r = b.getBoundingClientRect();
-    b.classList.add("pulled");
-    b.style.setProperty("--tx", (e.clientX - r.left - r.width / 2) * .25 + "px");
-    b.style.setProperty("--ty", (e.clientY - r.top - r.height / 2) * .35 + "px");
-  }, { passive: true });
+  document.addEventListener("pointerleave", release);
 }
 
 /* 화면에 들어오면 스트립이 아래에서 열림 */

@@ -191,7 +191,7 @@ export function renderStory(){
   const wrap = $("#timeline-wrap");
   if (!DATA.chapters.length){ wrap.innerHTML = `<p class="slot-note">아직 기록이 없습니다.</p>`; return; }
   wrap.innerHTML = `<span class="fill" aria-hidden="true"></span><ol class="timeline" id="timeline">` + DATA.chapters.map(c => `
-    <li class="reveal">
+    <li class="reveal" data-n="${esc(c.number)}">
       <span class="ep">제${c.number}화</span>
       <h2>${esc(c.title)}</h2>
       ${timeTag(c.date, c.iso)}
