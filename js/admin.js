@@ -12,7 +12,7 @@ import { ALL, renderAccount } from "./views.js";
    ========================================================= */
 export const ADM = { tab: "notices", rows: {}, sel: null, dirty: false, tabsDrawn: false };
 
-export const ADMIN_TABS = [["notices", "공지"], ["notice_categories", "공지 분류"], ["characters", "캐릭터"], ["items", "아이템"], ["chapters", "지난 이야기"], ["members", "멤버"], ["schedule", "게임 일정"]];
+export const ADMIN_TABS = [["notices", "공지"], ["notice_categories", "공지 분류"], ["characters", "캐릭터"], ["items", "아이템"], ["chapters", "지난 이야기"], ["game_slots", "게임 일정"], ["members", "멤버"]];
 
 export const OPT = {
   kind: [["dealer", "딜러"], ["player", "참가자"]],
@@ -103,6 +103,23 @@ export const SCHEMAS = {
       { k: "image_path", label: "아이템 이미지", type: "image", bucket: "items", max: CONFIG.IMG.item, hint: `정사각형 권장. WebP로 자동 변환 (긴 변 ${CONFIG.IMG.item}px), 투명 배경 유지` }
     ]
   },
+  game_slots: {
+    label: "게임 일정", key: "id", needs: ["characters"],
+    select: "id, game, dealer_character_id, starts_at, ends_at, memo", order: [["starts_at", { ascending: false }]],
+    title: r => r.game || "(게임 이름 없음)",
+    meta: r => [(ADM.rows.characters || []).find(c => c.id === r.dealer_character_id)?.name, fmtDate(r.starts_at)].filter(Boolean).join(" · "),
+    fields: [
+      { row: [
+        { k: "game", label: "게임", type: "text", required: true, max: 40 },
+        { k: "dealer_character_id", label: "딜러", type: "select", options: () => [["", "정하지 않음"], ...(ADM.rows.characters || []).filter(c => c.kind === "dealer").map(c => [c.id, c.name])] }
+      ] },
+      { row: [
+        { k: "starts_at", label: "시작", type: "datetime", required: true },
+        { k: "ends_at", label: "끝", type: "datetime" }
+      ] },
+      { k: "memo", label: "메모", type: "textarea", hint: "화면에는 표시되지 않지만 누구나 조회할 수 있는 칸입니다. 비밀 내용은 적지 마세요." }
+    ]
+  },
   chapters: {
     label: "지난 이야기", key: "id", touch: true, select: "id, number, title, summary, body, played_on", order: [["number", { ascending: false }]],
     title: r => `제${r.number}화 ${r.title || ""}`, meta: r => fmtDate(r.played_on),
@@ -160,7 +177,6 @@ export async function admShow(tab){
   const panel = admPanel();
   panel.innerHTML = `<p class="adm-status" role="status">불러오는 중…</p>`;
   try {
-    if (tab === "schedule"){ panel.innerHTML = `<div class="card"><p class="slot-note">스탭 시간대별 게임 개설 기능이 들어갈 자리입니다.</p></div>`; return; }
     if (tab === "members"){ await admMembers(); return; }
     const s = SCHEMAS[tab];
     await Promise.all([admLoad(tab), ...(s.needs || []).map(admLoad)]);

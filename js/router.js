@@ -2,9 +2,9 @@ import { showLoginNotice } from "./auth.js";
 import { PAGES, PAGE_TITLES } from "./config.js";
 import { USE_DB } from "./data.js";
 import { $, $$, setTitle, splitText } from "./dom.js";
-import { applyFilter, bindSpy, deal, moveNavInk, onScroll, setMenu } from "./effects.js";
+import { applyFilter, bindSpy, deal } from "./effects.js";
 import { DATA, motionOK, nav, state } from "./state.js";
-import { ALL, renderAccount, renderNotice, renderNoticeList, renderProfile } from "./views.js";
+import { ALL, placeSegInk, renderAccount, renderNotice, renderNoticeList, renderProfile } from "./views.js";
 
 export function resolve(){
   const [page, param] = (location.hash.slice(1) || "home").split("/");
@@ -30,17 +30,15 @@ export function route(){
   // 캐릭터 목록 -> 프로필: 누른 스트립 이미지를 공유 요소로 지정
   let src = null;
   if (from === "characters"){
-    nav.listScroll = scrollY;
+    nav.listScroll = $("#cast-pane").scrollTop;
     if (view === "profile"){ src = $(`.strip[data-id="${param}"] .img`); if (src) src.style.viewTransitionName = "portrait"; }
   }
-
-  setMenu(false, { restoreFocus: false });
 
   const swap = () => {
     if (src) src.style.viewTransitionName = "";
     nav.current = view; nav.key = key;
     $$("[data-page]").forEach(s => s.hidden = s.dataset.page !== view);
-    $$("#nav a, .foot-nav a").forEach(a => navKey && a.getAttribute("href") === "#" + navKey ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+    $$("#nav a, #site-head .mark, #me").forEach(a => navKey && a.getAttribute("href") === "#" + navKey ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
     setTitle(PAGE_TITLES[view] ?? "");
 
     if (view === "profile"){ renderProfile(param); nav.lastProfile = param; }
@@ -48,7 +46,7 @@ export function route(){
 
     // DOM 쓰기를 먼저 모두 끝내고(렌더·글자 쪼개기), 레이아웃은 스크롤에서 한 번만 계산
     const section = $(`[data-page="${view}"]`);
-    $$(".page-title.split, .home-title.split", section).forEach(splitText);
+    $$(".page-title.split", section).forEach(splitText);
     if (view === "characters") applyFilter();
     if (view === "notices") renderNoticeList();
     if (view === "settings") renderAccount();
@@ -63,14 +61,13 @@ export function route(){
     if (view === "characters" && from === "profile"){
       const back = $(`.strip[data-id="${nav.lastProfile}"] .img`);
       if (back) back.style.viewTransitionName = "portrait";
-      window.scrollTo({ top: nav.listScroll, behavior: "instant" });
+      $("#cast-pane").scrollTop = nav.listScroll;
     } else {
-      window.scrollTo({ top: 0, behavior: "instant" });
+      $$(".pane, .scroll", section).forEach(p => p.scrollTop = 0);   // 페이지는 고정, 창 안만 처음으로
     }
 
     // 여기부터는 읽기 위주 (레이아웃이 이미 계산돼 있어 추가 비용 없음)
-    onScroll();
-    moveNavInk();
+    if (view === "characters") placeSegInk($("#seg"));
     if (view === "characters") deal();
     if (view === "world") bindSpy();
     // SPA 화면 전환을 보조기기에 알림: 새 화면의 h1으로 포커스 이동 (첫 로드는 제외)

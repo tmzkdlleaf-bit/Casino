@@ -1,4 +1,5 @@
-import { $, $$, splitText, suitIcon } from "./dom.js";
+import { HERO_CHIPS, SUITS } from "./config.js";
+import { $, $$, isRed, splitText, suitIcon } from "./dom.js";
 import { DATA, motionOK, state } from "./state.js";
 import { placeSegInk } from "./views.js";
 
@@ -11,19 +12,10 @@ export function moveInk(container, active, ink){
   ink.style.width = active.offsetWidth + "px";
 }
 
-export function moveNavInk(){
-  const nav = $("#nav"), a = $('#nav a[aria-current="page"]'), ink = $(".nav-ink", nav);
-  if (!a) return moveInk(nav, null, ink);
-  const pad = parseFloat(getComputedStyle(a).paddingLeft);
-  ink.style.left = (a.offsetLeft + pad) + "px";
-  ink.style.width = (a.offsetWidth - pad * 2) + "px";
-}
-
-/* 헤더 배경 — 상태가 바뀔 때만 클래스 변경 */
-let scrolled = null;
-export function onScroll(){
-  const on = scrollY > 40;
-  if (on !== scrolled){ scrolled = on; $("#site-head").classList.toggle("scrolled", on); }
+/* 홈에 떨어지는 칩 */
+export function renderHeroChips(){
+  $("#hero-chips").innerHTML = HERO_CHIPS.map(([l, t, size, c, r, tx, d]) =>
+    `<span class="fall" style="left:${l}%;top:${t}%;--d:${d}s"><span class="chip ${c}" style="--size:${size}rem;--tx:${tx}deg;--r1:${r}deg"></span></span>`).join("");
 }
 
 /* 화면에 들어오면 스트립이 아래에서 열림 */
@@ -77,75 +69,107 @@ export function filterSummary(){
   return state.filter === "dealer" ? `딜러 ${d}명 표시` : state.filter === "player" ? `참가자 ${p}명 표시` : `전체 ${d + p}명 표시`;
 }
 
-/* ---------- 모바일 메뉴 ---------- */
-export const SHELL = () => [$("#app"), $(".site-foot"), $("#skip-link")];
-
-export function setMenu(open, { restoreFocus = true } = {}){
-  const head = $("#site-head"), btn = $("#menu-btn");
-  if (open === head.classList.contains("open")) return;
-  head.classList.toggle("open", open);
-  btn.setAttribute("aria-expanded", open);
-  document.body.classList.toggle("menu-open", open);
-  SHELL().forEach(el => el.inert = open);     // 메뉴가 열린 동안 뒤쪽 콘텐츠로 포커스가 새지 않게
-  if (open) $("#nav a:not([hidden])")?.focus();
-  else if (restoreFocus) btn.focus();
-}
-
 export function applyCalm(){
   document.body.classList.toggle("calm", state.calm);
   $("#set-calm").checked = state.calm;
   if (state.calm) $$(".strip").forEach(m => m.classList.add("dealt"));
+  applyReel();
 }
 
-/* ---------- intro ---------- */
-export function runIntro(){
-  const intro = $("#intro");
+/* 캐릭터 자동 넘김: 멈춤 버튼 / 애니메이션 끄기 / 동작 줄이기 설정이면 멈추고 손으로 넘기는 줄이 됨 (WCAG 2.2.2) */
+export function applyReel(){
+  const reel = $("#reel"), btn = $("#reel-toggle");
+  if (!reel) return;
+  const still = !motionOK();
+  reel.classList.toggle("static", still);
+  reel.classList.toggle("paused", state.reelPaused);
+  btn.hidden = still;
+  btn.setAttribute("aria-pressed", String(state.reelPaused));
+}
+
+/* ---------- intro ----------
+   0.15s 칩 착지 + 고리 파동 → 0.95s 카드가 사방에서 날아와 모임 → 1.75s 부채꼴
+   → 2.05s 뒤집힘 → 2.2s 칩 폭발·불티·섬광 → 2.3s 이름 → 2.95s 금빛 훑기 → 3.7s 막이 열림 */
+const R = (a, b) => a + Math.random() * (b - a);
+
+function buildIntro(stage){
+  const n = 9, mid = (n - 1) / 2;
+  const cards = Array.from({ length: n }, (_, i) => {
+    const off = i - mid, s = SUITS[i % 4];
+    const ang = R(0, Math.PI * 2), dist = R(70, 95);
+    return `<span class="icard" style="--i:${i};--sr:${R(-4, 4).toFixed(1)}deg;--fx:${(Math.cos(ang) * dist).toFixed(1)}vw;--fy:${(Math.sin(ang) * dist).toFixed(1)}vh;--fr:${R(-260, 260).toFixed(0)}deg;--rot:${off * 9}deg;--lift:${(Math.abs(off) * .45).toFixed(2)}rem;z-index:${10 - Math.abs(Math.round(off))}">
+      <span class="flipper"><span class="side card-back"></span>
+      <span class="side pcard ${isRed(s) ? "red-suit" : ""}"><span class="pip tl">${suitIcon(s)}</span><span class="big">${suitIcon(s)}</span><span class="pip br">${suitIcon(s)}</span></span></span></span>`;
+  }).join("");
+  const colors = ["red", "green", "", "red", ""];
+  const chips = Array.from({ length: 18 }, (_, i) => {
+    const ang = (i / 18) * Math.PI * 2 + R(-.2, .2), dist = R(42, 78), sz = R(1.6, 4.2).toFixed(2);
+    return `<span class="chip bchip ${colors[i % colors.length]}" style="--sz:${sz}rem;--t:${R(2.18, 2.3).toFixed(2)}s;--bx:${(Math.cos(ang) * dist).toFixed(1)}vmax;--by:${(Math.sin(ang) * dist).toFixed(1)}vmax;--rx:${R(40, 80).toFixed(0)}deg;--rz:${R(-720, 720).toFixed(0)}deg"></span>`;
+  }).join("");
+  const sparks = Array.from({ length: 34 }, () => {
+    const ang = R(0, Math.PI * 2), dist = R(14, 44);
+    return `<i class="spark" style="--t:${R(2.18, 2.45).toFixed(2)}s;--bx:${(Math.cos(ang) * dist).toFixed(1)}vmax;--by:${(Math.sin(ang) * dist).toFixed(1)}vmax"></i>`;
+  }).join("");
+  const name = $(".mark-name").textContent.trim() || document.title;
+  stage.innerHTML = `
+    <div class="glow"></div>
+    <span class="ring" style="--t:.9s;--s:5"></span>
+    <span class="chip red big-chip"></span>
+    <div class="deck">${cards}</div>
+    <div class="flash" style="--t:2.18s"></div>
+    <span class="ring" style="--t:2.2s;--s:9"></span>
+    <span class="ring" style="--t:2.32s;--s:6"></span>
+    <div class="burst">${chips}${sparks}</div>
+    <p class="intro-name split" data-text="${name.replace(/"/g, "&quot;")}"></p>
+    <span class="intro-line"></span>`;
+  const p = $(".intro-name", stage);
+  splitText(p);
+  p.insertAdjacentHTML("beforeend", `<span class="shine" aria-hidden="true">${p.dataset.text.replace(/</g, "&lt;")}</span>`);
+}
+
+export function runIntro({ force = false } = {}){
+  const intro = $("#intro"), stage = $("#intro-stage");
   let seen = false;
   try { seen = sessionStorage.getItem("intro-seen") === "1"; } catch (_) {}
-  const force = new URLSearchParams(location.search).has("intro");
-
-  const shell = [$("#skip-link"), $("#site-head"), $("#app"), $(".site-foot")];
+  const q = new URLSearchParams(location.search).has("intro");
+  const shell = [$("#skip-link"), $("#site-head"), $("#app")];
   const onKey = e => { if (e.key === "Escape") skip(); };   // Enter/Space는 '건너뛰기' 버튼이 받음
-  const finish = () => {
-    document.body.classList.remove("intro-on");
+  let t1, t2, done = false;
+
+  function finish(){
     const hadFocus = intro.contains(document.activeElement);
-    intro.remove();
+    document.body.classList.remove("intro-on");
+    intro.hidden = true; intro.classList.remove("out");
+    stage.innerHTML = "";
     shell.forEach(el => el.inert = false);
     removeEventListener("keydown", onKey);
+    intro.removeEventListener("click", skip);
     if (hadFocus) $("#skip-link").focus({ preventScroll: true });   // 버튼이 사라져도 포커스가 문서 맨 앞에 남도록
     try { sessionStorage.setItem("intro-seen", "1"); } catch (_) {}
-  };
-
-  if ((seen && !force) || !motionOK()){ finish(); return; }
-  // 재생 중에는 뒤쪽 화면을 조작 불가로 — 가려진 요소에 포커스가 가지 않게 (WCAG 2.4.11)
-  shell.forEach(el => el.inert = true);
-
-  // 카드 5장: 흩어진 위치에서 모였다가 부채꼴로 펼침
-  const n = 5, mid = (n - 1) / 2;
-  $("#deck").innerHTML = Array.from({ length: n }, (_, i) => {
-    const off = i - mid, top = i === Math.round(mid);
-    const fx = (Math.random() - .5) * 120 + "vw", fy = (Math.random() > .5 ? 1 : -1) * (60 + Math.random() * 20) + "vh";
-    return `<span class="icard ${top ? "top" : ""}" style="--i:${i};--sr:${(Math.random() - .5) * 8}deg;--fx:${fx};--fy:${fy};--fr:${(Math.random() - .5) * 200}deg;--rot:${off * 11}deg;--lift:${Math.abs(off) * .4}rem;z-index:${top ? 9 : i}">
-      <span class="flipper">
-        <span class="side card-back"></span>
-        <span class="side pcard red-suit"><span class="pip tl">${suitIcon("♥")}</span><span class="big">${suitIcon("♥")}</span><span class="pip br">${suitIcon("♥")}</span></span>
-      </span>
-    </span>`;
-  }).join("");
-  $$(".split", intro).forEach(splitText);
-
-  let done = false;
-  const release = setTimeout(() => document.body.classList.remove("intro-on"), 3500);  // 막이 열리는 순간 히어로 재생
-  const end = setTimeout(() => { done = true; finish(); }, 4600);
-
+  }
+  function open(){
+    intro.classList.add("out");
+    document.body.classList.remove("intro-on");                      // 막이 열리는 순간 홈의 칩·제목이 움직이기 시작
+  }
   function skip(){
     if (done) return; done = true;
-    clearTimeout(release); clearTimeout(end);
-    intro.classList.add("skip");
-    document.body.classList.remove("intro-on");
-    setTimeout(finish, 750);
+    clearTimeout(t1); clearTimeout(t2);
+    open();
+    setTimeout(finish, 900);
   }
-  // 기존: keydown에 { once:true } — Tab 등 다른 키를 먼저 누르면 리스너가 사라져 Esc가 먹지 않던 문제 수정
+
+  if (!force && ((seen && !q) || !motionOK())){ finish(); return; }
+
+  if (!$(".curtain", intro)) intro.insertAdjacentHTML("afterbegin", `<div class="curtain top"></div><div class="curtain bottom"></div>`);
+  buildIntro(stage);
+  intro.hidden = false;
+  document.body.classList.add("intro-on");
+  // 재생 중에는 뒤쪽 화면을 조작 불가로 — 가려진 요소에 포커스가 가지 않게 (WCAG 2.4.11)
+  shell.forEach(el => el.inert = true);
+  if (force) $("#intro-skip").focus({ preventScroll: true });
+
+  t1 = setTimeout(() => { done = true; open(); }, 3700);
+  t2 = setTimeout(finish, 4600);
   intro.addEventListener("click", skip);
   addEventListener("keydown", onKey);
 }

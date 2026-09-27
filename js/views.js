@@ -1,7 +1,6 @@
 import { CONFIG, INVENTORY_SLOTS, SUITS } from "./config.js";
 import { USE_DB } from "./data.js";
 import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js";
-import { moveNavInk } from "./effects.js";
 import { renderMarkdown } from "./markdown.js";
 import { DATA, nav, state } from "./state.js";
 
@@ -12,8 +11,9 @@ export const sortedNotices = () => [...DATA.notices].sort((a, b) => (b.pinned - 
 
 export const timeTag = (label, iso) => `<time${iso ? ` datetime="${esc(iso)}"` : ""}>${esc(label)}</time>`;
 
-export const noticeRow = (n, i) =>
-  `<li class="${n.pinned ? "pinned" : ""}"><a href="#notices/${n.id}">${timeTag(n.date, n.iso)}<span>${n.pinned ? `<span class="tag pin">고정</span>` : ""}${n.category ? `<span class="tag">${esc(n.category)}</span>` : ""}${esc(n.title)}</span><span class="suit">${suitIcon(SUITS[i % 4])}</span></a></li>`;
+// short: 홈 창처럼 좁은 곳 — 날짜는 월.일만, 분류 태그 생략
+export const noticeRow = (n, i, short = false) =>
+  `<li class="${n.pinned ? "pinned" : ""}"><a href="#notices/${n.id}">${timeTag(short && n.date ? n.date.slice(5) : n.date, n.iso)}<span class="t">${n.pinned ? `<span class="tag pin">고정</span>` : ""}${!short && n.category ? `<span class="tag">${esc(n.category)}</span>` : ""}${esc(n.title)}</span><span class="suit">${suitIcon(SUITS[i % 4])}</span></a></li>`;
 
 /* 분류 버튼은 한 번만 그림 — 클릭할 때마다 다시 그리면 키보드 포커스가 사라짐 (WCAG 2.4.3) */
 export function renderNoticeSeg(){
@@ -36,29 +36,77 @@ export function renderNoticeList(){
 
 export function renderHomeNotices(){
   $("#notice-list").innerHTML = DATA.notices.length
-    ? sortedNotices().slice(0, 5).map(noticeRow).join("")
-    : `<li class="slot-note" style="padding:.55rem 0">등록된 공지가 없습니다.</li>`;
+    ? sortedNotices().slice(0, 12).map((n, i) => noticeRow(n, i, true)).join("")
+    : `<li class="slot-note">등록된 공지가 없습니다.</li>`;
+}
+
+const pad2 = n => String(n).padStart(2, "0");
+
+/* 날짜 표시: 9월 30일 (화) 21:00 */
+const WD = "일월화수목금토";
+export const fmtSlot = iso => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WD[d.getDay()]}) ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+};
+
+/* 다음 게임: 가까운 순. 첫 줄은 크게 */
+const slotRow = (s, i) => `<li><span class="chip ${["red", "", "green"][i % 3]}" aria-hidden="true"></span><span>
+  <strong>${esc(s.game || "게임")}</strong><span class="m">${timeTag(fmtSlot(s.start), s.start)}${s.dealer ? ` · ${esc(s.dealer.name)}` : ""}</span></span></li>`;
+
+export function renderNext(){
+  const slots = DATA.slots || [];
+  $("#next-body").innerHTML = slots.length
+    ? `<ul class="slots">${slots.slice(0, 4).map(slotRow).join("")}</ul>`
+    : `<p class="slot-note">예정된 게임이 없습니다.</p>`;
+}
+
+/* 게임 페이지: 일정 전체 */
+export function renderSchedule(){
+  const slots = DATA.slots || [];
+  $("#schedule").innerHTML = slots.length
+    ? `<ul class="slots">${slots.map(slotRow).join("")}</ul>`
+    : `<p class="slot-note">예정된 게임이 없습니다.</p>`;
+}
+
+/* 바로가기: config.js의 QUICK_LINKS. 주소가 비어 있으면 누를 수 없는 자리로 표시 */
+export function renderQuickLinks(){
+  $("#quick-links").innerHTML = CONFIG.QUICK_LINKS.map((l, i) => {
+    const s = SUITS[i % 4], ext = /^https?:/.test(l.href || "");
+    const inner = `${suitIcon(s)}<span>${esc(l.label)}</span>`;
+    if (!l.href) return `<li class="${isRed(s) ? "red" : ""}"><span class="off">${inner}<span class="sr">(준비 중)</span></span></li>`;
+    return `<li class="${isRed(s) ? "red" : ""}"><a href="${esc(l.href)}"${ext ? ` target="_blank" rel="noopener"` : ""}>${inner}${ext ? `<svg class="ico ext" aria-hidden="true"><use href="#i-external-link"/></svg><span class="sr">(새 창)</span>` : ""}</a></li>`;
+  }).join("");
+}
+
+/* 딜러와 참가자: 외관 이미지가 자동으로 흘러가는 줄. 끊김 없이 돌도록 같은 줄을 한 번 더 붙임(보조기기·키보드에는 숨김) */
+const tile = (c, dup) => {
+  const dealer = c.role === "딜러";
+  const img = c.thumb || c.img;
+  return `<a class="tile ${dealer && isRed(c.suit) ? "red-suit" : ""}" href="#characters/${c.id}"${dup ? ` tabindex="-1"` : ""}>
+    <span class="img">${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async">` : ph()}</span>
+    <span class="mk">${dealer ? suitIcon(c.suit) : `<span class="chip ${c.chip}"></span>`}</span>
+    <span class="nm">${esc(c.name)}<span class="sr"> (${c.role})</span></span></a>`;
+};
+export function renderReel(){
+  const list = ALL(), reel = $("#reel");
+  if (!list.length){ reel.innerHTML = `<p class="empty-note">등록된 캐릭터가 없습니다.</p>`; return; }
+  const set = dup => `<div class="set"${dup ? ` aria-hidden="true" inert` : ""}>${list.map(c => tile(c, dup)).join("")}</div>`;
+  reel.innerHTML = `<div class="track" style="--dur:${Math.max(24, list.length * 4)}s">${set(false)}${set(true)}</div>`;
 }
 
 export function renderHome(){
-  const mid = (DATA.dealers.length - 1) / 2;
-  $("#fan").innerHTML = DATA.dealers.map((c, i) => {
-    const off = i - mid;
-    return `<a class="fan-card" href="#characters/${c.id}" style="--rot:${off * 7}deg;--lift:${Math.abs(off) * .35}rem;z-index:${i}" aria-label="${esc(c.name)} 프로필">
-      <span class="pcard ${isRed(c.suit) ? "red-suit" : ""}" aria-hidden="true">
-        <span class="pip tl">${suitIcon(c.suit)}</span><span class="face">${c.img ? `<img src="${esc(c.thumb || c.img)}" alt="" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover">` : "이미지"}</span><span class="pip br">${suitIcon(c.suit)}</span>
-      </span></a>`;
-  }).join("");
-
-  $("#chip-row").innerHTML = DATA.players.map(c => `<span class="chip ${c.chip}"><span class="face"></span></span>`).join("");
-
+  $("#roster-meta").textContent = `딜러 ${DATA.dealers.length}명 / 참가자 ${DATA.players.length}명`;
   renderHomeNotices();
+  renderNext();
+  renderSchedule();
+  renderQuickLinks();
+  renderReel();
 
   const last = DATA.chapters[DATA.chapters.length - 1];
   $("#latest-card").innerHTML = last
-    ? `<span class="eyebrow">최근 이야기 · 제${last.number}화</span><h2 class="g-title">${esc(last.title)}</h2><p>${esc(last.summary)}</p><span class="more" aria-hidden="true">지난 이야기</span>`
-    : `<span class="eyebrow">최근 이야기</span><h2 class="g-title">아직 기록이 없습니다</h2>`;
-  $("#roster-meta").textContent = `딜러 ${DATA.dealers.length}명 · 참가자 ${DATA.players.length}명`;
+    ? `<span class="ep">최근 이야기 · 제${last.number}화</span><h2 class="g-title">${esc(last.title)}</h2><p>${esc(last.summary)}</p><span class="more" aria-hidden="true">지난 이야기 보기</span>`
+    : `<span class="ep">최근 이야기</span><h2 class="g-title">아직 기록이 없습니다</h2><span class="more" aria-hidden="true">지난 이야기 보기</span>`;
 }
 
 /* 작은 이미지(thumb)가 있으면 srcset으로 화면 크기에 맞는 파일만 받음 */
@@ -209,8 +257,9 @@ export function renderAccount(){
   const p = state.profile, on = !!state.session;
   $("#acct-guest").hidden = on;
   $("#acct-form").hidden = !on;
-  $$("#nav [data-guest-only]").forEach(el => el.hidden = on || !USE_DB);
-  $$("#nav [data-admin-only]").forEach(el => el.hidden = !state.isAdmin);
+  $$("#site-head [data-guest-only]").forEach(el => el.hidden = on || !USE_DB);
+  $$("#site-head [data-member-only]").forEach(el => el.hidden = !on);
+  $$("#site-head [data-admin-only]").forEach(el => el.hidden = !state.isAdmin);
   if (on){
     const mine = myChars();
     $("#acct-email").textContent = state.session.user.email || "—";
@@ -223,5 +272,10 @@ export function renderAccount(){
   const main = myChars().sort((a, b) => (a.role === "참가자" ? 0 : 1) - (b.role === "참가자" ? 0 : 1))[0];
   $("#wallet").textContent = main ? main.balance.toLocaleString("ko-KR") : "—";
   $("#wallet-label").textContent = !on ? "보유 칩 (로그인 필요)" : main ? `보유 칩 · ${main.name}` : "보유 칩 (연결된 캐릭터 없음)";
-  moveNavInk();
+  // 독: 대표 캐릭터 이름 + 칩 (캐릭터가 없으면 표시 이름)
+  if (on){
+    $("#me-name").textContent = main?.name || p?.display_name || "내 계정";
+    $("#me-bal").textContent = main ? `${main.balance.toLocaleString("ko-KR")}칩` : "";
+    $("#me-chip").className = `chip ${main?.chip || "green"} me-chip`;
+  }
 }
