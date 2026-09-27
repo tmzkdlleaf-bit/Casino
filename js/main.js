@@ -2,16 +2,17 @@ import { refreshAuth } from "./auth.js";
 import { CALM_KEY } from "./config.js";
 import { AUTH_HASH, DB_CONFIGURED, USE_DB, loadAll, sb, showBootError, subscribeNotices } from "./data.js";
 import { $, $$, announce, toast } from "./dom.js";
-import { applyCalm, applyFilter, filterSummary, moveNavInk, onScroll, runIntro, setMenu } from "./effects.js";
+import { initBgm, initWorldBg } from "./ambience.js";
+import { applyCalm, applyFilter, applyReel, filterSummary, renderHeroChips, runIntro } from "./effects.js";
 import { errMsg } from "./forms.js";
 import { focusHeading, route } from "./router.js";
-import { DATA, motionOK, mqMobileNav, nav, state } from "./state.js";
+import { DATA, motionOK, nav, state } from "./state.js";
 import { placeSegInk, renderAccount, renderCast, renderHome, renderInventory, renderNoticeList, renderNoticeSeg, renderShop, renderStory, renderWorld } from "./views.js";
 
 /* ---------- events ---------- */
 document.addEventListener("click", e => {
   // 본문 바로가기: 해시 라우터가 #app을 페이지로 해석하지 않도록 직접 처리
-  if (e.target.closest("#skip-link")){ e.preventDefault(); focusHeading($(`[data-page="${nav.current}"]`)); $(`[data-page="${nav.current}"]`)?.scrollIntoView(); return; }
+  if (e.target.closest("#skip-link")){ e.preventDefault(); focusHeading($(`[data-page="${nav.current}"]`)); return; }
 
   const jump = e.target.closest("[data-jump]");
   if (jump){
@@ -33,26 +34,29 @@ document.addEventListener("click", e => {
     return;
   }
 
+  // 좁은 화면 홈: 창 하나에 보일 정보 전환 (다음 게임에는 최근 이야기도 함께)
+  const mt = e.target.closest("#mtabs button");
+  if (mt){
+    const show = { "p-next": ["p-next", "latest-card"] }[mt.dataset.panel] || [mt.dataset.panel];
+    $$("#mtabs button").forEach(b => b.setAttribute("aria-pressed", b === mt));
+    $$(".board > .g-panel, .board > .table").forEach(el => el.classList.toggle("on", show.includes(el.id)));
+    return;
+  }
+
+  // 캐릭터 자동 넘김 멈춤/재생
+  if (e.target.closest("#reel-toggle")){
+    state.reelPaused = !state.reelPaused;
+    applyReel();
+    $("#reel-toggle .sr").textContent = state.reelPaused ? "자동 넘김 재생" : "자동 넘김 멈춤";
+    return;
+  }
+
   const f = e.target.closest("#seg button");
   if (f){
     state.filter = f.dataset.filter;
     if (document.startViewTransition && motionOK()) document.startViewTransition(applyFilter); else applyFilter();
     announce(filterSummary());
   }
-});
-
-$("#menu-btn").addEventListener("click", () => setMenu(!$("#site-head").classList.contains("open")));
-
-$$("#nav a").forEach((a, k) => a.style.setProperty("--k", k));
-
-// 같은 페이지 링크를 눌러도 메뉴는 닫힘
-$("#nav").addEventListener("click", e => { if (e.target.closest("a")) setMenu(false, { restoreFocus: false }); });
-
-mqMobileNav.addEventListener("change", () => setMenu(false, { restoreFocus: false }));
-
-$("#to-top").addEventListener("click", () => {
-  window.scrollTo({ top: 0, behavior: motionOK() ? "smooth" : "auto" });
-  $("#skip-link").focus({ preventScroll: true });
 });
 
 export let spun = 0;
@@ -101,28 +105,38 @@ window.addEventListener("beforeunload", e => { if (state.admDirty){ e.preventDef
 
 addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
-  if ($("#site-head").classList.contains("open")){ setMenu(false); return; }   // 메뉴가 먼저
+  $("#site-head").classList.add("tips-off");   // 떠 있는 이름표 닫기
   if (e.target.closest?.("input, textarea, select")) return;
   if (nav.current === "profile") location.hash = "#characters";
   else if (nav.current === "notice") location.hash = "#notices";
 });
 
-window.addEventListener("scroll", onScroll, { passive: true });
 
 window.addEventListener("resize", () => {
-  moveNavInk();
   if (nav.current === "characters") applyFilter();
   if (nav.current === "notices") placeSegInk($("#notice-seg"));
 });
 
+// 이름표는 다음 조작 때 다시 쓸 수 있게
+["pointermove", "focusin"].forEach(t => $("#site-head").addEventListener(t, () => $("#site-head").classList.remove("tips-off")));
+
+/* 설정: 인트로 다시 보기 */
+$("#replay-intro").addEventListener("click", () => {
+  if (!motionOK()){ toast("애니메이션 끄기가 켜져 있어 인트로를 재생하지 않습니다"); return; }
+  runIntro({ force: true });
+});
+
+/* 독의 로그아웃 = 설정 화면의 로그아웃 */
+$("#dock-logout").addEventListener("click", () => $("#logout").click());
+
 /* ---------- boot ---------- */
+renderHeroChips();
 applyCalm();
+initWorldBg();
+initBgm();
 
 // 저장된 '애니메이션 끄기'를 인트로보다 먼저 적용
 runIntro();
-
-
-
 
 (async () => {
   // Supabase 라이브러리가 막혔거나(SRI 불일치·네트워크) 없으면 더미 화면으로 조용히 넘어가지 않고 오류 표시
@@ -152,6 +166,6 @@ runIntro();
   renderHome(); renderCast(); renderWorld(); renderStory(); renderShop(); renderNoticeSeg(); renderAccount();
   state.ready = true;
   route();
+  applyReel();
   $("#boot").classList.add("hide");
-  document.fonts?.ready.then(moveNavInk);
 })();

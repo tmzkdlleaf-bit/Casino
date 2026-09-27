@@ -74,30 +74,45 @@ export function withTimeout(promise, ms = 12000){
   return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
 }
 
+const charQuery = () => sb.from("characters")
+  .select("id, slug, name, kind, suit, chip_color, image_path, thumb_path, age, height, keywords, description, sort_order, inventory(quantity, note, sort_order, items(name, description, image_path))")
+  .order("sort_order");
+
+/* 게임 일정: 지금부터 끝나지 않은 것만, 가까운 순. 읽기 권한이 없거나 표가 비어도 화면은 계속 */
+export async function loadSlots(){
+  const { data, error } = await sb.from("game_slots")
+    .select("id, game, dealer_character_id, starts_at, ends_at, status")
+    .gte("starts_at", new Date(Date.now() - 6 * 36e5).toISOString())
+    .order("starts_at").limit(6);
+  if (error){ console.warn("[data] game_slots:", error.message); return []; }
+  return (data || []).filter(s => s.status !== "cancelled" && s.status !== "canceled");
+}
+
 export async function loadAll(){
   const q = await withTimeout(Promise.all([
     // 필요한 컬럼만 명시 — 나중에 비공개 컬럼을 추가해도 노출되지 않게
-    sb.from("characters")
-      .select("id, slug, name, kind, suit, chip_color, image_path, thumb_path, age, height, keywords, description, sort_order, inventory(quantity, note, sort_order, items(name, description, image_path))")
-      .order("sort_order"),
+    charQuery(),
     noticeQuery(),
     sb.from("notice_categories").select("name").order("sort_order"),
     sb.from("chapters").select("number, title, summary, played_on").order("number"),
     sb.from("items").select("id, name, description, image_path, price, stock, sort_order")
-      .eq("is_for_sale", true).order("sort_order")
+      .eq("is_for_sale", true).order("sort_order"),
+    loadSlots().then(data => ({ data, error: null }))
   ]));
   const failed = q.find(r => r.error);
   if (failed) throw failed.error;
-  const [chars, notices, cats, chapters, items] = q.map(r => r.data);
+  const [chars, notices, cats, chapters, items, slots] = q.map(r => r.data);
 
   const all = chars.map(mapCharacter);
+  const byUuid = Object.fromEntries(all.map(c => [c.uuid, c]));
   return {
     dealers: all.filter(c => c.role === "딜러"),
     players: all.filter(c => c.role === "참가자"),
     categories: cats.map(c => c.name),
     notices: notices.map(mapNotice),
     chapters: chapters.map(c => ({ number: c.number, title: c.title, summary: c.summary, date: fmtDate(c.played_on), iso: c.played_on })),
-    items: items.map(it => ({ id: it.id, name: it.name, description: it.description, price: it.price, stock: it.stock, img: publicUrl("items", it.image_path) }))
+    items: items.map(it => ({ id: it.id, name: it.name, description: it.description, price: it.price, stock: it.stock, img: publicUrl("items", it.image_path) })),
+    slots: slots.map(s => ({ id: s.id, game: s.game || "", start: s.starts_at, end: s.ends_at, dealer: byUuid[s.dealer_character_id] || null }))
   };
 }
 
@@ -113,7 +128,7 @@ export function showBootError(err){
   $("#boot-retry").addEventListener("click", () => location.reload());
   document.body.classList.remove("intro-on");
   $("#intro")?.remove();
-  [$("#skip-link"), $("#site-head"), $("#app"), $(".site-foot")].forEach(el => el.inert = true);  // 오류 화면 뒤는 조작 불가
+  [$("#skip-link"), $("#site-head"), $("#app")].forEach(el => el.inert = true);  // 오류 화면 뒤는 조작 불가
   $("#boot .btn").focus();
 }
 

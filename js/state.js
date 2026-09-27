@@ -4,9 +4,7 @@ export const mqReduce = matchMedia("(prefers-reduced-motion: reduce)");
 
 export const mqFine = matchMedia("(hover: hover) and (pointer: fine)");
 
-export const mqMobileNav = matchMedia("(max-width: 860px)");
-
-export const state = { isAdmin: false, session: null, profile: null, mine: [], calm: false, filter: "all", noticeFilter: "전체", invItems: [], admDirty: false };
+export const state = { isAdmin: false, session: null, profile: null, mine: [], calm: false, filter: "all", reelPaused: false, noticeFilter: "전체", invItems: [], admDirty: false };
 
 // mine: 내 소유 캐릭터 [{uuid, balance}]
 try { state.calm = localStorage.getItem(CALM_KEY) === "1"; } catch (_) {}
@@ -35,7 +33,9 @@ export const DATA = {
   players: Array.from({ length: 7 }, (_, i) => ({ id: "p" + (i + 1), name: "참가자 이름", role: "참가자", chip: i % 2 ? "red" : "green", img: "", ...PROFILE_DUMMY() })),
   world: Array.from({ length: 4 }, (_, i) => ({ id: "w" + (i + 1), title: "항목 제목 " + (i + 1) })),
   chapters: Array.from({ length: 5 }, (_, i) => ({ number: i + 1, title: "회차 제목", summary: "요약 자리입니다.", date: "0000.00.00" })),
-  items: Array.from({ length: 8 }, () => ({ name: "아이템 이름", price: 0 }))
+  items: Array.from({ length: 8 }, () => ({ name: "아이템 이름", price: 0 })),
+  // game_slots — 홈 '다음 게임'
+  slots: []
 };
 
 /* 라우터 상태 — 여러 모듈이 읽고 router가 갱신 */
