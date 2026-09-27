@@ -217,6 +217,7 @@ export function renderStory(){
       <h2>${esc(c.title)}</h2>
       ${timeTag(c.date, c.iso)}
       <p>${esc(c.summary)}</p>
+      ${c.log ? `<a class="btn small log-link" href="#story/${esc(String(c.number))}">진행 기록 보기<span class="sr"> — 제${c.number}화</span></a>` : ""}
     </li>`).join("") + `</ol>`;
 }
 

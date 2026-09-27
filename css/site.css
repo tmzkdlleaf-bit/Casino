@@ -595,6 +595,94 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 .timeline time{font-size:var(--s-1); color:var(--smoke)}
 .timeline p{color:var(--text-2); margin:.5rem 0 0; max-width:40rem}
 
+/* ---------- 진행 기록 (코코포리아 로그) — 읽기 편하게: 본문 폭 제한·넉넉한 줄 간격·이름 색 보정 ---------- */
+.timeline .log-link{margin-top:.75rem}
+.log-id{display:grid; gap:.1rem; min-width:0}
+.log-id .link-back{justify-self:start; min-height:2rem}
+.log-title{font-size:clamp(2rem, min(4.6vw, 7.5vh), 3.75rem); line-height:1.15}
+.log-tools{display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.5rem}
+.log-tabs button[aria-pressed="true"]{background:var(--velvet); color:var(--ivory)}
+.log-tabs button[aria-pressed="false"]{text-decoration:line-through; text-decoration-color:rgba(237,227,200,.35)}
+.log-tabs .num{font-size:.8125rem; color:var(--text-2)}
+.log-size button{min-width:2.6rem; padding-inline:.7rem; font-family:var(--f-serif); font-weight:700}
+.log-size button[data-size="-1"]{font-size:.8125rem} .log-size button[data-size="1"]{font-size:1.0625rem}
+.log-size button:disabled{opacity:.35; cursor:default}
+.log-box{padding:0}
+.log-box > .pane{margin:0; padding:1.25rem clamp(1rem, 4vw, 3rem) 3rem}
+.lg-body{--lg-fs:1.0625rem; max-width:46rem; margin:0 auto; font-size:var(--lg-fs); line-height:1.85}
+.lg-chunk{content-visibility:auto; contain-intrinsic-size:auto 1800px}   /* 화면 밖 묶음은 그리지 않음 */
+.lg{display:grid; grid-template-columns:2.5rem minmax(0, 1fr); gap:.9rem; padding:.95rem 0; border-top:1px solid var(--line-2)}
+.lg-chunk:first-child > .lg:first-child{border-top:0}
+.lg-av{width:2.5rem; height:2.5rem; margin-top:.2rem; border-radius:50%; overflow:hidden; background:var(--black-3); box-shadow:0 0 0 1px rgba(201,165,90,.45)}
+.lg-av img{width:100%; height:100%; object-fit:cover; object-position:50% 12%}
+.lg-av.ini{display:grid; place-items:center; font-family:var(--f-serif); font-weight:900; font-size:1rem; color:var(--c); background:color-mix(in srgb, var(--c) 14%, var(--black-2)); box-shadow:0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent)}
+.lg-n{display:flex; align-items:baseline; gap:.5rem; margin:0 0 .1rem; font-family:var(--f-serif); font-weight:700; font-size:.95em; line-height:1.45}
+.lg-b p, .lg-narr p, .lg-sys p{margin:0; white-space:pre-line; overflow-wrap:anywhere}
+.lg-b > p:not(.lg-n){color:rgba(237,227,200,.9)}
+.lg-b > p + p{margin-top:.4em}
+.lg-body strong{font-weight:600; color:var(--ivory)}
+.lg-body em{font-style:italic; color:var(--ivory)}
+.lg-tab{flex:none; padding:0 .55em; border:1px solid var(--line-strong); border-radius:999px; font-family:var(--f-sans); font-weight:500; font-size:.7rem; line-height:1.7; color:var(--text-2)}
+.lg-narr{margin:.5rem 0; padding:.8rem 0 .8rem 1.15rem; border-left:2px solid rgba(201,165,90,.55); color:var(--text-2)}
+.lg-narr > p + p{margin-top:.6em}
+.lg-narr .lg-tab{float:right; margin-left:.5rem}
+.lg-sys{padding:.5rem 0; text-align:center; font-size:.85em; color:var(--smoke)}
+/* 탭 형식별: 정보=펠트 상자, 비밀=벨벳 상자, 잡담=작고 흐리게 */
+.lg.f-info, .lg-narr.f-info{margin:.45rem 0; padding:.8rem 1rem; border:1px solid rgba(111,175,143,.28); border-radius:.8rem; background:rgba(15,59,46,.32)}
+.lg.f-secret, .lg-narr.f-secret{margin:.45rem 0; padding:.8rem 1rem; border:1px solid rgba(224,122,130,.3); border-radius:.8rem; background:rgba(140,28,38,.14)}
+.lg.f-info + .lg, .lg.f-secret + .lg{border-top:0}
+.lg.f-other{font-size:.9em; grid-template-columns:2rem minmax(0,1fr)}
+.lg.f-other .lg-av{width:2rem; height:2rem}
+.lg.f-other .lg-b > p:not(.lg-n){color:var(--text-2)}
+/* 다이스 */
+.lg-dice{display:flex; flex-wrap:wrap; align-items:baseline; gap:.2em .55em; width:fit-content; max-width:100%; margin:.3em 0 !important; padding:.2em .85em; border:1px solid var(--line); border-radius:999px; background:var(--black-3); font-size:.9em; white-space:normal !important}
+.lg-dice .cmd{color:var(--smoke); font-size:.9em}
+.lg-dice .arr{color:var(--smoke)}
+.lg-dice .res{font-weight:600; color:var(--ivory)}
+.lg-dice.g-critical{border-color:rgba(201,165,90,.7)} .lg-dice.g-critical .res{color:var(--gold)}
+.lg-dice.g-success .res{color:var(--green-hi)}
+.lg-dice.g-failure .res{color:var(--smoke)}
+.lg-dice.g-fumble{border-color:rgba(224,122,130,.6)} .lg-dice.g-fumble .res{color:var(--red-text)}
+/* 스탠딩 표정: 얼굴이 보이게 위쪽을 잘라 씀 */
+.lg-av.st{width:3.25rem; height:3.25rem; border-radius:.7rem; margin-top:.1rem}
+.lg-av.st img{object-position:50% 8%}
+.lg.has-st{grid-template-columns:3.25rem minmax(0, 1fr)}
+/* 구간 BGM 표시 */
+.lg-bgm{display:flex; flex-wrap:wrap; align-items:center; gap:.4rem .7rem; margin:1rem 0; padding:.55rem .9rem; border:1px dashed rgba(201,165,90,.55); border-radius:.8rem; background:rgba(201,165,90,.06); font-size:.9em}
+.lg-bgm .note{color:var(--gold); font-size:1.1em}
+.lg-bgm .t{flex:1; min-width:8rem; color:var(--ivory); font-weight:500}
+.lg-bgm.stop{border-style:dotted; background:none; color:var(--smoke)}
+.lg-bgm.stop .t{color:var(--smoke); font-weight:400}
+.lg-bgm .btn{min-height:2.25rem}
+.lg-bgm .btn[aria-pressed="true"]{background:var(--velvet); border-color:var(--velvet)}
+.yt-slot{flex-basis:100%}
+.yt-slot:empty{display:none}
+.yt-slot iframe{display:block; width:min(100%, 26rem); aspect-ratio:16/9; border:0; border-radius:.6rem}
+.log-btn[aria-pressed="true"]{background:var(--velvet); border-color:var(--velvet)}
+/* 편집 모드 */
+.log-editbar{position:sticky; top:0; z-index:3; display:flex; flex-wrap:wrap; align-items:center; gap:.5rem 1rem; padding:.6rem 1rem; border-bottom:1px solid var(--line); border-radius:var(--r) var(--r) 0 0; background:var(--black-2); font-size:var(--s-1); color:var(--text-2)}
+.log-editbar .grow{flex:1}
+.lg-body.editing [data-i], .lg-body.editing .lg-bgm{cursor:pointer; border-radius:.35rem; transition:background .2s, box-shadow .2s}
+.lg-body.editing [data-i]:hover, .lg-body.editing .lg-bgm:hover{background:rgba(237,227,200,.06); box-shadow:0 0 0 1px var(--line-strong)}
+.lg-body .just{background:rgba(201,165,90,.14) !important; box-shadow:0 0 0 1px var(--gold)}
+.dlg{width:min(40rem, calc(100vw - 2rem)); max-height:calc(100dvh - 2rem); overflow:auto; padding:1.5rem; border:1px solid var(--line-strong); border-radius:var(--r); background:var(--black-2); color:var(--ivory)}
+.dlg::backdrop{background:rgba(0,0,0,.6)}
+.dlg .row2{display:grid; grid-template-columns:1fr 1fr; gap:1rem}
+.face-pick{display:flex; flex-wrap:wrap; gap:.4rem; margin:0; padding:.6rem .7rem; border:1px solid var(--line); border-radius:.7rem; max-height:12rem; overflow:auto}
+.face-pick legend{padding:0 .3rem; font-size:.9375rem; font-weight:500}
+.face-pick label{position:relative; cursor:pointer}
+.face-pick input{position:absolute; opacity:0; inset:0}
+.face-pick img, .face-pick .ph{display:grid; place-items:center; width:3.5rem; height:3.5rem; border-radius:.5rem; object-fit:cover; object-position:50% 8%; border:2px solid transparent; background:var(--black-3); font-size:.75rem; color:var(--smoke)}
+.face-pick input:checked + img, .face-pick input:checked + .ph{border-color:var(--gold)}
+.face-pick input:focus-visible + img, .face-pick input:focus-visible + .ph{outline:2px solid var(--focus); outline-offset:2px}
+@media (max-width:760px){
+  .log-tools{justify-content:flex-start; flex-wrap:nowrap; max-width:100%; overflow-x:auto; scrollbar-width:none}
+  .log-tools .seg{flex:none}
+  .log-size button{min-width:2.2rem; padding-inline:.5rem}
+  .lg{grid-template-columns:2rem minmax(0,1fr); gap:.7rem}
+  .lg-av{width:2rem; height:2rem}
+}
+
 /* =========================================================
    11. 상점
    ========================================================= */

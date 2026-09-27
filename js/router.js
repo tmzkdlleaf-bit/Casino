@@ -16,7 +16,8 @@ export function resolve(){
   else if ((page === "login" || page === "password") && !USE_DB) view = "notfound";
   else if (page === "characters" && param) view = ALL().some(c => c.id === param) ? "profile" : "notfound";
   else if (page === "notices" && param) view = DATA.notices.some(n => String(n.id) === param) ? "notice" : "notfound";
-  const navKey = view === "profile" ? "characters" : ["notice", "notices", "notfound", "password"].includes(view) ? null : view;
+  else if (page === "story" && param) view = DATA.chapters.some(c => String(c.number) === param) ? "log" : "notfound";
+  const navKey = view === "profile" ? "characters" : view === "log" ? "story" : ["notice", "notices", "notfound", "password"].includes(view) ? null : view;
   return { view, param, navKey };
 }
 
@@ -59,6 +60,7 @@ export function route(){
   else $$(".pane, .scroll", section).forEach(p => p.scrollTop = 0);   // 페이지는 고정, 창 안만 처음으로
 
   if (view === "world") bindSpy();
+  if (view === "log") import("./logview.js").then(m => m.openLog(param));
   view === "home" ? showStart() : showStop();
 
   // 새 화면만 서서히 떠오름 (전체 화면 캡처 방식의 뷰 전환은 무거워서 쓰지 않음)

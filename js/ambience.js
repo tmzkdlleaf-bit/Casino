@@ -49,6 +49,9 @@ export function initBgm(){
     addEventListener("pointerdown", once, { once: true, capture: true });
   }
 
+  // 진행 기록의 구간 BGM이 시작되면 사이트 배경음악은 멈춤
+  document.addEventListener("comu:bgm-pause", () => { if (btn.getAttribute("aria-pressed") === "true") stop(); });
+
   // 다른 탭으로 가면 잠시 멈춤
   document.addEventListener("visibilitychange", () => {
     if (!audio || btn.getAttribute("aria-pressed") !== "true") return;

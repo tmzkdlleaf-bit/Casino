@@ -46,7 +46,7 @@ export const HERO_CHIPS = [
 export const SITE_NAME = "사이트명";
 
 // 문서 제목(탭 이름)에 쓰임
-export const PAGE_TITLES = { home: "", characters: "캐릭터", world: "세계관", story: "지난 이야기", shop: "상점", game: "게임", settings: "설정", admin: "관리", notices: "공지", login: "로그인", password: "비밀번호", notfound: "없는 페이지" };
+export const PAGE_TITLES = { home: "", characters: "캐릭터", world: "세계관", story: "지난 이야기", log: "지난 이야기", shop: "상점", game: "게임", settings: "설정", admin: "관리", notices: "공지", login: "로그인", password: "비밀번호", notfound: "없는 페이지" };
 
 export const CALM_KEY = "comu-calm";
 export const BGM_KEY = "comu-bgm";
