@@ -1,20 +1,11 @@
-import { CONFIG, HERO_CHIPS, INVENTORY_SLOTS, SUITS } from "./config.js";
+import { CONFIG, INVENTORY_SLOTS, SUITS } from "./config.js";
 import { USE_DB } from "./data.js";
-import { $, $$, esc, isRed, ph, setTitle, splitText } from "./dom.js";
+import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js";
 import { moveNavInk } from "./effects.js";
 import { renderMarkdown } from "./markdown.js";
 import { DATA, nav, state } from "./state.js";
 
 /* ---------- render ---------- */
-export function renderHero(){
-  $("#hero-chips").innerHTML = HERO_CHIPS.map(([l, t, s, c, r, tx, d, depth]) => `
-    <span class="fall" style="left:${l}%;top:${t}%;animation-delay:${d}s">
-      <span class="float" data-d="${depth}">
-        <span class="chip ${c}" style="--size:${s}rem;--tx:${tx}deg;--r1:${r}deg"></span>
-      </span>
-    </span>`).join("");
-}
-
 // 고정글 먼저(pin 순서) → 나머지는 기존 순서(최신순)
 // pinOrder가 null(DB 기본값)이어도 정렬이 깨지지 않도록 ?? 0
 export const sortedNotices = () => [...DATA.notices].sort((a, b) => (b.pinned - a.pinned) || (a.pinned && b.pinned ? (a.pinOrder ?? 0) - (b.pinOrder ?? 0) : 0));
@@ -22,7 +13,7 @@ export const sortedNotices = () => [...DATA.notices].sort((a, b) => (b.pinned - 
 export const timeTag = (label, iso) => `<time${iso ? ` datetime="${esc(iso)}"` : ""}>${esc(label)}</time>`;
 
 export const noticeRow = (n, i) =>
-  `<li class="${n.pinned ? "pinned" : ""}"><a href="#notices/${n.id}">${timeTag(n.date, n.iso)}<span>${n.pinned ? `<span class="tag pin">고정</span>` : ""}${n.category ? `<span class="tag">${esc(n.category)}</span>` : ""}${esc(n.title)}</span><span class="suit" aria-hidden="true">${SUITS[i % 4]}</span></a></li>`;
+  `<li class="${n.pinned ? "pinned" : ""}"><a href="#notices/${n.id}">${timeTag(n.date, n.iso)}<span>${n.pinned ? `<span class="tag pin">고정</span>` : ""}${n.category ? `<span class="tag">${esc(n.category)}</span>` : ""}${esc(n.title)}</span><span class="suit">${suitIcon(SUITS[i % 4])}</span></a></li>`;
 
 /* 분류 버튼은 한 번만 그림 — 클릭할 때마다 다시 그리면 키보드 포커스가 사라짐 (WCAG 2.4.3) */
 export function renderNoticeSeg(){
@@ -45,20 +36,17 @@ export function renderNoticeList(){
 
 export function renderHomeNotices(){
   $("#notice-list").innerHTML = DATA.notices.length
-    ? sortedNotices().slice(0, 3).map(noticeRow).join("")
+    ? sortedNotices().slice(0, 5).map(noticeRow).join("")
     : `<li class="slot-note" style="padding:.55rem 0">등록된 공지가 없습니다.</li>`;
 }
 
 export function renderHome(){
-  const unit = `<span>사이트명</span><span><i>♠</i></span><span>문구 자리</span><span><i>♥</i></span><span>사이트명</span><span><i>♣</i></span><span>문구 자리</span><span><i>♦</i></span>`;
-  $("#marquee").innerHTML = unit + unit;
-
   const mid = (DATA.dealers.length - 1) / 2;
   $("#fan").innerHTML = DATA.dealers.map((c, i) => {
     const off = i - mid;
     return `<a class="fan-card" href="#characters/${c.id}" style="--rot:${off * 7}deg;--lift:${Math.abs(off) * .35}rem;z-index:${i}" aria-label="${esc(c.name)} 프로필">
       <span class="pcard ${isRed(c.suit) ? "red-suit" : ""}" aria-hidden="true">
-        <span class="pip tl">${c.suit}</span><span class="face">${c.img ? `<img src="${esc(c.thumb || c.img)}" alt="" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover">` : "이미지"}</span><span class="pip br">${c.suit}</span>
+        <span class="pip tl">${suitIcon(c.suit)}</span><span class="face">${c.img ? `<img src="${esc(c.thumb || c.img)}" alt="" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover">` : "이미지"}</span><span class="pip br">${suitIcon(c.suit)}</span>
       </span></a>`;
   }).join("");
 
@@ -68,9 +56,9 @@ export function renderHome(){
 
   const last = DATA.chapters[DATA.chapters.length - 1];
   $("#latest-card").innerHTML = last
-    ? `<span class="ep">최근 이야기 / 제${last.number}화</span><h2 class="g-title">${esc(last.title)}</h2><p>${esc(last.summary)}</p>`
-    : `<span class="ep">최근 이야기</span><h2 class="g-title">아직 기록이 없습니다</h2>`;
-  $("#roster-meta").textContent = `딜러 ${DATA.dealers.length}명 / 참가자 ${DATA.players.length}명`;
+    ? `<span class="eyebrow">최근 이야기 · 제${last.number}화</span><h2 class="g-title">${esc(last.title)}</h2><p>${esc(last.summary)}</p><span class="more" aria-hidden="true">지난 이야기</span>`
+    : `<span class="eyebrow">최근 이야기</span><h2 class="g-title">아직 기록이 없습니다</h2>`;
+  $("#roster-meta").textContent = `딜러 ${DATA.dealers.length}명 · 참가자 ${DATA.players.length}명`;
 }
 
 /* 작은 이미지(thumb)가 있으면 srcset으로 화면 크기에 맞는 파일만 받음 */
@@ -90,7 +78,7 @@ export function renderCast(){
   $("#cast-dealers").innerHTML = DATA.dealers.map((c, i) => `
     <a class="strip dealer ${isRed(c.suit) ? "red-suit" : ""}" href="#characters/${c.id}" data-id="${c.id}" style="--delay:${i * 80}ms">
       <span class="img">${imgSlot(c, "", true, STRIP_SIZES)}</span>
-      <span class="pip" aria-hidden="true">${c.suit}</span>
+      <span class="pip">${suitIcon(c.suit)}</span>
       <span class="label"><span class="name">${esc(c.name)}</span><span class="sub">프로필 보기</span></span>
     </a>`).join("");
 
@@ -115,7 +103,7 @@ export function renderProfile(id){
   v.className = "pf-visual " + (dealer ? "dealer" : "player") + (dealer && isRed(c.suit) ? " red-suit" : "");
   v.style.setProperty("--band", c.chip === "red" ? "var(--velvet)" : "var(--felt)");
   v.innerHTML = `<span class="img">${imgSlot(c, `${c.name} 캐릭터 이미지`, false, "(max-width: 860px) 100vw, 55vw")}</span>` +
-    (dealer ? `<span class="pip" aria-hidden="true">${c.suit}</span>` : `<span class="chip ${c.chip} badge" aria-hidden="true"></span>`);
+    (dealer ? `<span class="pip">${suitIcon(c.suit)}</span>` : `<span class="chip ${c.chip} badge" aria-hidden="true"></span>`);
 
   const role = $("#pf-role");
   role.textContent = c.role;

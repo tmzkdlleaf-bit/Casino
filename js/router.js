@@ -4,7 +4,7 @@ import { USE_DB } from "./data.js";
 import { $, $$, setTitle, splitText } from "./dom.js";
 import { applyFilter, bindSpy, deal, moveNavInk, onScroll, setMenu } from "./effects.js";
 import { DATA, motionOK, nav, state } from "./state.js";
-import { ALL, renderAccount, renderHero, renderNotice, renderNoticeList, renderProfile } from "./views.js";
+import { ALL, renderAccount, renderNotice, renderNoticeList, renderProfile } from "./views.js";
 
 export function resolve(){
   const [page, param] = (location.hash.slice(1) || "home").split("/");
@@ -48,8 +48,7 @@ export function route(){
 
     // DOM 쓰기를 먼저 모두 끝내고(렌더·글자 쪼개기), 레이아웃은 스크롤에서 한 번만 계산
     const section = $(`[data-page="${view}"]`);
-    $$(".page-title.split, .hero-title.split", section).forEach(splitText);
-    if (view === "home") renderHero();
+    $$(".page-title.split, .home-title.split", section).forEach(splitText);
     if (view === "characters") applyFilter();
     if (view === "notices") renderNoticeList();
     if (view === "settings") renderAccount();

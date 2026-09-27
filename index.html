@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>사이트명</title>
 <meta name="description" content="사이트 소개 문구 자리">
-<meta name="theme-color" content="#0D0C0B">
+<meta name="theme-color" content="#0B0D0C">
 <meta name="color-scheme" content="dark">
 <meta property="og:type" content="website">
 <meta property="og:title" content="사이트명">
@@ -37,6 +37,13 @@
 <link rel="modulepreload" href="js/markdown.js">
 </head>
 <body class="intro-on">
+<!-- 수트 아이콘: 글자(♠♥)는 기기마다 모양이 달라 SVG로 통일 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="s-spade" viewBox="0 0 24 24"><path d="M12 1.8C9.2 5.6 3.2 9.1 3.2 13.9a4.6 4.6 0 0 0 7.7 3.4c-.3 2.1-1.1 3.8-2.6 4.9h7.4c-1.5-1.1-2.3-2.8-2.6-4.9a4.6 4.6 0 0 0 7.7-3.4c0-4.8-6-8.3-8.8-12.1z"/></symbol>
+  <symbol id="s-heart" viewBox="0 0 24 24"><path d="M12 21.3l-1.4-1.3C5.4 15.4 2 12.3 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.8-3.4 6.9-8.6 11.5L12 21.3z"/></symbol>
+  <symbol id="s-club" viewBox="0 0 24 24"><path d="M12 1.9a4.4 4.4 0 0 0-4 6.2 4.4 4.4 0 1 0 2.6 7.8c-.3 2.6-1.2 4.8-2.7 6h8.2c-1.5-1.2-2.4-3.4-2.7-6a4.4 4.4 0 1 0 2.6-7.8 4.4 4.4 0 0 0-4-6.2z"/></symbol>
+  <symbol id="s-diamond" viewBox="0 0 24 24"><path d="M12 1.5l8 10.5-8 10.5-8-10.5z"/></symbol>
+</svg>
 <noscript><style>.boot,.opening{display:none}</style><p class="noscript">이 사이트는 자바스크립트가 켜져 있어야 정상적으로 표시됩니다.</p></noscript>
 
 <div class="boot" id="boot" role="status"><span class="chip red" aria-hidden="true"></span><span class="sr">불러오는 중</span></div>
@@ -83,80 +90,64 @@
 
 <main id="app" tabindex="-1">
 
-  <!-- ===================== 홈 ===================== -->
-  <section data-page="home">
-    <div class="hero" id="hero">
-      <div class="hero-light" aria-hidden="true"></div>
-      <div class="hero-chips" id="hero-chips" aria-hidden="true"></div>
-      <div class="hero-meta wrap">
-        <span class="label" id="roster-meta"></span>
-        <span class="label scroll-cue">스크롤</span>
-      </div>
-
-      <div class="hero-stage wrap">
-        <h1 class="hero-title split">사이트명</h1>
-        <div class="hero-side">
+  <!-- ===================== 홈: 커뮤 대시보드 ===================== -->
+  <section data-page="home" class="page home">
+    <div class="wrap">
+      <header class="home-head">
+        <div class="home-id">
+          <p class="eyebrow" id="roster-meta"></p>
+          <h1 class="home-title split">사이트명</h1>
+        </div>
+        <div class="home-side">
           <p class="intro">소개 문구가 들어갈 자리입니다. 두세 문장 정도의 분량을 기준으로 잡았습니다.</p>
           <div class="actions">
-            <a class="btn primary magnetic" href="#world">세계관 보기</a>
-            <a class="btn magnetic" href="#characters">캐릭터 보기</a>
+            <a class="btn primary" href="#world">세계관 보기</a>
+            <a class="btn" href="#characters">캐릭터 보기</a>
           </div>
         </div>
-      </div>
+      </header>
 
-      <aside class="glance wrap" aria-label="한눈에 보기">
-        <div class="g-panel" style="--n:0">
-          <div class="g-head"><h2>공지</h2><a href="#notices">전체 보기</a></div>
+      <div class="dash">
+        <section class="panel p-notice" aria-labelledby="h-notice">
+          <div class="panel-head"><h2 id="h-notice">공지</h2><a class="more" href="#notices">전체 보기</a></div>
           <ul class="row-list" id="notice-list"></ul>
-        </div>
-        <a class="g-panel latest" href="#story" style="--n:1" id="latest-card"></a>
-        <div class="g-panel next" style="--n:2">
-          <span class="chip red" aria-hidden="true"></span>
-          <div><h2>다음 게임</h2><span>게임 일정이 들어갈 자리입니다.</span></div>
-        </div>
-      </aside>
-    </div>
+        </section>
 
-    <div class="marquee-wrap" id="marquee-wrap">
-      <div class="marquee" aria-hidden="true"><div class="track" id="marquee"></div></div>
-      <button class="marquee-toggle" type="button" id="marquee-toggle" aria-pressed="false">
-        <span class="ico" aria-hidden="true"></span><span class="sr">흐르는 문구 멈추기</span>
-      </button>
-    </div>
+        <section class="panel p-next" aria-labelledby="h-next">
+          <div class="panel-head"><h2 id="h-next">다음 게임</h2></div>
+          <p class="next-body">게임 일정이 들어갈 자리입니다.</p>
+        </section>
 
-    <div class="wrap">
-      <div class="intro-block" data-idx="01">
-        <h2 class="statement reveal">대표 문구가 들어갈 자리입니다. 두 줄 정도의 분량을 기준으로 잡았습니다.</h2>
-        <div class="body">
-          <article class="reveal"><h3>소제목 자리</h3><p>본문 자리입니다. 세계관 요약이나 커뮤 소개가 들어갈 수 있습니다.</p></article>
-          <article class="reveal"><h3>소제목 자리</h3><p>본문 자리입니다.</p></article>
-          <article class="reveal"><h3>소제목 자리</h3><p>본문 자리입니다.</p></article>
-        </div>
-      </div>
+        <a class="panel p-latest" href="#story" id="latest-card"></a>
 
-      <div class="home-cast" data-idx="02">
-      <div class="table reveal" data-spot>
-        <div class="cast-preview">
-          <div class="copy">
-            <h2 class="h">딜러와 참가자</h2>
+        <section class="panel p-cast table" aria-labelledby="h-cast">
+          <div class="cast-copy">
+            <div class="panel-head"><h2 id="h-cast">딜러와 참가자</h2></div>
             <p>캐릭터 소개 문구 자리입니다.</p>
-            <a class="btn magnetic" href="#characters">캐릭터 전체 보기</a>
+            <a class="more" href="#characters">캐릭터 전체 보기</a>
           </div>
           <div class="stage">
             <div class="fan" id="fan"></div>
             <div class="chip-row" id="chip-row" aria-hidden="true"></div>
           </div>
-        </div>
-      </div>
-      </div>
+        </section>
 
+        <section class="panel p-about" aria-labelledby="h-about">
+          <h2 class="statement" id="h-about">대표 문구가 들어갈 자리입니다. 두 줄 정도의 분량을 기준으로 잡았습니다.</h2>
+          <div class="about-list">
+            <article><h3>소제목 자리</h3><p>본문 자리입니다. 세계관 요약이나 커뮤 소개가 들어갈 수 있습니다.</p></article>
+            <article><h3>소제목 자리</h3><p>본문 자리입니다.</p></article>
+            <article><h3>소제목 자리</h3><p>본문 자리입니다.</p></article>
+          </div>
+        </section>
+      </div>
     </div>
   </section>
 
   <!-- ===================== 캐릭터 ===================== -->
   <section data-page="characters" class="page" hidden>
     <div class="wrap">
-      <header class="page-head compact" data-idx="01">
+      <header class="page-head compact">
         <h1 class="page-title split">캐릭터</h1>
         <div class="head-side">
           <p class="page-lede">캐릭터 페이지 안내 문구 자리입니다.</p>
@@ -224,7 +215,7 @@
   <!-- ===================== 세계관 ===================== -->
   <section data-page="world" class="page" hidden>
     <div class="wrap">
-      <header class="page-head" data-idx="02">
+      <header class="page-head">
         <h1 class="page-title split">세계관</h1>
         <p class="page-lede">세계관 페이지 안내 문구 자리입니다.</p>
       </header>
@@ -238,7 +229,7 @@
   <!-- ===================== 지난 이야기 ===================== -->
   <section data-page="story" class="page" hidden>
     <div class="wrap">
-      <header class="page-head" data-idx="03">
+      <header class="page-head">
         <h1 class="page-title split">지난 이야기</h1>
         <p class="page-lede">진행된 이야기가 순서대로 쌓이는 페이지입니다.</p>
       </header>
@@ -249,11 +240,11 @@
   <!-- ===================== 상점 ===================== -->
   <section data-page="shop" class="page" hidden>
     <div class="wrap">
-      <header class="page-head" data-idx="04">
+      <header class="page-head">
         <h1 class="page-title split">상점</h1>
         <p class="page-lede">상점 안내 문구 자리입니다.</p>
       </header>
-      <div class="table shop-bar" data-spot>
+      <div class="table shop-bar">
         <span id="wallet-label">보유 칩</span>
         <span class="wallet"><span class="chip red" aria-hidden="true"></span><strong id="wallet" aria-describedby="wallet-label">—</strong></span>
       </div>
@@ -266,16 +257,16 @@
   <!-- ===================== 게임 ===================== -->
   <section data-page="game" class="page" hidden>
     <div class="wrap">
-      <header class="page-head" data-idx="05">
+      <header class="page-head">
         <h1 class="page-title split">게임</h1>
         <p class="page-lede">게임 페이지 안내 문구 자리입니다.</p>
       </header>
-      <div class="table game-stage" data-spot>
+      <div class="table game-stage">
         <div class="wheel-wrap"><div class="wheel" id="wheel" aria-hidden="true"></div></div>
         <div class="copy">
           <h2 class="h">게임 준비 중</h2>
           <p>도박 시스템이 들어갈 자리입니다.</p>
-          <button class="btn magnetic" type="button" id="spin">휠 돌리기</button>
+          <button class="btn" type="button" id="spin">휠 돌리기</button>
         </div>
       </div>
     </div>
@@ -284,7 +275,7 @@
   <!-- ===================== 설정 ===================== -->
   <section data-page="settings" class="page" hidden>
     <div class="wrap">
-      <header class="page-head" data-idx="06">
+      <header class="page-head">
         <h1 class="page-title split">설정</h1>
         <p class="page-lede">내 표시 정보와 화면 효과를 바꿀 수 있습니다.</p>
       </header>
@@ -384,7 +375,7 @@
   <!-- ===================== 관리 ===================== -->
   <section data-page="admin" class="page" hidden>
     <div class="wrap">
-      <header class="page-head" data-idx="07">
+      <header class="page-head">
         <h1 class="page-title split">관리</h1>
         <p class="page-lede">관리자에게만 보이는 페이지입니다.</p>
       </header>
@@ -408,7 +399,7 @@
 
 <footer class="site-foot">
   <div class="wrap">
-    <p class="big" aria-hidden="true">사이트명</p>
+    <p class="foot-name">사이트명</p>
     <div class="foot-row">
       <nav class="foot-nav" aria-label="바닥글 메뉴">
         <ul>

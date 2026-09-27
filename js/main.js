@@ -2,7 +2,7 @@ import { refreshAuth } from "./auth.js";
 import { CALM_KEY } from "./config.js";
 import { AUTH_HASH, DB_CONFIGURED, USE_DB, loadAll, sb, showBootError, subscribeNotices } from "./data.js";
 import { $, $$, announce, toast } from "./dom.js";
-import { applyCalm, applyFilter, bindHero, bindMagnetic, bindSpots, filterSummary, moveNavInk, onScroll, runIntro, setMenu } from "./effects.js";
+import { applyCalm, applyFilter, filterSummary, moveNavInk, onScroll, runIntro, setMenu } from "./effects.js";
 import { errMsg } from "./forms.js";
 import { focusHeading, route } from "./router.js";
 import { DATA, motionOK, mqMobileNav, nav, state } from "./state.js";
@@ -49,12 +49,6 @@ $$("#nav a").forEach((a, k) => a.style.setProperty("--k", k));
 $("#nav").addEventListener("click", e => { if (e.target.closest("a")) setMenu(false, { restoreFocus: false }); });
 
 mqMobileNav.addEventListener("change", () => setMenu(false, { restoreFocus: false }));
-
-$("#marquee-toggle").addEventListener("click", e => {
-  const b = e.currentTarget, paused = b.getAttribute("aria-pressed") !== "true";
-  b.setAttribute("aria-pressed", paused);
-  $("#marquee-wrap").classList.toggle("paused", paused);
-});
 
 $("#to-top").addEventListener("click", () => {
   window.scrollTo({ top: 0, behavior: motionOK() ? "smooth" : "auto" });
@@ -127,11 +121,8 @@ applyCalm();
 // 저장된 '애니메이션 끄기'를 인트로보다 먼저 적용
 runIntro();
 
-bindHero();
 
-bindSpots();
 
-bindMagnetic();
 
 (async () => {
   // Supabase 라이브러리가 막혔거나(SRI 불일치·네트워크) 없으면 더미 화면으로 조용히 넘어가지 않고 오류 표시

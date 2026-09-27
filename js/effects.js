@@ -1,5 +1,5 @@
-import { $, $$, splitText } from "./dom.js";
-import { DATA, motionOK, mqFine, state } from "./state.js";
+import { $, $$, splitText, suitIcon } from "./dom.js";
+import { DATA, motionOK, state } from "./state.js";
 import { placeSegInk } from "./views.js";
 
 /* ---------- effects ---------- */
@@ -24,72 +24,6 @@ let scrolled = null;
 export function onScroll(){
   const on = scrollY > 40;
   if (on !== scrolled){ scrolled = on; $("#site-head").classList.toggle("scrolled", on); }
-}
-
-/* 히어로: 커서 조명 + 칩 시차
-   CSS 변수를 히어로 전체에 걸면 안쪽 모든 요소(글자 단위 제목 포함)의 스타일을 매 프레임 다시 계산함
-   → 조명 원 하나와 칩 8개의 transform만 직접 바꿈 (다시 그리기 없이 합성만) */
-export function bindHero(){
-  const hero = $("#hero"), light = $(".hero-light", hero);
-  let raf = 0, last = null;
-  const place = (x, y) => { light.style.transform = `translate3d(${x}px, ${y}px, 0)`; };
-  const r0 = () => hero.getBoundingClientRect();
-  place(r0().width * .7, r0().height * .35);
-  hero.addEventListener("pointermove", e => {
-    if (!mqFine.matches) return;
-    last = e;
-    if (raf) return;
-    raf = requestAnimationFrame(() => {
-      raf = 0;
-      const r = r0(), x = last.clientX - r.left, y = last.clientY - r.top;
-      place(x, y);
-      if (!motionOK()) return;
-      const px = (x / r.width - .5) * 2, py = (y / r.height - .5) * 2;
-      $$("#hero-chips .float").forEach(f => {
-        const d = +f.dataset.d || 1;
-        f.style.transform = `translate3d(${(px * d).toFixed(2)}rem, ${(py * d).toFixed(2)}rem, 0)`;
-      });
-    });
-  }, { passive: true });
-  hero.addEventListener("pointerleave", () => $$("#hero-chips .float").forEach(f => f.style.transform = ""));
-}
-
-/* 펠트 면 위 조명 */
-export function bindSpots(){ bindPointer(); }
-export function bindMagnetic(){ bindPointer(); }
-
-/* 펠트 조명 + 자석 버튼 — 포인터 이동 처리 하나로 합치고 프레임당 1회만 계산
-   (이전: 이벤트마다 두 핸들러가 돌고, 자석 버튼은 매번 문서 전체를 검색) */
-let pointerBound = false, pulled = null, lastEv = null, rafId = 0;
-function bindPointer(){
-  if (pointerBound) return;
-  pointerBound = true;
-  const release = () => { if (pulled){ pulled.style.setProperty("--tx", "0px"); pulled.style.setProperty("--ty", "0px"); pulled = null; } };
-  const frame = () => {
-    rafId = 0;
-    const e = lastEv, t = e.target instanceof Element ? e.target : null;
-    const spot = t?.closest("[data-spot]");
-    if (spot){   // 펠트 조명: 전용 원 요소를 transform으로 이동 (테이블 안 요소들의 스타일 재계산 없음)
-      let light = spot.querySelector(":scope > .spot-light");
-      if (!light){ light = document.createElement("span"); light.className = "spot-light"; light.setAttribute("aria-hidden", "true"); spot.prepend(light); }
-      const r = spot.getBoundingClientRect();
-      light.style.transform = `translate3d(${e.clientX - r.left}px, ${e.clientY - r.top}px, 0)`;
-    }
-    const b = motionOK() ? t?.closest(".magnetic") : null;
-    if (b !== pulled) release();
-    if (b){
-      const r = b.getBoundingClientRect();
-      b.style.setProperty("--tx", (e.clientX - r.left - r.width / 2) * .25 + "px");
-      b.style.setProperty("--ty", (e.clientY - r.top - r.height / 2) * .35 + "px");
-      pulled = b;
-    }
-  };
-  document.addEventListener("pointermove", e => {
-    if (!mqFine.matches) return;
-    lastEv = e;
-    if (!rafId) rafId = requestAnimationFrame(frame);
-  }, { passive: true });
-  document.addEventListener("pointerleave", release);
 }
 
 /* 화면에 들어오면 스트립이 아래에서 열림 */
@@ -194,7 +128,7 @@ export function runIntro(){
     return `<span class="icard ${top ? "top" : ""}" style="--i:${i};--sr:${(Math.random() - .5) * 8}deg;--fx:${fx};--fy:${fy};--fr:${(Math.random() - .5) * 200}deg;--rot:${off * 11}deg;--lift:${Math.abs(off) * .4}rem;z-index:${top ? 9 : i}">
       <span class="flipper">
         <span class="side card-back"></span>
-        <span class="side pcard red-suit"><span class="pip tl">♥</span><span class="big">♥</span><span class="pip br">♥</span></span>
+        <span class="side pcard red-suit"><span class="pip tl">${suitIcon("♥")}</span><span class="big">${suitIcon("♥")}</span><span class="pip br">${suitIcon("♥")}</span></span>
       </span>
     </span>`;
   }).join("");

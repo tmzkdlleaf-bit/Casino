@@ -10,6 +10,9 @@ export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 export const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
 
 export const isRed = s => s === "♥" || s === "♦";
+/* 수트 기호 → SVG 아이콘 (index.html의 스프라이트 사용) */
+const SUIT_ID = { "♠": "spade", "♥": "heart", "♣": "club", "♦": "diamond" };
+export const suitIcon = (s, cls = "") => `<svg class="suit-ico ${cls}" aria-hidden="true" focusable="false"><use href="#s-${SUIT_ID[s] || "spade"}"/></svg>`;
 
 export function toast(msg){
   const t = $("#toast");
@@ -30,7 +33,6 @@ export function splitText(el){
   if (!el.dataset.text) el.dataset.text = el.textContent.trim();
   const text = el.dataset.text;
   el.removeAttribute("aria-label");
-  el.style.setProperty("--len", Math.max(1, [...text.replace(/\s/g, "")].length));   // 히어로 제목: 글자 수에 맞춰 화면 폭을 채움
   el.innerHTML = `<span class="sr">${esc(text)}</span><span aria-hidden="true">` + [...text].map((ch, i) =>
     ch === " " ? " " : `<span class="clip"><span class="ch" style="--i:${i}">${esc(ch)}</span></span>`
   ).join("") + `</span>`;
