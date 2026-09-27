@@ -136,7 +136,7 @@ export const SCHEMAS = {
     after: row => LOGS.ok ? `
       <section class="card sub-editor" aria-labelledby="log-h">
         <h3 id="log-h">진행 기록 (코코포리아 로그)</h3>
-        <p class="hint">코코포리아에서 내보낸 로그 파일(.html 또는 .txt)을 올리면 사이트 모양으로 바꿔 저장합니다. 원본 파일은 올라가지 않습니다.</p>
+        <p class="hint">코코포리아에서 내보낸 로그 파일(.html 또는 .txt)을 올리면 사이트 모양으로 바꿔 저장합니다. 원본 파일은 올라가지 않습니다. 대사 수정과 구간 BGM은 저장한 뒤 기록 화면의 ‘편집’에서 합니다.</p>
         <p class="adm-status" id="log-now">${row.log_path ? `저장된 기록이 있습니다 — <a href="#story/${esc(String(row.number))}">보기</a>` : "아직 저장된 기록이 없습니다."}</p>
         <div class="field"><label for="log-file">로그 파일</label><input type="file" id="log-file" accept=".html,.htm,.txt" aria-describedby="log-file-err"><span class="field-error" id="log-file-err" hidden></span></div>
         <div id="log-opts"></div>
@@ -557,6 +557,10 @@ admPanel().addEventListener("click", async e => {
   }
   const invSave = t.closest("[data-inv-save]");
   if (invSave) return admSaveInventory(invSave);
+  if (t.closest(".bm-link")){ e.preventDefault(); toast("이 버튼은 누르지 말고 즐겨찾기 막대로 끌어다 놓으세요"); return; }
+  if (t.closest("[data-log-room]")) return withBusy(t.closest("[data-log-room]"), logRoom);
+  if (t.closest("[data-log-lib]")) return logLibPaste();
+  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
   const logSave = t.closest("[data-log-save]");
   if (logSave) return withBusy(logSave, () => logSaveNow(logSave.dataset.id));
   const logDel = t.closest("[data-log-del]");
@@ -614,15 +618,15 @@ admPanel().addEventListener("change", e => {
 /* =========================================================
    진행 기록: 로그 파일 → 고르기(탭·나레이션) → JSON으로 저장
    ========================================================= */
-const LOG = { messages: null, info: null, name: "" };
+const LOG = { messages: null, info: null, name: "", library: [] };
 
 async function logRead(input){
   const f = input.files[0], opts = $("#log-opts"), btn = $("[data-log-save]");
-  LOG.messages = null; btn.disabled = true; opts.innerHTML = ""; fieldError(input, "");
+  LOG.messages = null; LOG.library = []; btn.disabled = true; opts.innerHTML = ""; fieldError(input, "");
   if (!f) return;
   if (f.size > 60 * 1024 * 1024){ fieldError(input, "60MB 이하 파일만 올릴 수 있습니다."); return; }
   $("#log-status").textContent = "읽는 중…";
-  const { parseLog, analyze } = await import("./logparse.js");
+  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js");
   const messages = parseLog(await f.text());
   $("#log-status").textContent = "";
   if (!messages.length){ fieldError(input, "대사를 찾지 못했습니다. 코코포리아에서 내보낸 로그 파일이 맞는지 확인해 주세요."); return; }
@@ -638,8 +642,92 @@ async function logRead(input){
       <p class="hint" style="margin-top:0">체크한 화자는 이름 없이 본문처럼 보입니다 (진행자·KP 등).</p>
       <div class="log-sp">${sp.map((s, i) => `<label class="check"><input type="checkbox" name="log-narr" value="${i}"><span class="log-dot" style="background:${esc(s.color)}"></span>${esc(s.name || "(이름 없음)")} <span class="hint" style="margin:0">(${s.count.toLocaleString("ko-KR")})</span></label>`).join("")}</div>
     </fieldset>
+    <fieldset class="log-fs"><legend>스탠딩·표정 이미지 (선택)</legend>
+      <p class="hint" style="margin-top:0">로그 화자와 이름이 같은 코코포리아 캐릭터의 이미지를 대사 옆에 붙이고, 사이트 저장소에 복사해 둡니다. 코코포리아에서 이미지를 지워도 기록에는 남습니다.</p>
+      <div class="field"><label for="log-room">코코포리아 룸 링크</label>
+        <div class="log-inline"><input class="input" id="log-room" type="url" inputmode="url" placeholder="https://ccfolia.com/rooms/…"><button class="btn" type="button" data-log-room>불러오기</button></div>
+        <label class="check"><input type="checkbox" id="log-room-chat" checked>채팅 기록으로 대사마다 실제로 쓴 표정 맞추기</label>
+      </div>
+      <details class="log-alt"><summary>링크로 안 될 때 (비공개 룸)</summary>
+        <ol class="hint">
+          <li>아래 <b>스탠딩 가져오기</b> 버튼을 즐겨찾기 막대로 끌어다 놓습니다 (또는 코드를 복사해 새 북마크 주소로 저장).</li>
+          <li>코코포리아 룸에 입장한 상태에서 그 북마크를 누릅니다.</li>
+          <li>뜬 창의 ‘복사하고 닫기’를 누른 뒤, 아래 칸에 붙여넣고 ‘적용’을 누릅니다.</li>
+        </ol>
+        <div class="form-actions"><a class="btn small bm-link" href="${esc(BOOKMARKLET)}" draggable="true">스탠딩 가져오기</a><button class="btn small" type="button" data-log-bm-copy>북마크 코드 복사</button></div>
+        <div class="field"><label for="log-lib-text">붙여넣기</label><textarea class="input" id="log-lib-text" rows="3"></textarea></div>
+        <button class="btn small" type="button" data-log-lib>적용</button>
+      </details>
+      <p class="adm-status" id="log-lib-status" role="status"></p>
+    </fieldset>
     <label class="check"><input type="checkbox" id="log-strip" checked>줄 처음·끝의 @표정 태그 지우기</label>`;
   btn.disabled = false;
+}
+
+function libSummary(extra = ""){
+  const names = new Set(LOG.library.map(c => c.name.trim()));
+  const hit = LOG.info.speakers.filter(s => names.has(s.name.trim())).length;
+  const faces = LOG.library.reduce((n, c) => n + c.faces.length + (c.iconUrl ? 1 : 0), 0);
+  $("#log-lib-status").textContent = `캐릭터 ${LOG.library.length}명 · 이미지 ${faces}개 불러옴 — 로그 화자 ${hit}/${LOG.info.speakers.length}명과 이름이 맞음${extra}`;
+}
+
+async function logRoom(){
+  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js");
+  const id = roomIdFrom($("#log-room").value);
+  if (!id){ $("#log-lib-status").textContent = "코코포리아 룸 링크 형식이 아닙니다. (https://ccfolia.com/rooms/…)"; $("#log-room").focus(); return; }
+  try {
+    const { characters, roomMsgs } = await loadRoom(id, { withLog: $("#log-room-chat").checked, onStatus: t => { $("#log-lib-status").textContent = t; } });
+    LOG.library = characters;
+    const matched = roomMsgs.length ? alignRoomFaces(LOG.messages, roomMsgs) : 0;
+    libSummary(roomMsgs.length ? ` · 대사 ${matched.toLocaleString("ko-KR")}개에 실제 표정 연결` : "");
+  } catch (err){
+    const hint = err.status === 403 || err.status === 404 ? " 비공개 룸이거나 링크가 틀렸을 수 있습니다. ‘링크로 안 될 때’ 방법을 써 주세요." : "";
+    $("#log-lib-status").textContent = "룸에서 불러오지 못했습니다: " + err.message + hint;
+    $(".log-alt").open = true;
+  }
+}
+
+async function logLibPaste(){
+  const { parseLibrary } = await import("./logparse.js");
+  try {
+    const lib = parseLibrary($("#log-lib-text").value);
+    if (!lib.length){ $("#log-lib-status").textContent = "캐릭터를 찾지 못했습니다."; return; }
+    LOG.library = lib; libSummary();
+  } catch (err){ $("#log-lib-status").textContent = err.message; }
+}
+
+/* 표정 이미지를 사이트 저장소로 복사: 긴 변 480px WebP, 주소의 해시를 파일 이름으로 써서 같은 이미지는 한 번만.
+   코코포리아 서버가 교차 출처 읽기를 막으면 원본 주소를 그대로 둠 */
+async function sha1(t){ const b = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(t)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
+async function grabImage(url, max = 480){
+  const img = new Image();
+  img.crossOrigin = "anonymous"; img.decoding = "async"; img.referrerPolicy = "no-referrer";
+  img.src = url;
+  await img.decode();
+  const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+  const ctx = c.getContext("2d"); ctx.imageSmoothingQuality = "high"; ctx.drawImage(img, 0, 0, c.width, c.height);
+  const blob = await new Promise(r => c.toBlob(r, "image/webp", .88));   // 교차 출처가 막혔으면 여기서 오류
+  if (!blob) throw new Error("encode");
+  return blob;
+}
+export async function backupFaces(urls, onProgress = () => {}){
+  const out = urls.slice(); let ok = 0, done = 0;
+  const work = async i => {
+    const u = urls[i];
+    try {
+      const path = `img/${await sha1(u)}.webp`;
+      const blob = await grabImage(u);
+      const up = await sb.storage.from("logs").upload(path, blob, { contentType: "image/webp", cacheControl: "31536000", upsert: false });
+      if (up.error && !/exist|duplicate|409/i.test(up.error.message + (up.error.statusCode || ""))) throw up.error;
+      out[i] = path; ok++;
+    } catch (_) { /* 원본 주소 유지 */ }
+    onProgress(++done, urls.length);
+  };
+  const queue = urls.map((_, i) => i);
+  await Promise.all(Array.from({ length: Math.min(4, queue.length) }, async () => { while (queue.length) await work(queue.shift()); }));
+  return { faces: out, ok };
 }
 
 async function logSaveNow(id){
@@ -648,11 +736,18 @@ async function logSaveNow(id){
   const include = new Set($$('input[name="log-tab"]:checked').map(i => LOG.info.tabs[+i.value].name));
   const narrators = new Set($$('input[name="log-narr"]:checked').map(i => LOG.info.speakers[+i.value].name));
   if (!include.size){ $("#log-status").textContent = "저장할 탭을 하나 이상 골라 주세요."; return; }
-  const data = pack(LOG.messages, { include, narrators, stripTag: $("#log-strip").checked, src: LOG.name });
-  const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
-  const row = (ADM.rows.chapters || []).find(r => r.id === id), path = `ch-${id}-${Date.now()}.json`;
-  $("#log-status").textContent = `저장 중… (${Math.ceil(blob.size / 1024).toLocaleString("ko-KR")}KB)`;
+  const row = (ADM.rows.chapters || []).find(r => r.id === id);
+  if (row?.log_path && !confirm("이미 저장된 기록을 새 로그로 바꿉니다. 기록 화면에서 고친 대사와 BGM 구간은 사라집니다. 계속할까요?")) return;
+  const data = pack(LOG.messages, { include, narrators, stripTag: $("#log-strip").checked, src: LOG.name, library: LOG.library });
   try {
+    if (data.faces.length){
+      const r = await backupFaces(data.faces, (d, n) => { $("#log-status").textContent = `표정 이미지 복사 중… ${d}/${n}`; });
+      data.faces = r.faces;
+      if (r.ok < data.faces.length) toast(`이미지 ${data.faces.length - r.ok}개는 코코포리아가 복사를 막아 원본 주소로 연결했습니다`);
+    }
+    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+    const path = `ch-${id}-${Date.now()}.json`;
+    $("#log-status").textContent = `저장 중… (${Math.ceil(blob.size / 1024).toLocaleString("ko-KR")}KB)`;
     const up = await sb.storage.from("logs").upload(path, blob, { contentType: "application/json", cacheControl: "31536000", upsert: false });
     if (up.error) throw up.error;
     const { error } = await sb.from("chapters").update({ log_path: path, updated_at: new Date().toISOString() }).eq("id", id);

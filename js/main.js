@@ -91,10 +91,12 @@ $("#pf-inv").addEventListener("keydown", e => {
   btns[j].focus();
 });
 
-window.addEventListener("hashchange", () => {
-  if (state.admDirty && nav.current === "admin" && !confirm("저장하지 않은 변경이 있습니다. 이 페이지를 떠날까요?")){
-    history.replaceState(null, "", "#admin"); return;
+let lastHash = location.hash;
+window.addEventListener("hashchange", e => {
+  if (state.admDirty && (nav.current === "admin" || nav.current === "log") && !confirm("저장하지 않은 변경이 있습니다. 이 페이지를 떠날까요?")){
+    history.replaceState(null, "", lastHash); e.stopImmediatePropagation(); return;
   }
+  lastHash = location.hash;
   state.admDirty = false;
   route();
 });
