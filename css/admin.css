@@ -51,3 +51,8 @@ table.members .input{min-height:2.25rem; padding:.35rem .6rem}
 .chip-form input[type="number"]{width:7.5rem}
 .chip-form input[type="text"]{width:9rem}
 .members{min-width:52rem}
+/* 진행 기록 올리기 */
+.log-fs{margin:0 0 1rem; padding:.9rem 1rem; border:1px solid var(--line); border-radius:.7rem}
+.log-fs legend{padding:0 .4rem; font-weight:500}
+.log-sp{display:grid; grid-template-columns:repeat(auto-fill, minmax(13rem, 1fr)); gap:0 1rem; max-height:16rem; overflow:auto}
+.log-dot{display:inline-block; width:.7rem; height:.7rem; border-radius:50%; flex:none; box-shadow:0 0 0 1px var(--line-strong)}

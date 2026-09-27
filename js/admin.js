@@ -1,6 +1,6 @@
 import { loadMine } from "./auth.js";
 import { CONFIG } from "./config.js";
-import { USE_DB, fmtDate, publicUrl, refreshPublic, sb } from "./data.js";
+import { LOGS, USE_DB, fmtDate, publicUrl, refreshPublic, sb } from "./data.js";
 import { $, $$, announce, esc, toast } from "./dom.js";
 import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js";
 import { renderMarkdown } from "./markdown.js";
@@ -121,8 +121,9 @@ export const SCHEMAS = {
     ]
   },
   chapters: {
-    label: "지난 이야기", key: "id", touch: true, select: "id, number, title, summary, body, played_on", order: [["number", { ascending: false }]],
-    title: r => `제${r.number}화 ${r.title || ""}`, meta: r => fmtDate(r.played_on),
+    label: "지난 이야기", key: "id", touch: true, order: [["number", { ascending: false }]],
+    get select(){ return `id, number, title, summary, body, played_on${LOGS.ok ? ", log_path" : ""}`; },
+    title: r => `제${r.number}화 ${r.title || ""}`, meta: r => [fmtDate(r.played_on), r.log_path ? "기록 있음" : ""].filter(Boolean).join(" · "),
     fields: [
       { row: [
         { k: "number", label: "회차", type: "number", required: true, min: 1 },
@@ -131,7 +132,20 @@ export const SCHEMAS = {
       { k: "title", label: "제목", type: "text", required: true, max: 80 },
       { k: "summary", label: "요약", type: "textarea", hint: "지난 이야기 목록과 홈에 표시" },
       { k: "body", label: "본문", type: "textarea", hint: "상세 기록 (현재 공개 화면에는 표시되지 않음)" }
-    ]
+    ],
+    after: row => LOGS.ok ? `
+      <section class="card sub-editor" aria-labelledby="log-h">
+        <h3 id="log-h">진행 기록 (코코포리아 로그)</h3>
+        <p class="hint">코코포리아에서 내보낸 로그 파일(.html 또는 .txt)을 올리면 사이트 모양으로 바꿔 저장합니다. 원본 파일은 올라가지 않습니다.</p>
+        <p class="adm-status" id="log-now">${row.log_path ? `저장된 기록이 있습니다 — <a href="#story/${esc(String(row.number))}">보기</a>` : "아직 저장된 기록이 없습니다."}</p>
+        <div class="field"><label for="log-file">로그 파일</label><input type="file" id="log-file" accept=".html,.htm,.txt" aria-describedby="log-file-err"><span class="field-error" id="log-file-err" hidden></span></div>
+        <div id="log-opts"></div>
+        <div class="form-actions">
+          <button class="btn primary" type="button" data-log-save data-id="${esc(row.id)}" disabled>기록 저장</button>
+          ${row.log_path ? `<button class="btn danger" type="button" data-log-del data-id="${esc(row.id)}">기록 삭제</button>` : ""}
+        </div>
+        <p class="adm-status" id="log-status" role="status"></p>
+      </section>` : `<section class="card sub-editor"><p class="hint">진행 기록을 붙이려면 Supabase에서 supabase/update-3.sql을 먼저 실행해 주세요.</p></section>`
   }
 };
 
@@ -370,6 +384,7 @@ export async function admDelete(){
       if (error) throw error;
     }
     const { error } = await sb.from(table).delete().eq(s.key, row[s.key]);
+    if (!error && table === "chapters" && row.log_path) sb.storage.from("logs").remove([row.log_path]);   // 붙어 있던 기록 파일도 정리
     if (error) throw error;
     const imgF = flatFields(s).find(f => f.type === "image");
     if (imgF){ const paths = [row[imgF.k], imgF.thumbKey && row[imgF.thumbKey]].filter(Boolean); if (paths.length) sb.storage.from(imgF.bucket).remove(paths); }
@@ -542,6 +557,10 @@ admPanel().addEventListener("click", async e => {
   }
   const invSave = t.closest("[data-inv-save]");
   if (invSave) return admSaveInventory(invSave);
+  const logSave = t.closest("[data-log-save]");
+  if (logSave) return withBusy(logSave, () => logSaveNow(logSave.dataset.id));
+  const logDel = t.closest("[data-log-del]");
+  if (logDel) return withBusy(logDel, () => logDelete(logDel.dataset.id));
 });
 
 admPanel().addEventListener("submit", async e => {
@@ -578,6 +597,8 @@ admPanel().addEventListener("change", async e => {
 
 admPanel().addEventListener("input", e => { if (e.target.closest("#adm-form, #inv-rows")) state.admDirty = true; });
 
+admPanel().addEventListener("change", e => { if (e.target.id === "log-file") logRead(e.target); });
+
 admPanel().addEventListener("change", e => {
   const file = e.target.closest('#adm-form input[type="file"]');
   if (!file) return;
@@ -589,3 +610,68 @@ admPanel().addEventListener("change", e => {
   const url = URL.createObjectURL(f);
   prev.innerHTML = `<img src="${url}" alt="새로 올릴 이미지 미리보기">`;
 });
+
+/* =========================================================
+   진행 기록: 로그 파일 → 고르기(탭·나레이션) → JSON으로 저장
+   ========================================================= */
+const LOG = { messages: null, info: null, name: "" };
+
+async function logRead(input){
+  const f = input.files[0], opts = $("#log-opts"), btn = $("[data-log-save]");
+  LOG.messages = null; btn.disabled = true; opts.innerHTML = ""; fieldError(input, "");
+  if (!f) return;
+  if (f.size > 60 * 1024 * 1024){ fieldError(input, "60MB 이하 파일만 올릴 수 있습니다."); return; }
+  $("#log-status").textContent = "읽는 중…";
+  const { parseLog, analyze } = await import("./logparse.js");
+  const messages = parseLog(await f.text());
+  $("#log-status").textContent = "";
+  if (!messages.length){ fieldError(input, "대사를 찾지 못했습니다. 코코포리아에서 내보낸 로그 파일이 맞는지 확인해 주세요."); return; }
+  LOG.messages = messages; LOG.info = analyze(messages); LOG.name = f.name;
+  const tabs = LOG.info.tabs, sp = LOG.info.speakers;
+  opts.innerHTML = `
+    <p class="form-note">대사 ${messages.length.toLocaleString("ko-KR")}개 · 탭 ${tabs.length}개 · 화자 ${sp.length}명을 찾았습니다.</p>
+    <fieldset class="log-fs"><legend>저장할 탭</legend>
+      ${tabs.map((t, i) => `<label class="check"><input type="checkbox" name="log-tab" value="${i}" ${t.format === "secret" ? "" : "checked"}>${esc(t.name)} <span class="hint" style="margin:0">(${t.count.toLocaleString("ko-KR")})</span></label>`).join("")}
+      <p class="hint">비밀 탭은 처음에 빠져 있습니다. 잡담 탭은 저장되지만 보는 화면에서 처음엔 접혀 있습니다.</p>
+    </fieldset>
+    <fieldset class="log-fs"><legend>나레이션으로 보일 화자</legend>
+      <p class="hint" style="margin-top:0">체크한 화자는 이름 없이 본문처럼 보입니다 (진행자·KP 등).</p>
+      <div class="log-sp">${sp.map((s, i) => `<label class="check"><input type="checkbox" name="log-narr" value="${i}"><span class="log-dot" style="background:${esc(s.color)}"></span>${esc(s.name || "(이름 없음)")} <span class="hint" style="margin:0">(${s.count.toLocaleString("ko-KR")})</span></label>`).join("")}</div>
+    </fieldset>
+    <label class="check"><input type="checkbox" id="log-strip" checked>줄 처음·끝의 @표정 태그 지우기</label>`;
+  btn.disabled = false;
+}
+
+async function logSaveNow(id){
+  if (!LOG.messages) return;
+  const { pack } = await import("./logparse.js");
+  const include = new Set($$('input[name="log-tab"]:checked').map(i => LOG.info.tabs[+i.value].name));
+  const narrators = new Set($$('input[name="log-narr"]:checked').map(i => LOG.info.speakers[+i.value].name));
+  if (!include.size){ $("#log-status").textContent = "저장할 탭을 하나 이상 골라 주세요."; return; }
+  const data = pack(LOG.messages, { include, narrators, stripTag: $("#log-strip").checked, src: LOG.name });
+  const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+  const row = (ADM.rows.chapters || []).find(r => r.id === id), path = `ch-${id}-${Date.now()}.json`;
+  $("#log-status").textContent = `저장 중… (${Math.ceil(blob.size / 1024).toLocaleString("ko-KR")}KB)`;
+  try {
+    const up = await sb.storage.from("logs").upload(path, blob, { contentType: "application/json", cacheControl: "31536000", upsert: false });
+    if (up.error) throw up.error;
+    const { error } = await sb.from("chapters").update({ log_path: path, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error){ sb.storage.from("logs").remove([path]); throw error; }
+    if (row?.log_path) sb.storage.from("logs").remove([row.log_path]);
+    toast(`기록을 저장했습니다 (대사 ${data.n.toLocaleString("ko-KR")}개)`);
+    LOG.messages = null;
+    await admLoad("chapters"); admRenderCrud("chapters");
+    refreshPublic();
+  } catch (err){ $("#log-status").textContent = errMsg(err); }
+}
+
+async function logDelete(id){
+  const row = (ADM.rows.chapters || []).find(r => r.id === id);
+  if (!row?.log_path || !confirm("이 회차에 붙은 기록을 삭제할까요?")) return;
+  const { error } = await sb.from("chapters").update({ log_path: null, updated_at: new Date().toISOString() }).eq("id", id);
+  if (error){ $("#log-status").textContent = errMsg(error); return; }
+  sb.storage.from("logs").remove([row.log_path]);
+  toast("기록을 삭제했습니다");
+  await admLoad("chapters"); admRenderCrud("chapters");
+  refreshPublic();
+}

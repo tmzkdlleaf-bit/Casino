@@ -239,6 +239,30 @@
     <div class="g-panel pane-box narrow"><div class="pane" tabindex="0" role="region" aria-label="이야기 목록"><div class="timeline-wrap" id="timeline-wrap"></div></div></div>
   </section>
 
+  <!-- ===================== 진행 기록 (회차별 코코포리아 로그) ===================== -->
+  <section data-page="log" class="page" hidden>
+    <header class="page-head">
+      <div class="log-id">
+        <a class="link-back" href="#story">지난 이야기로</a>
+        <p class="eyebrow" id="log-ep"></p>
+        <h1 class="page-title log-title" id="log-title"></h1>
+      </div>
+      <div class="head-side">
+        <p class="page-lede" id="log-meta"></p>
+        <div class="log-tools">
+          <div class="seg log-tabs" role="group" aria-label="보이는 탭" id="log-tabs"></div>
+          <div class="seg log-size" role="group" aria-label="글자 크기">
+            <button type="button" data-size="-1" aria-label="글자 작게">가<span aria-hidden="true">−</span></button>
+            <button type="button" data-size="1" aria-label="글자 크게">가<span aria-hidden="true">+</span></button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="g-panel pane-box log-box">
+      <div class="pane log-pane" id="log-pane" tabindex="0" role="region" aria-label="진행 기록 본문"><div class="lg-body" id="log-body"></div></div>
+    </div>
+  </section>
+
   <!-- ===================== 상점 ===================== -->
   <section data-page="shop" class="page" hidden>
     <header class="page-head">

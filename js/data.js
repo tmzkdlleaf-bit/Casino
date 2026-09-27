@@ -78,6 +78,11 @@ const charQuery = () => sb.from("characters")
   .select("id, slug, name, kind, suit, chip_color, image_path, thumb_path, age, height, keywords, description, sort_order, inventory(quantity, note, sort_order, items(name, description, image_path))")
   .order("sort_order");
 
+/* 지난 이야기: update-3.sql(기록 칸)을 아직 실행하지 않은 DB에서도 동작하도록, 칸이 없으면 빼고 다시 조회 */
+export const LOGS = { ok: true };
+const chapterQuery = () => sb.from("chapters").select(`id, number, title, summary, played_on${LOGS.ok ? ", log_path" : ""}`).order("number");
+const missingCol = e => e && (e.code === "42703" || e.code === "PGRST204" || /log_path/.test(e.message || ""));
+
 /* 게임 일정: 지금부터 끝나지 않은 것만, 가까운 순. 읽기 권한이 없거나 표가 비어도 화면은 계속 */
 export async function loadSlots(){
   const { data, error } = await sb.from("game_slots")
@@ -89,16 +94,17 @@ export async function loadSlots(){
 }
 
 export async function loadAll(){
-  const q = await withTimeout(Promise.all([
+  let q = await withTimeout(Promise.all([
     // 필요한 컬럼만 명시 — 나중에 비공개 컬럼을 추가해도 노출되지 않게
     charQuery(),
     noticeQuery(),
     sb.from("notice_categories").select("name").order("sort_order"),
-    sb.from("chapters").select("number, title, summary, played_on").order("number"),
+    chapterQuery(),
     sb.from("items").select("id, name, description, image_path, price, stock, sort_order")
       .eq("is_for_sale", true).order("sort_order"),
     loadSlots().then(data => ({ data, error: null }))
   ]));
+  if (LOGS.ok && missingCol(q[3].error)){ LOGS.ok = false; q = [...q]; q[3] = await chapterQuery(); }
   const failed = q.find(r => r.error);
   if (failed) throw failed.error;
   const [chars, notices, cats, chapters, items, slots] = q.map(r => r.data);
@@ -110,7 +116,7 @@ export async function loadAll(){
     players: all.filter(c => c.role === "참가자"),
     categories: cats.map(c => c.name),
     notices: notices.map(mapNotice),
-    chapters: chapters.map(c => ({ number: c.number, title: c.title, summary: c.summary, date: fmtDate(c.played_on), iso: c.played_on })),
+    chapters: chapters.map(c => ({ id: c.id, number: c.number, title: c.title, summary: c.summary, date: fmtDate(c.played_on), iso: c.played_on, log: publicUrl("logs", c.log_path) })),
     items: items.map(it => ({ id: it.id, name: it.name, description: it.description, price: it.price, stock: it.stock, img: publicUrl("items", it.image_path) })),
     slots: slots.map(s => ({ id: s.id, game: s.game || "", start: s.starts_at, end: s.ends_at, dealer: byUuid[s.dealer_character_id] || null }))
   };

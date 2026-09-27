@@ -107,6 +107,7 @@ addEventListener("keydown", e => {
   if (e.target.closest?.("input, textarea, select")) return;
   if (nav.current === "profile") location.hash = "#characters";
   else if (nav.current === "notice") location.hash = "#notices";
+  else if (nav.current === "log") location.hash = "#story";
 });
 
 
