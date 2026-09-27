@@ -4,7 +4,7 @@ export const mqReduce = matchMedia("(prefers-reduced-motion: reduce)");
 
 export const mqFine = matchMedia("(hover: hover) and (pointer: fine)");
 
-export const state = { isAdmin: false, session: null, profile: null, mine: [], calm: false, filter: "all", reelPaused: false, noticeFilter: "전체", invItems: [], admDirty: false };
+export const state = { isAdmin: false, session: null, profile: null, mine: [], calm: false, filter: "dealer", reelPaused: false, noticeFilter: "전체", invItems: [], admDirty: false };
 
 // mine: 내 소유 캐릭터 [{uuid, balance}]
 try { state.calm = localStorage.getItem(CALM_KEY) === "1"; } catch (_) {}

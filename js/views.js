@@ -1,6 +1,7 @@
 import { CONFIG, INVENTORY_SLOTS, SUITS } from "./config.js";
 import { USE_DB } from "./data.js";
 import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js";
+import { initShow } from "./effects.js";
 import { renderMarkdown } from "./markdown.js";
 import { DATA, nav, state } from "./state.js";
 
@@ -79,29 +80,13 @@ export function renderQuickLinks(){
   }).join("");
 }
 
-/* 딜러와 참가자: 외관 이미지가 자동으로 흘러가는 줄. 끊김 없이 돌도록 같은 줄을 한 번 더 붙임(보조기기·키보드에는 숨김) */
-const tile = (c, dup) => {
-  const dealer = c.role === "딜러";
-  const img = c.thumb || c.img;
-  return `<a class="tile ${dealer && isRed(c.suit) ? "red-suit" : ""}" href="#characters/${c.id}"${dup ? ` tabindex="-1"` : ""}>
-    <span class="img">${img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async">` : ph()}</span>
-    <span class="mk">${dealer ? suitIcon(c.suit) : `<span class="chip ${c.chip}"></span>`}</span>
-    <span class="nm">${esc(c.name)}<span class="sr"> (${c.role})</span></span></a>`;
-};
-export function renderReel(){
-  const list = ALL(), reel = $("#reel");
-  if (!list.length){ reel.innerHTML = `<p class="empty-note">등록된 캐릭터가 없습니다.</p>`; return; }
-  const set = dup => `<div class="set"${dup ? ` aria-hidden="true" inert` : ""}>${list.map(c => tile(c, dup)).join("")}</div>`;
-  reel.innerHTML = `<div class="track" style="--dur:${Math.max(24, list.length * 4)}s">${set(false)}${set(true)}</div>`;
-}
-
 export function renderHome(){
   $("#roster-meta").textContent = `딜러 ${DATA.dealers.length}명 / 참가자 ${DATA.players.length}명`;
   renderHomeNotices();
   renderNext();
   renderSchedule();
   renderQuickLinks();
-  renderReel();
+  initShow();
 
   const last = DATA.chapters[DATA.chapters.length - 1];
   $("#latest-card").innerHTML = last
@@ -119,20 +104,20 @@ export const imgSlot = (c, alt = "", lazy = true, sizes = "100vw") => {
 export const STRIP_SIZES = "(max-width: 760px) 50vw, 30vw";
 
 export function renderCast(){
-  $("#count-dealer").textContent = DATA.dealers.length + "명";
-  $("#count-player").textContent = DATA.players.length + "명";
+  $("#count-dealer").textContent = DATA.dealers.length;
+  $("#count-player").textContent = DATA.players.length;
   const empty = `<p class="empty-note">등록된 캐릭터가 없습니다.</p>`;
 
   $("#cast-dealers").innerHTML = DATA.dealers.map((c, i) => `
     <a class="strip dealer ${isRed(c.suit) ? "red-suit" : ""}" href="#characters/${c.id}" data-id="${c.id}" style="--delay:${i * 80}ms">
-      <span class="img">${imgSlot(c, "", true, STRIP_SIZES)}</span>
+      <span class="img">${imgSlot(c, "", true, STRIP_SIZES)}</span><span class="dim"></span>
       <span class="pip">${suitIcon(c.suit)}</span>
       <span class="label"><span class="name">${esc(c.name)}</span><span class="sub">프로필 보기</span></span>
     </a>`).join("");
 
   $("#cast-players").innerHTML = DATA.players.map((c, i) => `
     <a class="strip player" href="#characters/${c.id}" data-id="${c.id}" style="--delay:${i * 80}ms;--band:${c.chip === "red" ? "var(--velvet)" : "var(--felt)"}">
-      <span class="img">${imgSlot(c, "", true, STRIP_SIZES)}</span>
+      <span class="img">${imgSlot(c, "", true, STRIP_SIZES)}</span><span class="dim"></span>
       <span class="chip ${c.chip} badge" aria-hidden="true"></span>
       <span class="label"><span class="name">${esc(c.name)}</span><span class="sub">프로필 보기</span></span>
     </a>`).join("");

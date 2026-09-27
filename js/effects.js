@@ -1,7 +1,7 @@
 import { HERO_CHIPS, SUITS } from "./config.js";
 import { $, $$, isRed, splitText, suitIcon } from "./dom.js";
 import { DATA, motionOK, state } from "./state.js";
-import { placeSegInk } from "./views.js";
+import { ALL, placeSegInk } from "./views.js";
 
 /* ---------- effects ---------- */
 
@@ -18,25 +18,13 @@ export function renderHeroChips(){
     `<span class="fall" style="left:${l}%;top:${t}%;--d:${d}s"><span class="chip ${c}" style="--size:${size}rem;--tx:${tx}deg;--r1:${r}deg"></span></span>`).join("");
 }
 
-/* 화면에 들어오면 스트립이 아래에서 열림 */
-export let dealIO;
-
+/* 보이는 쪽(딜러/참가자) 스트립이 아래에서 차례로 떠오름 — 투명도·위치만 움직여 가볍게 */
 export function deal(){
-  // clip-path로 가려진 요소는 교차 판정이 안 되므로 부모 컨테이너를 관찰
-  const rows = $$('[data-page="characters"] .strips');
-  if (!motionOK() || !("IntersectionObserver" in window)){
-    $$(".strip", rows[0]?.closest("section")).forEach(m => m.classList.add("dealt"));
-    return;
-  }
-  dealIO?.disconnect();
-  dealIO = new IntersectionObserver(entries => {
-    entries.forEach(en => {
-      if (!en.isIntersecting) return;
-      $$(".strip", en.target).forEach(m => m.classList.add("dealt"));
-      dealIO.unobserve(en.target);
-    });
-  }, { threshold: .2 });
-  rows.forEach(r => dealIO.observe(r));
+  const g = $(`#grp-${state.filter}`);
+  if (!g) return;
+  const strips = $$(".strip:not(.dealt)", g);
+  if (!motionOK()){ strips.forEach(m => m.classList.add("dealt")); return; }
+  requestAnimationFrame(() => requestAnimationFrame(() => strips.forEach(m => m.classList.add("dealt"))));
 }
 
 /* 세계관 목차 스크롤 추적 */
@@ -57,40 +45,108 @@ export function bindSpy(){
   $$("#world-body section").forEach(s => spyIO.observe(s));
 }
 
-/* 캐릭터 필터 */
-export function applyFilter(){
+/* 캐릭터: 딜러 ↔ 참가자 가로로 넘김. 보이지 않는 쪽은 inert (Tab·스크린리더에서 빠짐) */
+export function applyFilter({ instant = false } = {}){
+  const player = state.filter === "player", track = $("#cast-track");
   $$("#seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.filter === state.filter));
-  $$(".cast-group").forEach(g => g.hidden = !(state.filter === "all" || g.dataset.group === state.filter));
+  if (instant) track.style.transition = "none";
+  track.classList.toggle("to-player", player);
+  if (instant){ void track.offsetWidth; track.style.transition = ""; }
+  $("#grp-dealer").inert = player;
+  $("#grp-player").inert = !player;
   placeSegInk($("#seg"));
+  deal();
 }
 
 export function filterSummary(){
-  const d = DATA.dealers.length, p = DATA.players.length;
-  return state.filter === "dealer" ? `딜러 ${d}명 표시` : state.filter === "player" ? `참가자 ${p}명 표시` : `전체 ${d + p}명 표시`;
+  return state.filter === "player" ? `참가자 ${DATA.players.length}명` : `딜러 ${DATA.dealers.length}명`;
 }
 
 export function applyCalm(){
   document.body.classList.toggle("calm", state.calm);
   $("#set-calm").checked = state.calm;
   if (state.calm) $$(".strip").forEach(m => m.classList.add("dealt"));
-  applyReel();
+  applyShow();
 }
 
-/* 캐릭터 자동 넘김: 멈춤 버튼 / 애니메이션 끄기 / 동작 줄이기 설정이면 멈추고 손으로 넘기는 줄이 됨 (WCAG 2.2.2) */
-export function applyReel(){
-  const reel = $("#reel"), btn = $("#reel-toggle");
-  if (!reel) return;
-  const still = !motionOK();
-  reel.classList.toggle("static", still);
-  reel.classList.toggle("paused", state.reelPaused);
-  btn.hidden = still;
+/* 홈 '딜러와 참가자': 한 명씩 약 1.4초 보였다가 다음 사람으로 겹쳐 바뀜 (반복)
+   멈춤 버튼 / 마우스를 올리거나 키보드로 들어가면 멈춤 (WCAG 2.2.2)
+   '애니메이션 끄기'·동작 줄이기 설정이면 자동으로 넘기지 않고 이전·다음 버튼으로만 */
+const SHOW = { list: [], i: 0, layer: 0, timer: 0, hover: false, on: false, seq: 0 };
+const HOLD = 1400, FADE = 800;
+
+export function initShow(){
+  SHOW.list = ALL(); SHOW.i = 0;
+  const box = $("#show");
+  const empty = !SHOW.list.length;
+  $(".show-link", box).hidden = empty; $(".show-ctl", box).hidden = empty;
+  $(".empty-note", box)?.remove();
+  if (empty){ box.insertAdjacentHTML("beforeend", `<p class="empty-note">등록된 캐릭터가 없습니다.</p>`); return; }
+  paint(0, true);
+  applyShow();
+}
+
+function paint(i, instant = false){
+  const box = $("#show"), c = SHOW.list[i];
+  if (!c) return;
+  const layers = $$(".show-img", box), next = instant ? layers[SHOW.layer] : layers[SHOW.layer ^ 1];
+  const img = $("img", next), src = c.thumb || c.img || "";
+  const seq = ++SHOW.seq;
+  const apply = () => {
+    if (seq !== SHOW.seq) return;                      // 그사이 다른 사람으로 넘어갔으면 무시
+    if (!instant){ layers[SHOW.layer].classList.remove("on"); SHOW.layer ^= 1; }
+    next.classList.add("on");
+    box.classList.add("swap");
+    setTimeout(() => {
+      if (seq !== SHOW.seq) return;
+      const dealer = c.role === "딜러";
+      const mk = $(".show-mk", box);
+      mk.className = "show-mk" + (dealer && isRed(c.suit) ? " red" : "");
+      mk.innerHTML = dealer ? suitIcon(c.suit) : `<span class="chip ${c.chip}"></span>`;
+      $("#show-nm").textContent = c.name;
+      $("#show-role").textContent = c.role;
+      $("#show-link").href = `#characters/${c.id}`;
+      box.classList.remove("swap");
+    }, instant ? 0 : 300);
+  };
+  img.hidden = !src;
+  if (src){ img.src = src; (img.decode ? img.decode() : Promise.resolve()).catch(() => {}).then(apply); }
+  else { img.removeAttribute("src"); apply(); }
+  // 다음 사람 이미지는 미리 받아 둠
+  const n = SHOW.list[(i + 1) % SHOW.list.length], pre = n && (n.thumb || n.img);
+  if (pre){ const im = new Image(); im.decoding = "async"; im.src = pre; }
+}
+
+export function showStep(d){
+  if (!SHOW.list.length) return;
+  SHOW.i = (SHOW.i + d + SHOW.list.length) % SHOW.list.length;
+  paint(SHOW.i);
+  schedule();
+}
+
+function running(){ return SHOW.on && motionOK() && !state.reelPaused && !SHOW.hover && !document.hidden && SHOW.list.length > 1; }
+function schedule(){
+  clearTimeout(SHOW.timer);
+  if (running()) SHOW.timer = setTimeout(() => showStep(1), HOLD + FADE);
+}
+export function showStart(){ SHOW.on = true; schedule(); }
+export function showStop(){ SHOW.on = false; clearTimeout(SHOW.timer); }
+export function setShowHover(on){ SHOW.hover = on; schedule(); }
+
+export function applyShow(){
+  const btn = $("#show-toggle"), auto = motionOK();
+  btn.hidden = !auto;
   btn.setAttribute("aria-pressed", String(state.reelPaused));
+  $(".sr", btn).textContent = state.reelPaused ? "자동 넘김 재생" : "자동 넘김 멈춤";
+  $("#show").style.setProperty("--fade", auto ? FADE + "ms" : "0ms");
+  schedule();
 }
 
 /* ---------- intro ----------
    0.15s 칩 착지 + 고리 파동 → 0.95s 카드가 사방에서 날아와 모임 → 1.75s 부채꼴
    → 2.05s 뒤집힘 → 2.2s 칩 폭발·불티·섬광 → 2.3s 이름 → 2.95s 금빛 훑기 → 3.7s 막이 열림 */
 const R = (a, b) => a + Math.random() * (b - a);
+const K = 1.6;   // 인트로 속도 배율 — CSS .opening의 --k와 같은 값
 
 function buildIntro(stage){
   const n = 9, mid = (n - 1) / 2;
@@ -155,7 +211,7 @@ export function runIntro({ force = false } = {}){
     if (done) return; done = true;
     clearTimeout(t1); clearTimeout(t2);
     open();
-    setTimeout(finish, 900);
+    setTimeout(finish, 900 * K);
   }
 
   if (!force && ((seen && !q) || !motionOK())){ finish(); return; }
@@ -168,8 +224,8 @@ export function runIntro({ force = false } = {}){
   shell.forEach(el => el.inert = true);
   if (force) $("#intro-skip").focus({ preventScroll: true });
 
-  t1 = setTimeout(() => { done = true; open(); }, 3700);
-  t2 = setTimeout(finish, 4600);
+  t1 = setTimeout(() => { done = true; open(); }, 3700 * K);
+  t2 = setTimeout(finish, 4600 * K);
   intro.addEventListener("click", skip);
   addEventListener("keydown", onKey);
 }
