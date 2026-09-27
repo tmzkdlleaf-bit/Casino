@@ -2,9 +2,9 @@ import { showLoginNotice } from "./auth.js";
 import { PAGES, PAGE_TITLES } from "./config.js";
 import { USE_DB } from "./data.js";
 import { $, $$, setTitle, splitText } from "./dom.js";
-import { applyFilter, bindSpy, deal } from "./effects.js";
+import { applyFilter, bindSpy, showStart, showStop } from "./effects.js";
 import { DATA, motionOK, nav, state } from "./state.js";
-import { ALL, placeSegInk, renderAccount, renderNotice, renderNoticeList, renderProfile } from "./views.js";
+import { ALL, renderAccount, renderNotice, renderNoticeList, renderProfile } from "./views.js";
 
 export function resolve(){
   const [page, param] = (location.hash.slice(1) || "home").split("/");
@@ -27,57 +27,49 @@ export function route(){
   if (key === nav.key) return;
   const from = nav.current;
 
-  // 캐릭터 목록 -> 프로필: 누른 스트립 이미지를 공유 요소로 지정
-  let src = null;
-  if (from === "characters"){
-    nav.listScroll = $("#cast-pane").scrollTop;
-    if (view === "profile"){ src = $(`.strip[data-id="${param}"] .img`); if (src) src.style.viewTransitionName = "portrait"; }
+  if (from === "characters") nav.listScroll = $("#cast-pane").scrollTop;
+
+  nav.current = view; nav.key = key;
+  $$("[data-page]").forEach(s => s.hidden = s.dataset.page !== view);
+  $$("#nav a, #me").forEach(a => navKey && a.getAttribute("href") === "#" + navKey ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+  setTitle(PAGE_TITLES[view] ?? "");
+
+  if (view === "profile"){ renderProfile(param); nav.lastProfile = param; }
+  if (view === "notice") renderNotice(param);
+
+  // DOM 쓰기를 먼저 모두 끝내고(렌더·글자 쪼개기), 레이아웃은 한 번만 계산
+  const section = $(`[data-page="${view}"]`);
+  $$(".page-title.split", section).forEach(splitText);
+  // 프로필에서 돌아오면 그 캐릭터가 속한 쪽(딜러/참가자)을 보여 줌
+  if (view === "characters" && from === "profile"){
+    const c = ALL().find(x => x.id === nav.lastProfile);
+    if (c) state.filter = c.role === "참가자" ? "player" : "dealer";
+  }
+  if (view === "characters") applyFilter({ instant: from === "profile" });
+  if (view === "notices") renderNoticeList();
+  if (view === "settings") renderAccount();
+  if (view === "admin") import("./admin.js").then(m => m.admOpen());
+  if (view === "login") showLoginNotice();
+  if (view === "password"){
+    $("#pw-lede").textContent = { invite: "초대를 수락했습니다. 사용할 비밀번호를 정해 주세요.", recovery: "새 비밀번호를 정해 주세요." }[state.pwMode] || "새 비밀번호를 입력해 주세요.";
+    $("#pw-form").reset(); $("#pw-error").hidden = true;
   }
 
-  const swap = () => {
-    if (src) src.style.viewTransitionName = "";
-    nav.current = view; nav.key = key;
-    $$("[data-page]").forEach(s => s.hidden = s.dataset.page !== view);
-    $$("#nav a, #site-head .mark, #me").forEach(a => navKey && a.getAttribute("href") === "#" + navKey ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
-    setTitle(PAGE_TITLES[view] ?? "");
+  if (view === "characters" && from === "profile") $("#cast-pane").scrollTop = nav.listScroll;
+  else $$(".pane, .scroll", section).forEach(p => p.scrollTop = 0);   // 페이지는 고정, 창 안만 처음으로
 
-    if (view === "profile"){ renderProfile(param); nav.lastProfile = param; }
-    if (view === "notice") renderNotice(param);
+  if (view === "world") bindSpy();
+  view === "home" ? showStart() : showStop();
 
-    // DOM 쓰기를 먼저 모두 끝내고(렌더·글자 쪼개기), 레이아웃은 스크롤에서 한 번만 계산
-    const section = $(`[data-page="${view}"]`);
-    $$(".page-title.split", section).forEach(splitText);
-    if (view === "characters") applyFilter();
-    if (view === "notices") renderNoticeList();
-    if (view === "settings") renderAccount();
-    if (view === "admin") import("./admin.js").then(m => m.admOpen());
-    if (view === "login") showLoginNotice();
-    if (view === "password"){
-      $("#pw-lede").textContent = { invite: "초대를 수락했습니다. 사용할 비밀번호를 정해 주세요.", recovery: "새 비밀번호를 정해 주세요." }[state.pwMode] || "새 비밀번호를 입력해 주세요.";
-      $("#pw-form").reset(); $("#pw-error").hidden = true;
-    }
-
-    // 프로필 -> 목록: 돌아갈 스트립에 공유 요소 이름을 넘기고 스크롤 위치 복원
-    if (view === "characters" && from === "profile"){
-      const back = $(`.strip[data-id="${nav.lastProfile}"] .img`);
-      if (back) back.style.viewTransitionName = "portrait";
-      $("#cast-pane").scrollTop = nav.listScroll;
-    } else {
-      $$(".pane, .scroll", section).forEach(p => p.scrollTop = 0);   // 페이지는 고정, 창 안만 처음으로
-    }
-
-    // 여기부터는 읽기 위주 (레이아웃이 이미 계산돼 있어 추가 비용 없음)
-    if (view === "characters") placeSegInk($("#seg"));
-    if (view === "characters") deal();
-    if (view === "world") bindSpy();
-    // SPA 화면 전환을 보조기기에 알림: 새 화면의 h1으로 포커스 이동 (첫 로드는 제외)
-    if (from !== null) focusHeading(section);
-  };
-
-  const clearNames = () => $$(".strip .img").forEach(el => el.style.viewTransitionName = "");
-  if (document.startViewTransition && motionOK() && from !== null){
-    document.startViewTransition(swap).finished.finally(clearNames);
-  } else { swap(); clearNames(); }
+  // 새 화면만 서서히 떠오름 (전체 화면 캡처 방식의 뷰 전환은 무거워서 쓰지 않음)
+  if (from !== null && motionOK()){
+    section.classList.remove("enter");
+    void section.offsetWidth;
+    section.classList.add("enter");
+    section.addEventListener("animationend", e => { if (e.target === section) section.classList.remove("enter"); }, { once: true });
+  }
+  // SPA 화면 전환을 보조기기에 알림: 새 화면의 h1으로 포커스 이동 (첫 로드는 제외)
+  if (from !== null) focusHeading(section);
 }
 
 export function focusHeading(scope){

@@ -3,7 +3,7 @@ import { CALM_KEY } from "./config.js";
 import { AUTH_HASH, DB_CONFIGURED, USE_DB, loadAll, sb, showBootError, subscribeNotices } from "./data.js";
 import { $, $$, announce, toast } from "./dom.js";
 import { initBgm, initWorldBg } from "./ambience.js";
-import { applyCalm, applyFilter, applyReel, filterSummary, renderHeroChips, runIntro } from "./effects.js";
+import { applyCalm, applyFilter, applyShow, filterSummary, renderHeroChips, runIntro, setShowHover, showStep } from "./effects.js";
 import { errMsg } from "./forms.js";
 import { focusHeading, route } from "./router.js";
 import { DATA, motionOK, nav, state } from "./state.js";
@@ -29,8 +29,7 @@ document.addEventListener("click", e => {
   const cat = e.target.closest("#notice-seg button");
   if (cat){
     state.noticeFilter = cat.dataset.cat;
-    const run = () => announce(`${state.noticeFilter} 공지 ${renderNoticeList()}건`);
-    if (document.startViewTransition && motionOK()) document.startViewTransition(run); else run();
+    announce(`${state.noticeFilter} 공지 ${renderNoticeList()}건`);
     return;
   }
 
@@ -44,17 +43,16 @@ document.addEventListener("click", e => {
   }
 
   // 캐릭터 자동 넘김 멈춤/재생
-  if (e.target.closest("#reel-toggle")){
-    state.reelPaused = !state.reelPaused;
-    applyReel();
-    $("#reel-toggle .sr").textContent = state.reelPaused ? "자동 넘김 재생" : "자동 넘김 멈춤";
-    return;
-  }
+  if (e.target.closest("#show-toggle")){ state.reelPaused = !state.reelPaused; applyShow(); return; }
+  if (e.target.closest("#show-prev")){ showStep(-1); return; }
+  if (e.target.closest("#show-next")){ showStep(1); return; }
 
   const f = e.target.closest("#seg button");
   if (f){
+    if (f.dataset.filter === state.filter) return;
     state.filter = f.dataset.filter;
-    if (document.startViewTransition && motionOK()) document.startViewTransition(applyFilter); else applyFilter();
+    $("#cast-pane").scrollTop = 0;
+    applyFilter();
     announce(filterSummary());
   }
 });
@@ -126,6 +124,25 @@ $("#replay-intro").addEventListener("click", () => {
   runIntro({ force: true });
 });
 
+/* 홈 캐릭터: 마우스를 올리거나 키보드로 들어가면 잠시 멈춤 */
+const show = $("#show");
+show.addEventListener("pointerenter", () => setShowHover(true));
+show.addEventListener("pointerleave", () => setShowHover(false));
+show.addEventListener("focusin", () => setShowHover(true));
+show.addEventListener("focusout", e => { if (!show.contains(e.relatedTarget)) setShowHover(false); });
+document.addEventListener("visibilitychange", () => setShowHover(false));
+
+/* 캐릭터 페이지: 손가락으로 옆으로 밀어서 딜러 ↔ 참가자 */
+let sw = null;
+$("#cast-pane").addEventListener("pointerdown", e => { if (e.pointerType !== "mouse") sw = { x: e.clientX, y: e.clientY }; });
+$("#cast-pane").addEventListener("pointerup", e => {
+  if (!sw) return;
+  const dx = e.clientX - sw.x, dy = e.clientY - sw.y; sw = null;
+  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  const to = dx < 0 ? "player" : "dealer";
+  if (to !== state.filter) $(`#seg button[data-filter="${to}"]`).click();
+});
+
 /* 독의 로그아웃 = 설정 화면의 로그아웃 */
 $("#dock-logout").addEventListener("click", () => $("#logout").click());
 
@@ -166,6 +183,5 @@ runIntro();
   renderHome(); renderCast(); renderWorld(); renderStory(); renderShop(); renderNoticeSeg(); renderAccount();
   state.ready = true;
   route();
-  applyReel();
   $("#boot").classList.add("hide");
 })();

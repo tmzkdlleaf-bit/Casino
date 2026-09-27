@@ -53,6 +53,9 @@
   <symbol id="i-login-2" viewBox="0 0 24 24"><path d="M9 8v-2a2 2 0 0 1 2 -2h7a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-2"/><path d="M3 12h13l-3 -3"/><path d="M13 15l3 -3"/></symbol>
   <symbol id="i-volume" viewBox="0 0 24 24"><path d="M15 8a5 5 0 0 1 0 8"/><path d="M17.7 5a9 9 0 0 1 0 14"/><path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5"/></symbol>
   <symbol id="i-volume-off" viewBox="0 0 24 24"><path d="M15 8a5 5 0 0 1 1.912 4.934m-1.377 2.602a5 5 0 0 1 -.535 .464"/><path d="M17.7 5a9 9 0 0 1 2.362 11.086m-1.676 2.299a9 9 0 0 1 -.686 .615"/><path d="M9.069 5.054l.431 -.554a.8 .8 0 0 1 1.5 .5v2m0 4v8a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l1.294 -1.664"/><path d="M3 3l18 18"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="M15 6l-6 6l6 6"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="M9 6l6 6l-6 6"/></symbol>
   <symbol id="i-player-pause" viewBox="0 0 24 24"><path d="M6 6a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -12"/><path d="M14 6a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -12"/></symbol>
   <symbol id="i-player-play" viewBox="0 0 24 24"><path d="M7 4v16l13 -8l-13 -8"/></symbol>
   <symbol id="i-external-link" viewBox="0 0 24 24"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></symbol>
@@ -76,6 +79,7 @@
 <header class="dock" id="site-head">
   <a class="mark" href="#home"><span class="chip red" aria-hidden="true"></span><span class="mark-name">사이트명</span><span class="sr"> 홈</span></a>
   <nav class="dock-nav" id="nav" aria-label="주 메뉴">
+      <a class="il" href="#home"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-home"/></svg><span class="tip">홈</span></a>
       <a class="il" href="#characters"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span class="tip">캐릭터</span></a>
       <a class="il" href="#notices"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-speakerphone"/></svg><span class="tip">공지</span></a>
       <a class="il" href="#world"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-world"/></svg><span class="tip">세계관</span></a>
@@ -138,35 +142,40 @@
       <section class="table p-cast" id="p-cast" aria-labelledby="h-cast">
         <div class="g-head">
           <h2 id="h-cast">딜러와 참가자</h2>
-          <button class="reel-toggle" type="button" id="reel-toggle" aria-pressed="false" aria-controls="reel"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-player-pause"/></svg><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-player-play"/></svg><span class="sr">자동 넘김 멈춤</span></button>
           <a class="more" href="#characters">전체 보기</a>
         </div>
-        <div class="reel" id="reel"></div>
+        <div class="show" id="show">
+          <a class="show-link" id="show-link" href="#characters">
+            <span class="show-img"><img alt="" decoding="async"></span>
+            <span class="show-img"><img alt="" decoding="async"></span>
+            <span class="show-cap"><span class="show-mk" aria-hidden="true"></span><strong class="show-nm" id="show-nm"></strong><span class="show-role" id="show-role"></span></span>
+          </a>
+          <div class="show-ctl">
+            <button class="ctl" type="button" id="show-prev"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-chevron-left"/></svg><span class="sr">이전 캐릭터</span></button>
+            <button class="ctl" type="button" id="show-toggle" aria-pressed="false"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-player-pause"/></svg><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-player-play"/></svg><span class="sr">자동 넘김 멈춤</span></button>
+            <button class="ctl" type="button" id="show-next"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg><span class="sr">다음 캐릭터</span></button>
+          </div>
+        </div>
       </section>
     </div>
   </section>
-  <!-- ===================== 캐릭터 (화면 폭 전체 이미지 띠) ===================== -->
+  <!-- ===================== 캐릭터: 딜러 / 참가자를 옆으로 넘겨 봄 ===================== -->
   <section data-page="characters" class="page" hidden>
     <header class="page-head">
       <h1 class="page-title split">캐릭터</h1>
       <div class="head-side">
         <p class="page-lede">캐릭터 페이지 안내 문구 자리입니다.</p>
-        <div class="seg" role="group" aria-label="구분 필터" id="seg">
-          <button type="button" data-filter="all" aria-pressed="true">전체</button>
-          <button type="button" data-filter="dealer" aria-pressed="false">딜러</button>
-          <button type="button" data-filter="player" aria-pressed="false">참가자</button>
+        <div class="seg" role="group" aria-label="딜러·참가자 전환" id="seg">
+          <button type="button" data-filter="dealer" aria-pressed="true" aria-controls="grp-dealer">딜러 <span class="num" id="count-dealer"></span></button>
+          <button type="button" data-filter="player" aria-pressed="false" aria-controls="grp-player">참가자 <span class="num" id="count-player"></span></button>
           <span class="seg-ink" aria-hidden="true"></span>
         </div>
       </div>
     </header>
-    <div class="pane bleed" id="cast-pane">
-      <div class="cast-group" data-group="dealer">
-        <div class="group-head"><h2 class="h">딜러</h2><span class="muted" id="count-dealer"></span></div>
-        <div class="strips" id="cast-dealers"></div>
-      </div>
-      <div class="cast-group" data-group="player">
-        <div class="group-head"><h2 class="h">참가자</h2><span class="muted" id="count-player"></span></div>
-        <div class="strips" id="cast-players"></div>
+    <div class="pane bleed cast-slider" id="cast-pane">
+      <div class="cast-track" id="cast-track">
+        <div class="cast-group" data-group="dealer" id="grp-dealer"><h2 class="sr">딜러</h2><div class="strips" id="cast-dealers"></div></div>
+        <div class="cast-group" data-group="player" id="grp-player"><h2 class="sr">참가자</h2><div class="strips" id="cast-players"></div></div>
       </div>
     </div>
   </section>
