@@ -40,6 +40,7 @@
 <link rel="modulepreload" href="js/forms.js">
 <link rel="modulepreload" href="js/markdown.js">
 <link rel="modulepreload" href="js/ambience.js">
+<link rel="modulepreload" href="js/navorder.js">
 </head>
 <body class="intro-on loading">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -375,6 +376,12 @@
             </div>
             <button class="btn small" type="button" id="replay-intro" aria-describedby="replay-l">재생</button>
           </div>
+        </section>
+        <section class="g-panel card" aria-labelledby="navo-h">
+          <h2 class="card-h" id="navo-h">하단 메뉴 순서</h2>
+          <p class="hint" id="navo-hint">하단 메뉴 아이콘을 끌어서(휴대폰은 길게 누른 뒤 끌어서) 옮기거나, 아래 버튼으로 바꿀 수 있습니다. 이 브라우저에만 저장됩니다.</p>
+          <ol class="nav-order" id="nav-order" aria-describedby="navo-hint"></ol>
+          <div class="form-actions"><button class="btn small" type="button" id="nav-order-reset">기본 순서로</button></div>
         </section>
       </div>
     </div>

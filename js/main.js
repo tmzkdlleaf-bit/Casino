@@ -6,6 +6,7 @@ import { initBgm, initWorldBg } from "./ambience.js";
 import { applyCalm, applyFilter, applyShow, filterSummary, renderHeroChips, runIntro, setShowHover, showStep } from "./effects.js";
 import { errMsg } from "./forms.js";
 import { focusHeading, route } from "./router.js";
+import { applyNavOrder } from "./navorder.js";
 import { DATA, motionOK, nav, state } from "./state.js";
 import { placeSegInk, renderAccount, renderCast, renderHome, renderInventory, renderNext, renderNoticeList, renderNoticeSeg, renderQuickLinks, renderSchedule, renderShop, renderStory, renderWorld } from "./views.js";
 
@@ -194,6 +195,7 @@ setInterval(() => {
   if (PAGES.includes(base) && !["admin", "login", "password"].includes(base) && !AUTH_HASH)
     $$("[data-page]").forEach(s => s.hidden = s.dataset.page !== base);
 }
+applyNavOrder();      // 저장해 둔 하단 메뉴 순서
 renderHeroChips();
 renderQuickLinks();   // 설정 파일 값이라 데이터를 기다릴 필요 없음
 applyCalm();

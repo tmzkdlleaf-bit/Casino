@@ -5,6 +5,7 @@ import { $, $$, setTitle, splitText } from "./dom.js";
 import { applyFilter, bindSpy, showStart, showStop } from "./effects.js";
 import { DATA, motionOK, nav, state } from "./state.js";
 import { ALL, renderAccount, renderNotice, renderNoticeList, renderProfile } from "./views.js";
+import { renderNavOrderList } from "./navorder.js";
 
 export function resolve(){
   const [page, param] = (location.hash.slice(1) || "home").split("/");
@@ -49,7 +50,7 @@ export function route(){
   }
   if (view === "characters") applyFilter({ instant: from === "profile" });
   if (view === "notices") renderNoticeList();
-  if (view === "settings") renderAccount();
+  if (view === "settings"){ renderAccount(); renderNavOrderList(); }
   if (view === "admin") import("./admin.js").then(m => m.admOpen());
   if (view === "login") showLoginNotice();
   if (view === "password"){
