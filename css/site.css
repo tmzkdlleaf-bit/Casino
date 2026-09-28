@@ -626,7 +626,7 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
    ========================================================= */
 /* 왼쪽 회차 목록 + 오른쪽 선택한 회차 */
 .story{display:grid; grid-template-columns:minmax(0, 22rem) minmax(0, 1fr); gap:var(--gap); min-height:0; width:min(100%, 72rem); justify-self:center}
-.story-list{padding-inline:.6rem}
+.story-list{padding:1.25rem 1.4rem}
 .story-list > .pane{margin-inline:-.6rem; padding-inline:.6rem}
 .timeline-wrap{position:relative; padding:.4rem 0 .6rem}
 .timeline{position:relative; list-style:none; margin:0; padding:0 0 0 1.6rem}
@@ -643,7 +643,7 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 .ch-pick .h{font-family:var(--f-serif); font-weight:700; font-size:1.0625rem; line-height:1.4}
 .timeline time{font-size:.75rem; color:var(--smoke)}
 .m-only{display:none}
-.story-detail > .pane{padding:.4rem .25rem 1.5rem}
+.story-detail > .pane{padding:clamp(1rem, 3vh, 2rem) clamp(1.5rem, 3.2vw, 3rem) 2.5rem}   /* 창 테두리에서 넉넉히 */
 .story-detail .ep{margin:0; font-family:var(--f-serif); font-weight:700; font-size:var(--s-1); color:var(--gold); display:flex; align-items:center; gap:.5rem}
 .story-detail .h{margin:.3rem 0 .4rem; font-size:clamp(1.75rem, 3.4vw, 2.6rem); line-height:1.25}
 .story-detail .h:focus{outline:none}
