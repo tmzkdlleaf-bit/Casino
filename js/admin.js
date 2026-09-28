@@ -1,6 +1,6 @@
 import { loadMine } from "./auth.js";
 import { CONFIG } from "./config.js";
-import { LOGS, USE_DB, fmtDate, publicUrl, refreshPublic, sb } from "./data.js";
+import { FOCUS, LOGS, USE_DB, fmtDate, parseFocus, publicUrl, refreshPublic, sb } from "./data.js";
 import { $, $$, announce, esc, toast } from "./dom.js";
 import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js";
 import { renderMarkdown } from "./markdown.js";
@@ -19,6 +19,32 @@ export const OPT = {
   suit: [["spade", "♠ 스페이드"], ["heart", "♥ 하트"], ["club", "♣ 클럽"], ["diamond", "♦ 다이아"]],
   chip: [["green", "초록"], ["red", "빨강"]]
 };
+
+/* 캐릭터 입력 칸 — 이미지 초점(image_focus)은 update-4.sql을 실행한 DB에서만 보임 */
+const CHAR_FIELDS = [
+  { row: [
+    { k: "name", label: "이름", type: "text", required: true, max: 40 },
+    { k: "slug", label: "주소 이름(slug)", type: "text", required: true, max: 40, pattern: "[a-z0-9\\-]+", patternMsg: "영문 소문자, 숫자, 하이픈(-)만 쓸 수 있습니다.", hint: "프로필 주소에 쓰임 — #characters/이 값" }
+  ] },
+  { row: [
+    { k: "kind", label: "구분", type: "select", required: true, options: () => OPT.kind },
+    { k: "sort_order", label: "표시 순서", type: "number", min: 0 }
+  ] },
+  { row: [
+    { k: "suit", label: "카드 무늬 (딜러)", type: "select", options: () => [["", "없음"], ...OPT.suit] },
+    { k: "chip_color", label: "칩 색 (참가자)", type: "select", options: () => [["", "없음"], ...OPT.chip] }
+  ] },
+  { row: [
+    { k: "age", label: "나이", type: "text", max: 20 },
+    { k: "height", label: "키", type: "text", max: 20 }
+  ] },
+  { k: "keywords", label: "성격 키워드", type: "tags", hint: "쉼표로 구분 — 예: 침착, 계산적" },
+  { k: "description", label: "설명", type: "textarea" },
+  { k: "image_path", thumbKey: "thumb_path", label: "캐릭터 이미지", type: "image", bucket: "characters", max: CONFIG.IMG.character, thumb: CONFIG.IMG.characterThumb,
+    hint: `세로형 권장. 올리면 WebP로 자동 변환 (긴 변 ${CONFIG.IMG.character}px + 목록용 ${CONFIG.IMG.characterThumb}px)` },
+  { k: "image_focus", label: "이미지 초점", type: "focus", img: "image_path", thumbKey: "thumb_path", bucket: "characters",
+    hint: "잘려서 보이는 곳(홈·캐릭터 목록·프로필)에서 이미지의 어느 부분을 보여 줄지 정합니다. 비워 두면 기본 위치를 씁니다." }
+];
 
 export const SCHEMAS = {
   notices: {
@@ -49,31 +75,10 @@ export const SCHEMAS = {
   },
   characters: {
     label: "캐릭터", key: "id", touch: true, needs: ["items"],
-    select: "id, slug, name, kind, suit, chip_color, image_path, thumb_path, age, height, keywords, description, sort_order",
+    get select(){ return `id, slug, name, kind, suit, chip_color, image_path, thumb_path${FOCUS.ok ? ", image_focus" : ""}, age, height, keywords, description, sort_order`; },
     order: [["sort_order"]],
     title: r => r.name, meta: r => `${r.kind === "dealer" ? "딜러" : "참가자"} · ${r.slug}`,
-    fields: [
-      { row: [
-        { k: "name", label: "이름", type: "text", required: true, max: 40 },
-        { k: "slug", label: "주소 이름(slug)", type: "text", required: true, max: 40, pattern: "[a-z0-9\\-]+", patternMsg: "영문 소문자, 숫자, 하이픈(-)만 쓸 수 있습니다.", hint: "프로필 주소에 쓰임 — #characters/이 값" }
-      ] },
-      { row: [
-        { k: "kind", label: "구분", type: "select", required: true, options: () => OPT.kind },
-        { k: "sort_order", label: "표시 순서", type: "number", min: 0 }
-      ] },
-      { row: [
-        { k: "suit", label: "카드 무늬 (딜러)", type: "select", options: () => [["", "없음"], ...OPT.suit] },
-        { k: "chip_color", label: "칩 색 (참가자)", type: "select", options: () => [["", "없음"], ...OPT.chip] }
-      ] },
-      { row: [
-        { k: "age", label: "나이", type: "text", max: 20 },
-        { k: "height", label: "키", type: "text", max: 20 }
-      ] },
-      { k: "keywords", label: "성격 키워드", type: "tags", hint: "쉼표로 구분 — 예: 침착, 계산적" },
-      { k: "description", label: "설명", type: "textarea" },
-      { k: "image_path", thumbKey: "thumb_path", label: "캐릭터 이미지", type: "image", bucket: "characters", max: CONFIG.IMG.character, thumb: CONFIG.IMG.characterThumb,
-        hint: `세로형 권장. 올리면 WebP로 자동 변환 (긴 변 ${CONFIG.IMG.character}px + 목록용 ${CONFIG.IMG.characterThumb}px)` }
-    ],
+    get fields(){ return CHAR_FIELDS.filter(f => f.k !== "image_focus" || FOCUS.ok); },
     after: row => `
       <section class="card sub-editor" aria-labelledby="inv-h">
         <h3 id="inv-h">소지품</h3>
@@ -254,14 +259,29 @@ export function admField(table, f, v){
       return `<div class="field">${label}<input class="input" type="text" name="${f.k}" id="${id}" value="${esc((val || []).join(", "))}"${req} ${desc}>${hint}${err}</div>`;
     case "image": {
       const url = val ? publicUrl(f.bucket, (f.thumbKey && v[f.thumbKey]) || val) : "";
-      return `<div class="field"><span class="label-like" id="${id}-lbl">${esc(f.label)}</span>
+      return `<div class="field"><label class="label-like" id="${id}-lbl" for="${id}">${esc(f.label)}</label>
         <div class="img-field">
           <div class="img-prev" id="${id}-prev">${url ? `<img src="${esc(url)}" alt="현재 이미지">` : `<span aria-hidden="true">없음</span>`}</div>
           <div>
-            <input type="file" accept="image/*" name="${f.k}" id="${id}" aria-labelledby="${id}-lbl" ${desc}>
+            <input type="file" accept="image/*" name="${f.k}" id="${id}" ${desc}>
             ${val ? `<label class="check"><input type="checkbox" name="${f.k}__remove">이미지 삭제</label>` : ""}
           </div>
         </div>${hint}${err}</div>`;
+    }
+    case "focus": {
+      const [x, y] = parseFocus(val) || [50, 15];
+      const src = v[f.img] ? publicUrl(f.bucket, v[f.thumbKey] || v[f.img]) : "";
+      const pos = `object-position:${x}% ${y}%`;
+      return `<fieldset class="field focus-f" data-focus aria-describedby="${id}-hint"><legend>${esc(f.label)}</legend>
+        ${src ? `<div class="focus-prev" aria-hidden="true">${[["wide", "홈"], ["tall", "목록"], ["sq", "프로필"]].map(([k, t]) =>
+          `<span class="fp ${k}"><img src="${esc(src)}" alt="" style="${pos}"><small>${t}</small></span>`).join("")}</div>` : `<p class="hint">이미지를 올려 저장한 뒤에 정할 수 있습니다.</p>`}
+        <div class="row2">
+          <label class="rng">가로 <input type="range" min="0" max="100" step="1" value="${x}" data-axis="x"${src ? "" : " disabled"}><output>${x}</output></label>
+          <label class="rng">세로 <input type="range" min="0" max="100" step="1" value="${y}" data-axis="y"${src ? "" : " disabled"}><output>${y}</output></label>
+        </div>
+        <input type="hidden" name="${f.k}" id="${id}" value="${esc(val ?? "")}">
+        <div class="form-actions"><button class="btn small" type="button" data-focus-reset${src ? "" : " disabled"}>기본 위치로</button><span class="hint focus-state">${val ? "직접 정함" : "기본 위치 사용 중"}</span></div>
+        ${hint}</fieldset>`;
     }
     default:
       return `<div class="field">${label}<input class="input" type="text" name="${f.k}" id="${id}" value="${esc(val ?? "")}"${f.max ? ` maxlength="${f.max}"` : ""}${f.pattern ? ` pattern="${esc(f.pattern)}" data-pattern-msg="${esc(f.patternMsg || "")}"` : ""}${req} ${desc}>${hint}${err}</div>`;
@@ -303,7 +323,7 @@ export function admCollect(form, s){
       case "number": out[f.k] = raw === "" ? (f.nullable ? null : 0) : Number(raw); break;   // 대부분 NOT NULL default 0
       case "tags": out[f.k] = raw.split(/[,，、]/).map(t => t.trim()).filter(Boolean); break;
       case "datetime": out[f.k] = raw ? new Date(raw).toISOString() : (f.k === "published_at" ? new Date().toISOString() : null); break;
-      case "select": case "date": out[f.k] = raw === "" ? null : raw; break;
+      case "select": case "date": case "focus": out[f.k] = raw === "" ? null : raw; break;
       default: out[f.k] = raw;   // 텍스트는 빈 문자열 그대로 (NOT NULL default '' 컬럼)
     }
   }
@@ -600,6 +620,26 @@ admPanel().addEventListener("change", async e => {
 });
 
 admPanel().addEventListener("input", e => { if (e.target.closest("#adm-form, #inv-rows")) state.admDirty = true; });
+
+/* 이미지 초점: 슬라이더를 움직이면 미리보기 세 칸이 바로 바뀜 */
+function setFocus(box, x, y, empty = false){
+  $$("input[type=range]", box).forEach(r => { r.value = r.dataset.axis === "x" ? x : y; r.nextElementSibling.textContent = r.value; });
+  $$(".fp img", box).forEach(img => img.style.objectPosition = `${x}% ${y}%`);
+  $("input[type=hidden]", box).value = empty ? "" : `${x} ${y}`;
+  $(".focus-state", box).textContent = empty ? "기본 위치 사용 중" : "직접 정함";
+}
+admPanel().addEventListener("input", e => {
+  const box = e.target.closest("[data-focus]");
+  if (!box || e.target.type !== "range") return;
+  const [x, y] = ["x", "y"].map(k => $(`[data-axis="${k}"]`, box).value);
+  setFocus(box, x, y);
+});
+admPanel().addEventListener("click", e => {
+  const b = e.target.closest("[data-focus-reset]");
+  if (!b) return;
+  setFocus(b.closest("[data-focus]"), 50, 15, true);
+  state.admDirty = true;
+});
 
 admPanel().addEventListener("change", e => { if (e.target.id === "log-file") logRead(e.target); });
 

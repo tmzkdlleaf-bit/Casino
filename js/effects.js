@@ -110,6 +110,7 @@ function paint(i, instant = false){
     }, instant ? 0 : 300);
   };
   img.hidden = !src;
+  img.style.objectPosition = c.focus || "";   // 관리 화면에서 정한 초점 (없으면 CSS 기본값)
   if (src){ img.src = src; (img.decode ? img.decode() : Promise.resolve()).catch(() => {}).then(apply); }
   else { img.removeAttribute("src"); apply(); }
   // 다음 사람 이미지는 미리 받아 둠

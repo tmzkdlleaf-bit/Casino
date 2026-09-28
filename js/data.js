@@ -35,6 +35,13 @@ export const fmtDate = iso => {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 };
 
+/* 이미지 초점 "가로 세로"(0~100) → CSS object-position. 없거나 형식이 틀리면 "" (사이트 기본 위치) */
+export const parseFocus = v => {
+  const m = /^(\d{1,3}) (\d{1,3})$/.exec(v || "");
+  return m && +m[1] <= 100 && +m[2] <= 100 ? [+m[1], +m[2]] : null;
+};
+export const focusCss = v => { const f = parseFocus(v); return f ? `${f[0]}% ${f[1]}%` : ""; };
+
 export function mapCharacter(r){
   return {
     id: r.slug,
@@ -45,6 +52,7 @@ export function mapCharacter(r){
     chip: r.chip_color || "green",
     img: publicUrl("characters", r.image_path),
     thumb: publicUrl("characters", r.thumb_path),
+    focus: focusCss(r.image_focus),
     age: r.age, height: r.height,
     keywords: r.keywords || [],
     description: r.description || "",
@@ -74,14 +82,15 @@ export function withTimeout(promise, ms = 12000){
   return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
 }
 
-const charQuery = () => sb.from("characters")
-  .select("id, slug, name, kind, suit, chip_color, image_path, thumb_path, age, height, keywords, description, sort_order, inventory(quantity, note, sort_order, items(name, description, image_path))")
-  .order("sort_order");
-
-/* 지난 이야기: update-3.sql(기록 칸)을 아직 실행하지 않은 DB에서도 동작하도록, 칸이 없으면 빼고 다시 조회 */
+/* 나중에 추가한 칸: update SQL을 아직 실행하지 않은 DB에서도 동작하도록, 칸이 없으면 빼고 다시 조회
+   LOGS — chapters.log_path (update-3.sql) / FOCUS — characters.image_focus (update-4.sql) */
 export const LOGS = { ok: true };
+export const FOCUS = { ok: true };
+const charQuery = () => sb.from("characters")
+  .select(`id, slug, name, kind, suit, chip_color, image_path, thumb_path${FOCUS.ok ? ", image_focus" : ""}, age, height, keywords, description, sort_order, inventory(quantity, note, sort_order, items(name, description, image_path))`)
+  .order("sort_order");
 const chapterQuery = () => sb.from("chapters").select(`id, number, title, summary, played_on${LOGS.ok ? ", log_path" : ""}`).order("number");
-const missingCol = e => e && (e.code === "42703" || e.code === "PGRST204" || /log_path/.test(e.message || ""));
+const missingCol = (e, col) => e && (e.code === "42703" || e.code === "PGRST204") && new RegExp(col).test(e.message || "");
 
 /* 게임 일정: 지금부터 끝나지 않은 것만, 가까운 순. 읽기 권한이 없거나 표가 비어도 화면은 계속 */
 export async function loadSlots(){
@@ -104,7 +113,8 @@ export async function loadAll(){
       .eq("is_for_sale", true).order("sort_order"),
     loadSlots().then(data => ({ data, error: null }))
   ]));
-  if (LOGS.ok && missingCol(q[3].error)){ LOGS.ok = false; q = [...q]; q[3] = await chapterQuery(); }
+  if (FOCUS.ok && missingCol(q[0].error, "image_focus")){ FOCUS.ok = false; q = [...q]; q[0] = await charQuery(); }
+  if (LOGS.ok && missingCol(q[3].error, "log_path")){ LOGS.ok = false; q = [...q]; q[3] = await chapterQuery(); }
   const failed = q.find(r => r.error);
   if (failed) throw failed.error;
   const [chars, notices, cats, chapters, items, slots] = q.map(r => r.data);

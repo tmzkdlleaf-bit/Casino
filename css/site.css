@@ -220,8 +220,20 @@ body.intro-on main .split .ch{animation-play-state:paused}
   border:0; background:none; color:var(--smoke); cursor:pointer; text-decoration:none; transition:color .3s;
 }
 .il:hover, .il[aria-current="page"]{color:var(--ivory)}
-.il[aria-current="page"]::after{content:""; position:absolute; left:24%; right:24%; bottom:.1rem; height:2px; background:var(--red)}   /* 색 외 표시: 막대 (1.4.1) */
+.il[aria-current="page"]::after, .il.more.on::after{content:""; position:absolute; left:24%; right:24%; bottom:.1rem; height:2px; background:var(--red)}
+.il.more.on{color:var(--ivory)}   /* 색 외 표시: 막대 (1.4.1) */
 .il.admin{color:#b3938d}
+.il.more{display:none}
+/* 새 공지 점 */
+.new-dot{display:none; position:absolute; top:.55rem; right:.55rem; width:.45rem; height:.45rem; border-radius:50%; background:var(--red-hi); box-shadow:0 0 0 2px rgb(16,15,14)}
+.il.has-new .new-dot{display:block}
+/* 더보기 메뉴 (좁은 화면) */
+.dock-menu{position:fixed; right:.5rem; bottom:calc(var(--dock) + env(safe-area-inset-bottom) + .5rem); z-index:60; display:grid; min-width:11rem; padding:.4rem; border:1px solid var(--line-strong); border-radius:.9rem; background:var(--black-2); box-shadow:0 12px 30px rgba(0,0,0,.55)}
+.dock-menu[hidden], .dock-menu [hidden]{display:none}
+.dock-menu a, .dock-menu button{display:flex; align-items:center; gap:.7rem; min-height:2.75rem; padding:0 .9rem; border:0; border-radius:.6rem; background:none; color:var(--ivory); font:inherit; font-size:.9375rem; text-align:left; text-decoration:none; cursor:pointer}
+.dock-menu a:hover, .dock-menu button:hover{background:rgba(237,227,200,.06)}
+.dock-menu a[aria-current="page"]{color:var(--gold)}
+.dock-menu .ico{width:1.1rem; height:1.1rem; color:var(--smoke)}
 .il:focus-visible{outline-offset:-2px; border-radius:.5rem}
 /* 이름표: 마우스를 올리거나 키보드로 오면 보임. 스크린리더는 항상 읽음 */
 .tip{
@@ -255,7 +267,8 @@ body.intro-on main .split .ch{animation-play-state:paused}
   .il{width:3.3rem; height:3.4rem; grid-template-rows:auto auto; align-content:center; gap:.15rem}
   .il .ico{width:1.2rem; height:1.2rem}
   .tip{position:static; translate:none; opacity:1; padding:0; background:none; color:inherit; font-size:.625rem; font-weight:500; line-height:1.1; text-align:center; white-space:normal}
-  .il[aria-current="page"]::after{bottom:auto; top:0}
+  .il[aria-current="page"]::after, .il.more.on::after{bottom:auto; top:0}
+  .new-dot{top:.45rem; right:calc(50% - .95rem)}
 }
 @media (max-width:1100px){
   .mark-name{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%)}
@@ -270,6 +283,9 @@ body.intro-on main .split .ch{animation-play-state:paused}
   .dock-nav .il{flex:1 1 0; width:auto; min-width:0}
   .tip{white-space:normal; word-break:keep-all}
   #dock-logout{display:none}
+  .il.wide-nav{display:none}
+  .il.more{display:grid}
+  .wide-only{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap}
   .me{padding:0 .3rem; border:0; gap:0}
   .me-text, .dock .login span{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%)}
   .dock .login{width:var(--tap); padding:0; justify-content:center; border:0}
@@ -289,6 +305,7 @@ main{position:fixed; inset:0 0 calc(var(--dock) + env(safe-area-inset-bottom)); 
 .page-lede{margin:0; color:var(--smoke)}
 .head-side{display:grid; justify-items:end; gap:.75rem}
 .head-side .page-lede{text-align:right}
+.page-head > .page-lede{justify-self:end; text-align:right}   /* 안내 문구는 어느 화면이든 오른쪽 끝 */
 .pane-box{display:flex; flex-direction:column; min-height:0}
 .pane-box > .pane{flex:1; margin-inline:-1.25rem; padding-inline:1.25rem}
 .narrow{width:min(100%, 60rem); justify-self:center}
@@ -297,6 +314,7 @@ main{position:fixed; inset:0 0 calc(var(--dock) + env(safe-area-inset-bottom)); 
   .page-head{grid-template-columns:1fr; row-gap:.6rem}
   .head-side{justify-items:start}
   .head-side .page-lede{text-align:left}
+  .page-head > .page-lede{justify-self:start; text-align:left}
 }
 
 /* =========================================================
@@ -350,6 +368,8 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .row-list li.pinned time{color:var(--red-text)}
 .row-list li.pinned .t{font-weight:500}
 .row-list .empty-note{padding:1.5rem 0}
+.new-mk{display:inline-grid; place-items:center; width:1.05rem; height:1.05rem; margin-left:.4rem; border-radius:50%; background:var(--red); color:var(--ivory); font-size:.625rem; font-weight:700; line-height:1; vertical-align:.12em}
+.mtabs .has-new::after{content:""; display:inline-block; width:.4rem; height:.4rem; margin-left:.35rem; border-radius:50%; background:var(--red-hi); vertical-align:.2em}
 
 /* 다음 게임 */
 .slots{list-style:none; margin:0; padding:0}
@@ -361,6 +381,23 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .slots strong{display:block; font-family:var(--f-serif); font-weight:700; line-height:1.35}
 .slots li:first-child strong{font-weight:900; font-size:var(--s1)}
 .slots .m{display:block; font-size:var(--s-1); color:var(--smoke)}
+.slots .until{display:inline-flex; align-items:center; gap:.35rem; margin-top:.35rem; padding:.05rem .65rem; border:1px solid rgba(201,165,90,.5); border-radius:999px; font-size:.75rem; font-weight:500; color:var(--gold)}
+.slots .live .until{border-color:rgba(217,99,108,.7); color:var(--red-text)}
+.slots .live .until::before{content:""; width:.4rem; height:.4rem; border-radius:50%; background:var(--red-hi); animation:live 1.6s ease-in-out infinite}
+@keyframes live{50%{opacity:.25}}
+/* 게임 페이지: 오늘부터 7일 */
+.week{display:grid; grid-template-columns:repeat(7, minmax(0, 1fr)); gap:.3rem; list-style:none; margin:.1rem 0 1rem; padding:0}
+.week li{padding:.5rem 0 .45rem; border:1px solid var(--line-2); border-radius:.6rem; font-size:.75rem; color:var(--smoke)}
+.week li > span[aria-hidden]{display:grid; justify-items:center; gap:.15rem}
+.week .dd{font-family:var(--f-serif); font-weight:700; font-size:1.0625rem; line-height:1.2; color:var(--text-2)}
+.week .sun .wd{color:var(--red-text)}
+.week .has{border-color:var(--line-strong)}
+.week .has .dd{color:var(--ivory)}
+.week .today{border-color:rgba(201,165,90,.7)}
+.week .today .wd{color:var(--gold)}
+.week .dots{display:flex; gap:3px; height:.4rem}
+.week .dots i{width:.4rem; height:.4rem; border-radius:50%; background:var(--ivory)}
+.week .dots i.red{background:var(--red-hi)} .week .dots i.green{background:var(--green-hi)}
 
 /* 바로가기 */
 .links{list-style:none; margin:.15rem 0 0; padding:0; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); column-gap:.9rem; align-content:start}
@@ -392,7 +429,7 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .show-link:focus-visible{outline-offset:-3px}
 .show-img{position:absolute; inset:0; z-index:-2; opacity:0; transition:opacity var(--fade, .8s) ease}
 .show-img.on{opacity:1}
-.show-img img{width:100%; height:100%; object-fit:cover; object-position:50% 18%}
+.show-img img{width:100%; height:100%; object-fit:cover; object-position:50% 10%}
 .show-link::after{content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(transparent 45%, rgba(10,12,11,.88)); pointer-events:none}
 .show-cap{position:absolute; left:.85rem; right:6.75rem; bottom:.75rem; display:flex; align-items:center; gap:.5rem; min-width:0; transition:opacity .4s ease}
 .show.swap .show-cap{opacity:0}
@@ -427,9 +464,10 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
   .board > .latest.on{flex:none; margin-top:.6rem}
   .hero-chips .chip{--size:2.2rem !important}
   .hero-chips .fall:nth-child(n+4){display:none}
-  .hero-chips .fall:nth-child(1){left:auto !important; right:4% !important; top:1% !important}
-  .hero-chips .fall:nth-child(2){left:auto !important; right:16% !important; top:4% !important}
-  .hero-chips .fall:nth-child(3){left:auto !important; right:8% !important; top:9% !important}
+  /* 오른쪽 위는 배경음악 버튼 자리 — 칩은 그 아래·왼쪽으로 */
+  .hero-chips .fall:nth-child(1){left:auto !important; right:24% !important; top:1.5% !important}
+  .hero-chips .fall:nth-child(2){left:auto !important; right:6% !important; top:9% !important}
+  .hero-chips .fall:nth-child(3){left:auto !important; right:16% !important; top:12.5% !important}
 }
 @media (max-width:700px){
   .hero .actions .btn{min-height:2.5rem; padding:.55rem 1.15rem}
@@ -515,6 +553,8 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .kw{display:flex; flex-wrap:wrap; gap:.45rem; list-style:none; margin:0; padding:0}
 .kw li{padding:.3rem .9rem; border:1px solid var(--line-strong); border-radius:999px; font-size:.9375rem}
 .inv{display:grid; grid-template-columns:repeat(6, 1fr); gap:.45rem}
+.inv[hidden], .inv-detail[hidden]{display:none}
+.inv-empty{margin:0; padding:.9rem 1.1rem; border:1px dashed var(--line-strong); border-radius:.8rem; color:var(--smoke); font-size:.9375rem}
 @media (max-width:1200px){ .inv{grid-template-columns:repeat(4, 1fr)} }
 .slot{position:relative; aspect-ratio:1; border-radius:.6rem; border:1px solid var(--line-2); background:var(--black-2); display:grid; place-items:center; padding:0; color:var(--smoke); font-size:.75rem}
 button.slot{cursor:pointer; border-color:var(--line-strong); background:var(--black-3); transition:border-color .25s}
@@ -584,16 +624,40 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 /* =========================================================
    10. 지난 이야기
    ========================================================= */
-.timeline-wrap{position:relative; padding:.75rem 0 1rem}
-.timeline{position:relative; list-style:none; margin:0; padding:0 0 0 clamp(2rem, 5vw, 3.5rem)}
-.timeline-wrap::before{content:""; position:absolute; left:clamp(.6rem, 1.6vw, 1.1rem); top:1.25rem; bottom:1rem; width:1px; background:linear-gradient(var(--velvet), var(--felt-hi))}
+/* 왼쪽 회차 목록 + 오른쪽 선택한 회차 */
+.story{display:grid; grid-template-columns:minmax(0, 22rem) minmax(0, 1fr); gap:var(--gap); min-height:0; width:min(100%, 72rem); justify-self:center}
+.story-list{padding-inline:.6rem}
+.story-list > .pane{margin-inline:-.6rem; padding-inline:.6rem}
+.timeline-wrap{position:relative; padding:.4rem 0 .6rem}
+.timeline{position:relative; list-style:none; margin:0; padding:0 0 0 1.6rem}
+.timeline-wrap::before{content:""; position:absolute; left:.55rem; top:1.4rem; bottom:1.4rem; width:1px; background:linear-gradient(var(--velvet), var(--felt-hi))}
 .timeline-wrap:has(.slot-note)::before{display:none}
-.timeline li{position:relative; padding:0 0 clamp(2rem, 5vh, 3rem)}
-.timeline li::before{content:""; position:absolute; left:calc(clamp(.6rem, 1.6vw, 1.1rem) - clamp(2rem, 5vw, 3.5rem) - .4rem); top:.45rem; width:.8rem; height:.8rem; border-radius:50%; background:var(--black); border:2px solid var(--gold)}
+.timeline li{position:relative; padding:0 0 .3rem}
+.timeline li::before{content:""; position:absolute; left:-1.4rem; top:1.05rem; width:.7rem; height:.7rem; border-radius:50%; background:var(--black); border:2px solid var(--gold); transition:background .3s}
+.timeline li.on::before{background:var(--gold)}
+.ch-pick{display:grid; gap:.05rem; width:100%; padding:.6rem .8rem; border:0; border-radius:.7rem; background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; transition:background .3s, box-shadow .3s}
+.ch-pick:hover{background:rgba(237,227,200,.04)}
+.ch-pick[aria-pressed="true"]{background:rgba(201,165,90,.09); box-shadow:inset 0 0 0 1px rgba(201,165,90,.45)}
+.ch-pick:focus-visible{outline-offset:-2px}
 .timeline .ep{font-family:var(--f-serif); font-size:var(--s-1); font-weight:700; color:var(--gold)}
-.timeline h2{font-family:var(--f-serif); font-weight:900; font-size:clamp(1.4rem, 2.6vw, 1.9rem); margin:.15rem 0 .25rem; line-height:1.35}
-.timeline time{font-size:var(--s-1); color:var(--smoke)}
-.timeline p{color:var(--text-2); margin:.5rem 0 0; max-width:40rem}
+.ch-pick .h{font-family:var(--f-serif); font-weight:700; font-size:1.0625rem; line-height:1.4}
+.timeline time{font-size:.75rem; color:var(--smoke)}
+.m-only{display:none}
+.story-detail > .pane{padding:.4rem .25rem 1.5rem}
+.story-detail .ep{margin:0; font-family:var(--f-serif); font-weight:700; font-size:var(--s-1); color:var(--gold); display:flex; align-items:center; gap:.5rem}
+.story-detail .h{margin:.3rem 0 .4rem; font-size:clamp(1.75rem, 3.4vw, 2.6rem); line-height:1.25}
+.story-detail .h:focus{outline:none}
+.story-detail .when{margin:0 0 1.5rem; padding-bottom:1.25rem; border-bottom:1px solid var(--line); font-size:var(--s-1); color:var(--smoke)}
+.story-detail .sum{margin:0; max-width:40rem; color:var(--text-2); font-size:1.0625rem; line-height:1.85; white-space:pre-line}
+.story-detail .acts{margin-top:1.75rem}
+@media (max-width:860px){
+  .story{grid-template-columns:1fr}
+  .story-detail{display:none}
+  .ch-pick[aria-pressed="true"]{box-shadow:none}
+  .timeline li.on .m-only{display:block; padding:.1rem .8rem .9rem}
+  .m-only p{margin:0; color:var(--text-2); white-space:pre-line}
+  .m-only .log-link{margin-top:.75rem}
+}
 
 /* ---------- 진행 기록 (코코포리아 로그) — 읽기 편하게: 본문 폭 제한·넉넉한 줄 간격·이름 색 보정 ---------- */
 .timeline .log-link{margin-top:.75rem}
@@ -691,18 +755,50 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 .wallet{display:flex; align-items:center; gap:.6rem; padding-right:.6rem}
 .wallet .chip{--size:1.8rem}
 .wallet strong{font-family:var(--f-serif); font-weight:900; font-size:1.5rem; line-height:1}
-.shop{display:grid; grid-template-columns:repeat(auto-fill, minmax(15rem, 1fr)); gap:var(--gap); padding-bottom:1rem}
-.item{position:relative; display:flex; flex-direction:column; gap:.7rem; padding:.9rem .9rem 1.1rem; border:1px solid var(--line); border-radius:var(--r); background:var(--glass); transition:border-color .3s, transform .5s var(--ease)}
+/* 왼쪽 상품 칸 + 오른쪽 선택한 상품 (좁은 화면은 위) */
+.shop-wrap{display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 24rem); gap:var(--gap); min-height:0}
+.shop-pane{margin:-.3rem; padding:.3rem}
+.shop{display:grid; grid-template-columns:repeat(auto-fill, minmax(10.5rem, 1fr)); gap:.75rem; padding-bottom:1rem}
+.item{position:relative; display:flex; flex-direction:column; gap:.6rem; padding:.6rem .6rem .75rem; border:1px solid var(--line); border-radius:var(--r); background:var(--glass); color:inherit; font:inherit; text-align:left; cursor:pointer; transition:border-color .3s, transform .5s var(--ease)}
 .item:hover{border-color:rgba(201,165,90,.5); transform:translateY(-.2rem)}
-.item .thumb{aspect-ratio:4/3; border-radius:.7rem; background:var(--black); display:grid; place-items:center; color:var(--smoke); font-size:var(--s-1); overflow:hidden}
+.item[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 0 1px var(--gold)}
+.item .thumb{aspect-ratio:1; border-radius:.7rem; background:var(--black); display:grid; place-items:center; color:var(--smoke); font-size:var(--s-1); overflow:hidden}
 .item .thumb img{width:100%; height:100%; object-fit:cover}
-.item .row{display:flex; justify-content:space-between; align-items:baseline; gap:1rem}
-.item h3{font-family:var(--f-serif); font-weight:700; font-size:1.125rem; margin:0}
-.item .desc{margin:0; color:var(--text-2); font-size:.9375rem}
-.item .price{display:flex; align-items:center; gap:.4rem; font-size:.9375rem; font-weight:600; color:var(--gold)}
-.item .price .chip{--size:1rem; box-shadow:none}
-.item .price .chip::before{display:none}
-.item .btn{margin-top:auto}
+.item .row{display:flex; justify-content:space-between; align-items:baseline; gap:.6rem; min-width:0; padding-inline:.15rem}
+.item .nm{min-width:0; font-family:var(--f-serif); font-weight:700; font-size:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.price, .sd-price{display:flex; align-items:center; gap:.4rem; font-size:.9375rem; font-weight:600; color:var(--gold)}
+.price .chip, .sd-price .chip{--size:1rem; box-shadow:none}
+.price .chip::before, .sd-price .chip::before{display:none}
+.item.sold .thumb img{opacity:.45}
+.sold-tag{position:absolute; top:1rem; left:1rem; padding:.1rem .6rem; border-radius:999px; background:var(--black); border:1px solid var(--line-strong); font-size:.75rem; color:var(--text-2)}
+.shop-detail{display:flex; flex-direction:column; gap:1rem; min-height:0; overflow:auto; padding:1rem}
+.sd-img{flex:none; aspect-ratio:1; max-height:min(22rem, 42vh); border-radius:.8rem; background:var(--black); display:grid; place-items:center; color:var(--smoke); font-size:var(--s-1); overflow:hidden}
+.sd-img img{width:100%; height:100%; object-fit:cover}
+.sd-body{display:grid; gap:.55rem; align-content:start; padding-inline:.25rem}
+.sd-name{margin:0; font-family:var(--f-serif); font-weight:900; font-size:var(--s2); line-height:1.3}
+.sd-price{margin:0}
+.sd-price strong{font-family:var(--f-serif); font-weight:900; font-size:1.375rem; line-height:1}
+.sd-price .chip{--size:1.3rem}
+.sd-price > span:last-child{font-weight:400; color:var(--text-2); font-size:var(--s-1)}
+.sd-stock{margin:0; font-size:var(--s-1); color:var(--text-2)}
+.sd-stock.out{color:var(--red-text)}
+.sd-desc{margin:.25rem 0 .5rem; padding-top:.8rem; border-top:1px solid var(--line); color:var(--text-2); font-size:.9375rem; white-space:pre-line}
+.sd-body .btn{justify-self:start}
+.sd-body .hint{margin:0}
+.sd-empty{display:grid; justify-items:center; align-content:center; gap:.9rem; height:100%; min-height:10rem; color:var(--smoke); text-align:center}
+.sd-empty .chip{--size:3rem; opacity:.7}
+.sd-empty p{margin:0}
+@media (max-width:860px){
+  .shop-wrap{grid-template-columns:1fr; grid-template-rows:auto minmax(0, 1fr)}
+  .shop-detail{order:-1; display:grid; grid-template-columns:6.5rem minmax(0, 1fr); gap:.9rem; padding:.75rem; overflow:visible}
+  .sd-img{max-height:none}
+  .sd-body{gap:.35rem}
+  .sd-name{font-size:var(--s1)}
+  .sd-desc{margin:0; padding-top:.45rem; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden}
+  .sd-body .hint{display:none}
+  .sd-empty{grid-column:1 / -1; min-height:6rem}
+  .shop{grid-template-columns:repeat(auto-fill, minmax(8.5rem, 1fr))}
+}
 
 /* =========================================================
    12. 게임
@@ -843,10 +939,27 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
 /* =========================================================
    15. 로딩 · 오류 · 빈 상태
    ========================================================= */
+/* 불러오는 동안: 비어 있는 창에 줄 모양 자리 표시가 은은하게 흐름 */
+body.loading :is(#notice-list, #next-body, #notice-all, #timeline-wrap, #story-detail, #shop-detail, #schedule, #world-toc, #world-body, #latest-card, #show):empty,
+body.loading #show, body.loading #shop:empty, body.loading :is(#cast-dealers, #cast-players):empty{
+  --sk:rgba(237,227,200,.06);
+  min-height:8rem; border-radius:.6rem;
+  background:
+    linear-gradient(100deg, transparent 35%, rgba(237,227,200,.05) 50%, transparent 65%) 0 0 / 250% 100%,
+    repeating-linear-gradient(180deg, var(--sk) 0 .8rem, transparent .8rem 2.2rem) 0 .4rem / 100% 100% no-repeat;
+  background-origin:content-box; background-clip:content-box;   /* 창 안쪽 여백까지만 */
+  animation:skel 1.8s linear infinite;
+}
+body.loading #show, body.loading #latest-card:empty, body.loading #shop-detail:empty{background:linear-gradient(100deg, transparent 35%, rgba(237,227,200,.05) 50%, transparent 65%) 0 0 / 250% 100%, var(--black-2); background-clip:padding-box}
+body.loading #show > *{visibility:hidden}
+body.loading #shop:empty{background:linear-gradient(100deg, transparent 35%, rgba(237,227,200,.05) 50%, transparent 65%) 0 0 / 250% 100%, repeating-linear-gradient(90deg, var(--sk) 0 calc(25% - .75rem), transparent 0 25%) 0 0 / 100% 14rem no-repeat}
+body.loading :is(#cast-dealers, #cast-players):empty{background:linear-gradient(100deg, transparent 35%, rgba(237,227,200,.04) 50%, transparent 65%) 0 0 / 250% 100%, repeating-linear-gradient(90deg, rgba(237,227,200,.05) 0 calc(100% / 7 - 3px), transparent 0 calc(100% / 7))}
+@keyframes skel{to{background-position:-250% 0, 0 .4rem}}
+body.loading :is(#cast-dealers, #cast-players):empty, body.loading #show, body.loading #shop:empty{animation-name:skel2}
+@keyframes skel2{to{background-position:-250% 0, 0 0}}
+
 .boot{position:fixed; inset:0; z-index:140; display:grid; place-items:center; background:var(--black); transition:opacity .5s}
 .boot.hide{opacity:0; pointer-events:none}
-.boot .chip{--size:2.75rem; animation:boot-spin 1.2s linear infinite}
-@keyframes boot-spin{to{transform:rotate(360deg)}}
 .boot-error{display:grid; justify-items:center; gap:1rem; text-align:center; padding:2rem}
 .boot-error h2{margin:0; font-family:var(--f-serif); font-weight:900; font-size:clamp(1.75rem, 4vw, 2.5rem)}
 .boot-error p{margin:0; color:var(--smoke); font-size:.9375rem}
