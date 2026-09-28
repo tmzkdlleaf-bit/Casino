@@ -50,11 +50,11 @@ export const PAGE_TITLES = { home: "", characters: "캐릭터", world: "세계�
 
 export const CALM_KEY = "comu-calm";
 export const BGM_KEY = "comu-bgm";
+export const NOTICE_READ_KEY = "comu-notice-read";   // 이 브라우저에서 읽은 공지 (새 글 표시용)
 
 /* ---------- 더미 데이터 (Supabase 테이블로 교체) ---------- */
 export const SUITS = ["♠", "♥", "♣", "♦"];
 
-export const INVENTORY_SLOTS = 12;
 
 
 

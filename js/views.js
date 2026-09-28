@@ -1,4 +1,4 @@
-import { CONFIG, INVENTORY_SLOTS, SUITS } from "./config.js";
+import { CONFIG, NOTICE_READ_KEY, SUITS } from "./config.js";
 import { USE_DB } from "./data.js";
 import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js";
 import { initShow } from "./effects.js";
@@ -12,9 +12,43 @@ export const sortedNotices = () => [...DATA.notices].sort((a, b) => (b.pinned - 
 
 export const timeTag = (label, iso) => `<time${iso ? ` datetime="${esc(iso)}"` : ""}>${esc(label)}</time>`;
 
+/* 새 글: 이 브라우저로 처음 들어온 때(처음이면 그 3일 전)보다 뒤에 올라왔고, 아직 열어 보지 않은 공지.
+   2주가 지나면 열지 않았어도 표시하지 않음. 기록은 이 브라우저(localStorage)에만 남음 */
+const NEW_DAYS = 14, FIRST_GRACE = 3;
+let NR = null;
+const nr = () => {
+  if (NR) return NR;
+  let v = null;
+  try { v = JSON.parse(localStorage.getItem(NOTICE_READ_KEY) || "null"); } catch (_) {}
+  NR = { since: v?.since || Date.now() - FIRST_GRACE * 864e5, ids: new Set(v?.ids || []) };
+  if (!v) saveNr();
+  return NR;
+};
+const saveNr = () => { try { localStorage.setItem(NOTICE_READ_KEY, JSON.stringify({ since: NR.since, ids: [...NR.ids].slice(-300) })); } catch (_) {} };
+export const isNewNotice = n => {
+  const t = Date.parse(n.iso || "");
+  return t > nr().since && Date.now() - t < NEW_DAYS * 864e5 && !nr().ids.has(String(n.id));
+};
+export function markNoticeRead(id){
+  if (nr().ids.has(String(id))) return;
+  NR.ids.add(String(id));
+  saveNr();
+  renderHomeNotices();   // 홈 목록의 표시도 바로 갱신 (메뉴 점 포함)
+}
+/* 하단 메뉴 '공지'에 점 + 스크린리더용 문구 */
+export function updateNoticeBadge(){
+  const has = DATA.notices.some(isNewNotice), a = $('#nav a[href="#notices"]');
+  if (!a) return;
+  a.classList.toggle("has-new", has);
+  $(".new-sr", a).hidden = !has;
+  $$('#mtabs [data-panel="p-notice"]').forEach(b => b.classList.toggle("has-new", has));
+}
+
 // short: 홈 창처럼 좁은 곳 — 날짜는 월.일만, 분류 태그 생략
-export const noticeRow = (n, i, short = false) =>
-  `<li class="${n.pinned ? "pinned" : ""}"><a href="#notices/${n.id}">${timeTag(short && n.date ? n.date.slice(5) : n.date, n.iso)}<span class="t">${n.pinned ? `<span class="tag pin">고정</span>` : ""}${!short && n.category ? `<span class="tag">${esc(n.category)}</span>` : ""}${esc(n.title)}</span><span class="suit">${suitIcon(SUITS[i % 4])}</span></a></li>`;
+export const noticeRow = (n, i, short = false) => {
+  const fresh = isNewNotice(n);
+  return `<li class="${n.pinned ? "pinned" : ""}${fresh ? " fresh" : ""}"><a href="#notices/${n.id}">${timeTag(short && n.date ? n.date.slice(5) : n.date, n.iso)}<span class="t">${n.pinned ? `<span class="tag pin">고정</span>` : ""}${!short && n.category ? `<span class="tag">${esc(n.category)}</span>` : ""}${esc(n.title)}${fresh ? `<span class="new-mk"><span aria-hidden="true">N</span><span class="sr">새 글</span></span>` : ""}</span><span class="suit">${suitIcon(SUITS[i % 4])}</span></a></li>`;
+};
 
 /* 분류 버튼은 한 번만 그림 — 클릭할 때마다 다시 그리면 키보드 포커스가 사라짐 (WCAG 2.4.3) */
 export function renderNoticeSeg(){
@@ -30,7 +64,7 @@ export function placeSegInk(seg){
 export function renderNoticeList(){
   $$("#notice-seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.cat === state.noticeFilter));
   const list = sortedNotices().filter(n => state.noticeFilter === "전체" || n.category === state.noticeFilter);
-  $("#notice-all").innerHTML = list.length ? list.map(noticeRow).join("") : `<li class="empty-note">해당 분류의 공지가 없습니다.</li>`;
+  $("#notice-all").innerHTML = list.length ? list.map((n, i) => noticeRow(n, i)).join("") : `<li class="empty-note">해당 분류의 공지가 없습니다.</li>`;
   requestAnimationFrame(() => placeSegInk($("#notice-seg")));
   return list.length;
 }
@@ -39,6 +73,7 @@ export function renderHomeNotices(){
   $("#notice-list").innerHTML = DATA.notices.length
     ? sortedNotices().slice(0, 12).map((n, i) => noticeRow(n, i, true)).join("")
     : `<li class="slot-note">등록된 공지가 없습니다.</li>`;
+  updateNoticeBadge();
 }
 
 const pad2 = n => String(n).padStart(2, "0");
@@ -51,23 +86,46 @@ export const fmtSlot = iso => {
   return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WD[d.getDay()]}) ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 };
 
-/* 다음 게임: 가까운 순. 첫 줄은 크게 */
-const slotRow = (s, i) => `<li><span class="chip ${["red", "", "green"][i % 3]}" aria-hidden="true"></span><span>
-  <strong>${esc(s.game || "게임")}</strong><span class="m">${timeTag(fmtSlot(s.start), s.start)}${s.dealer ? ` · ${esc(s.dealer.name)}` : ""}</span></span></li>`;
+/* 남은 시간: "2일 3시간 뒤" / "3시간 20분 뒤" / "12분 뒤" / 진행 중(끝 시간이 없으면 시작 후 3시간까지) */
+const SLOT_LEN = 3 * 36e5;
+export function untilText(s, now = Date.now()){
+  const st = Date.parse(s.start), en = s.end ? Date.parse(s.end) : st + SLOT_LEN;
+  if (!(st > 0)) return "";
+  if (now >= st) return now < en ? "진행 중" : "";
+  const m = Math.ceil((st - now) / 6e4), d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mm = m % 60;
+  return (d ? `${d}일 ${h ? h + "시간 " : ""}` : h ? `${h}시간 ${mm ? mm + "분 " : ""}` : `${mm}분 `) + "뒤";
+}
+
+/* 다음 게임: 가까운 순. 첫 줄은 크게 + 남은 시간 */
+const slotRow = (s, i) => {
+  const u = i === 0 ? untilText(s) : "";
+  return `<li${u === "진행 중" ? ` class="live"` : ""}><span class="chip ${["red", "", "green"][i % 3]}" aria-hidden="true"></span><span>
+  <strong>${esc(s.game || "게임")}</strong><span class="m">${timeTag(fmtSlot(s.start), s.start)}${s.dealer ? ` · ${esc(s.dealer.name)}` : ""}</span>${u ? `<span class="until">${u}</span>` : ""}</span></li>`;
+};
+
+const upcoming = () => (DATA.slots || []).filter(s => untilText(s) !== "" || Date.parse(s.start) > Date.now());
 
 export function renderNext(){
-  const slots = DATA.slots || [];
+  const slots = upcoming();
   $("#next-body").innerHTML = slots.length
     ? `<ul class="slots">${slots.slice(0, 4).map(slotRow).join("")}</ul>`
     : `<p class="slot-note">예정된 게임이 없습니다.</p>`;
 }
 
-/* 게임 페이지: 일정 전체 */
+/* 게임 페이지: 오늘부터 7일 달력 + 일정 전체 */
+const dayKey = d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 export function renderSchedule(){
-  const slots = DATA.slots || [];
-  $("#schedule").innerHTML = slots.length
+  const slots = upcoming(), today = new Date();
+  const byDay = {};
+  slots.forEach(s => { const k = dayKey(new Date(s.start)); (byDay[k] ||= []).push(s); });
+  const week = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i), list = byDay[dayKey(d)] || [];
+    const label = `${d.getMonth() + 1}월 ${d.getDate()}일 ${WD[d.getDay()]}요일${list.length ? ` — ${list.map(s => esc(s.game || "게임")).join(", ")}` : " — 일정 없음"}`;
+    return `<li class="${i === 0 ? "today " : ""}${list.length ? "has" : ""}${d.getDay() === 0 ? " sun" : ""}"><span class="sr">${label}</span><span aria-hidden="true"><span class="wd">${i === 0 ? "오늘" : WD[d.getDay()]}</span><span class="dd">${d.getDate()}</span><span class="dots">${list.slice(0, 3).map((_, j) => `<i class="${["red", "", "green"][j % 3]}"></i>`).join("")}</span></span></li>`;
+  }).join("");
+  $("#schedule").innerHTML = `<ol class="week" aria-label="오늘부터 7일">${week}</ol>` + (slots.length
     ? `<ul class="slots">${slots.map(slotRow).join("")}</ul>`
-    : `<p class="slot-note">예정된 게임이 없습니다.</p>`;
+    : `<p class="slot-note">예정된 게임이 없습니다.</p>`);
 }
 
 /* 바로가기: config.js의 QUICK_LINKS. 주소가 비어 있으면 누를 수 없는 자리로 표시 */
@@ -98,7 +156,7 @@ export function renderHome(){
 export const imgSlot = (c, alt = "", lazy = true, sizes = "100vw") => {
   if (!c.img) return ph();
   const set = c.thumb ? ` srcset="${esc(c.thumb)} ${CONFIG.IMG.characterThumb}w, ${esc(c.img)} ${CONFIG.IMG.character}w" sizes="${sizes}"` : "";
-  return `<img src="${esc(c.thumb || c.img)}"${set} alt="${esc(alt)}"${lazy ? ` loading="lazy"` : ` fetchpriority="high"`} decoding="async">`;
+  return `<img src="${esc(c.thumb || c.img)}"${set} alt="${esc(alt)}"${c.focus ? ` style="object-position:${esc(c.focus)}"` : ""}${lazy ? ` loading="lazy"` : ` fetchpriority="high"`} decoding="async">`;
 };
 
 export const STRIP_SIZES = "(max-width: 760px) 50vw, 30vw";
@@ -145,7 +203,7 @@ export function renderProfile(id){
   name.dataset.text = c.name;
   splitText(name);
 
-  $("#pf-dl").innerHTML = `<dt>이름</dt><dd>${esc(c.name)}</dd><dt>나이</dt><dd>${esc(c.age || "—")}</dd><dt>키</dt><dd>${esc(c.height || "—")}</dd>`;
+  $("#pf-dl").innerHTML = `<dt>나이</dt><dd>${esc(c.age || "—")}</dd><dt>키</dt><dd>${esc(c.height || "—")}</dd>`;
   $("#pf-kw").innerHTML = c.keywords.map(k => `<li>${esc(k)}</li>`).join("");
   $("#pf-desc").textContent = c.description;
   renderInventory(c.inventory);
@@ -165,8 +223,12 @@ export function renderInventory(inv, selected = 0){
       ${it.img ? `<img src="${esc(it.img)}" alt="">` : ph()}
       ${it.quantity > 1 ? `<span class="qty" aria-hidden="true">×${it.quantity}</span>` : ""}
     </button>`).join("");
-  const empty = Array.from({ length: Math.max(0, INVENTORY_SLOTS - inv.length) }, () => `<span class="slot" aria-hidden="true"></span>`).join("");
-  $("#pf-inv").innerHTML = filled + empty;
+  const box = $("#pf-inv"), detail = $("#pf-inv-detail");
+  box.hidden = detail.hidden = !inv.length;
+  $("#pf-inv-empty").hidden = !!inv.length;
+  if (!inv.length){ box.innerHTML = detail.innerHTML = ""; return; }
+  const empty = Array.from({ length: (6 - inv.length % 6) % 6 }, () => `<span class="slot" aria-hidden="true"></span>`).join("");
+  box.innerHTML = filled + empty;
 
   const it = inv[selected];
   $("#pf-inv-detail").innerHTML = it
@@ -179,6 +241,7 @@ export function renderNotice(id){
   const list = sortedNotices(), idx = list.findIndex(n => n.id === id);
   if (idx < 0) return false;
   const n = list[idx], newer = list[idx - 1], older = list[idx + 1];
+  markNoticeRead(n.id);
   $("#notice-article").innerHTML = `
     <a class="link-back" href="#notices">공지 목록으로</a>
     <div class="meta">${n.pinned ? `<span class="tag pin">고정</span>` : ""}${n.category ? `<span class="tag">${esc(n.category)}</span>` : ""}${timeTag(n.date, n.iso)}</div>
@@ -208,31 +271,72 @@ export function renderWorld(){
     </section>`).join("");
 }
 
-export function renderStory(){
-  const wrap = $("#timeline-wrap");
-  if (!DATA.chapters.length){ wrap.innerHTML = `<p class="slot-note">아직 기록이 없습니다.</p>`; return; }
-  wrap.innerHTML = `<span class="fill" aria-hidden="true"></span><ol class="timeline" id="timeline">` + DATA.chapters.map(c => `
-    <li class="reveal" data-n="${esc(c.number)}">
-      <span class="ep">제${c.number}화</span>
-      <h2>${esc(c.title)}</h2>
-      ${timeTag(c.date, c.iso)}
-      <p>${esc(c.summary)}</p>
-      ${c.log ? `<a class="btn small log-link" href="#story/${esc(String(c.number))}">진행 기록 보기<span class="sr"> — 제${c.number}화</span></a>` : ""}
-    </li>`).join("") + `</ol>`;
+/* 지난 이야기: 왼쪽 회차 목록 + 오른쪽 선택한 회차 (좁은 화면은 목록 안에 요약까지) */
+const epTitle = c => {
+  const t = (c.title || "").trim();
+  return t && !new RegExp(`^제?\\s*${c.number}\\s*화$`).test(t) ? t : "";   // "1화"처럼 회차와 같은 제목은 한 번만
+};
+const logLink = c => c.log ? `<a class="btn small log-link" href="#story/${esc(String(c.number))}">진행 기록 보기<span class="sr"> — 제${c.number}화</span></a>` : "";
+
+export function renderStory(sel){
+  const wrap = $("#timeline-wrap"), detail = $("#story-detail");
+  if (!DATA.chapters.length){
+    wrap.innerHTML = `<p class="slot-note">아직 기록이 없습니다.</p>`;
+    detail.innerHTML = `<p class="empty-note">진행된 이야기가 쌓이면 여기에 보입니다.</p>`;
+    return;
+  }
+  const last = DATA.chapters[DATA.chapters.length - 1];
+  if (sel == null) sel = state.storySel ?? last.number;
+  if (!DATA.chapters.some(c => c.number === sel)) sel = last.number;
+  state.storySel = sel;
+  wrap.innerHTML = `<ol class="timeline" id="timeline">` + DATA.chapters.map(c => {
+    const t = epTitle(c);
+    return `<li${c.number === sel ? ` class="on"` : ""} data-n="${esc(c.number)}">
+      <button class="ch-pick" type="button" data-ch="${esc(c.number)}" aria-pressed="${c.number === sel}" aria-controls="story-detail">
+        <span class="ep">제${c.number}화</span>${t ? `<span class="h">${esc(t)}</span>` : ""}${timeTag(c.date, c.iso)}
+      </button>
+      <div class="m-only">${c.summary ? `<p>${esc(c.summary)}</p>` : ""}${logLink(c)}</div>
+    </li>`;
+  }).join("") + `</ol>`;
+  const c = DATA.chapters.find(x => x.number === sel), t = epTitle(c);
+  detail.innerHTML = `
+    <p class="ep">${t ? `제${c.number}화` : ""}${c.number === last.number ? `<span class="tag">최근</span>` : ""}</p>
+    <h2 class="h" id="story-h" tabindex="-1">${esc(t || `제${c.number}화`)}</h2>
+    ${c.date ? `<p class="when">${timeTag(c.date, c.iso)}</p>` : ""}
+    <p class="sum">${esc(c.summary || "요약이 없습니다.")}</p>
+    <div class="acts">${logLink(c) || `<span class="hint">진행 기록이 아직 없습니다.</span>`}</div>`;
 }
 
-export function renderShop(){
-  if (!DATA.items.length){ $("#shop").innerHTML = `<p class="empty-note" style="grid-column:1 / -1">판매 중인 아이템이 없습니다.</p>`; return; }
+/* 상점: 왼쪽 상품 칸 + 오른쪽(좁은 화면은 위) 선택한 상품 */
+const stockText = it => it.stock == null ? "" : it.stock > 0 ? `남은 수량 ${it.stock}개` : "품절";
+export function renderShop(sel){
+  const detail = $("#shop-detail");
+  if (!DATA.items.length){
+    $("#shop").innerHTML = `<p class="empty-note" style="grid-column:1 / -1">판매 중인 아이템이 없습니다.</p>`;
+    detail.innerHTML = `<div class="sd-empty"><span class="chip red" aria-hidden="true"></span><p>진열된 상품이 없습니다.</p></div>`;
+    return;
+  }
+  if (sel == null) sel = state.shopSel ?? 0;
+  sel = Math.min(sel, DATA.items.length - 1);
+  state.shopSel = sel;
   $("#shop").innerHTML = DATA.items.map((it, i) => `
-    <article class="item reveal ${i === 0 ? "wide" : ""}">
-      <div class="thumb">${it.img ? `<img src="${esc(it.img)}" alt="" loading="lazy" decoding="async">` : ph()}</div>
-      <div class="row">
-        <h3>${esc(it.name)}</h3>
-        <span class="price"><span class="chip red" aria-hidden="true"></span>${esc(it.price)}<span class="sr">칩</span></span>
-      </div>
-      ${it.description ? `<p class="desc">${esc(it.description)}</p>` : ""}
-      <button class="btn" type="button" disabled aria-describedby="buy-note">구매하기</button>
-    </article>`).join("");
+    <button class="item${it.stock === 0 ? " sold" : ""}" type="button" data-item="${i}" aria-pressed="${i === sel}" aria-controls="shop-detail">
+      <span class="thumb">${it.img ? `<img src="${esc(it.img)}" alt="" loading="lazy" decoding="async">` : ph()}</span>
+      <span class="row"><span class="nm">${esc(it.name)}</span>
+        <span class="price"><span class="chip red" aria-hidden="true"></span>${esc(it.price)}<span class="sr">칩</span></span></span>
+      ${it.stock === 0 ? `<span class="sold-tag">품절</span>` : ""}
+    </button>`).join("");
+  const it = DATA.items[sel], st = stockText(it);
+  detail.innerHTML = `
+    <div class="sd-img">${it.img ? `<img src="${esc(it.img)}" alt="" decoding="async">` : ph()}</div>
+    <div class="sd-body">
+      <h2 class="sd-name">${esc(it.name)}</h2>
+      <p class="sd-price"><span class="chip red" aria-hidden="true"></span><strong>${esc(it.price)}</strong><span>칩</span></p>
+      ${st ? `<p class="sd-stock${it.stock === 0 ? " out" : ""}">${st}</p>` : ""}
+      <p class="sd-desc">${esc(it.description || "설명이 없습니다.")}</p>
+      <button class="btn primary" type="button" disabled aria-describedby="buy-note">구매하기</button>
+      <p class="hint" id="buy-note">구매 기능은 준비 중입니다.</p>
+    </div>`;
 }
 
 /* 내 소유 캐릭터 + 잔액 (공개 캐릭터 데이터와 합침) */

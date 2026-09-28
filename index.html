@@ -12,6 +12,12 @@
 <meta property="og:title" content="사이트명">
 <meta property="og:description" content="사이트 소개 문구 자리">
 <meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<!-- 링크 공유 미리보기 이미지 (디스코드·트위터 등): 1200×630 이미지를 assets/og.jpg 로 넣고,
+     아래 두 줄의 주석을 푼 뒤 https://사이트주소 부분을 실제 주소로 바꾸세요. 주소는 https:// 부터 전체를 적어야 합니다.
+<meta property="og:url" content="https://사이트주소/">
+<meta property="og:image" content="https://사이트주소/assets/og.jpg">
+-->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%238C1C26'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23EDE3C8' stroke-width='2' stroke-dasharray='3 3'/%3E%3C/svg%3E">
 <!-- 연결 미리 열기: 글꼴·라이브러리·데이터 -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -35,7 +41,7 @@
 <link rel="modulepreload" href="js/markdown.js">
 <link rel="modulepreload" href="js/ambience.js">
 </head>
-<body class="intro-on">
+<body class="intro-on loading">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <symbol id="s-spade" viewBox="0 0 24 24"><path d="M12 1.8C9.2 5.6 3.2 9.1 3.2 13.9a4.6 4.6 0 0 0 7.7 3.4c-.3 2.1-1.1 3.8-2.6 4.9h7.4c-1.5-1.1-2.3-2.8-2.6-4.9a4.6 4.6 0 0 0 7.7-3.4c0-4.8-6-8.3-8.8-12.1z"/></symbol>
   <symbol id="s-heart" viewBox="0 0 24 24"><path d="M12 21.3l-1.4-1.3C5.4 15.4 2 12.3 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.8-3.4 6.9-8.6 11.5L12 21.3z"/></symbol>
@@ -58,11 +64,13 @@
   <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="M9 6l6 6l-6 6"/></symbol>
   <symbol id="i-player-pause" viewBox="0 0 24 24"><path d="M6 6a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -12"/><path d="M14 6a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -12"/></symbol>
   <symbol id="i-player-play" viewBox="0 0 24 24"><path d="M7 4v16l13 -8l-13 -8"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24"><path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/></symbol>
   <symbol id="i-external-link" viewBox="0 0 24 24"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></symbol>
 </svg>
 <noscript><style>.boot,.opening{display:none}</style><p class="noscript">이 사이트는 자바스크립트가 켜져 있어야 정상적으로 표시됩니다.</p></noscript>
 
-<div class="boot" id="boot" role="status"><span class="chip red" aria-hidden="true"></span><span class="sr">불러오는 중</span></div>
+<!-- 불러오는 동안에는 화면 뼈대 위에 자리 표시(body.loading)가 보이고, 이 상자는 오류 화면으로만 쓰임 -->
+<div class="boot hide" id="boot" role="status"><span class="sr">불러오는 중</span></div>
 
 <!-- 인트로: 장식용. 재생 중에는 뒤쪽 화면을 inert로 막고 '건너뛰기'만 조작 가능. 내용은 effects.js의 runIntro가 채움 -->
 <div class="opening" id="intro">
@@ -81,14 +89,21 @@
   <nav class="dock-nav" id="nav" aria-label="주 메뉴">
       <a class="il" href="#home"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-home"/></svg><span class="tip">홈</span></a>
       <a class="il" href="#characters"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span class="tip">캐릭터</span></a>
-      <a class="il" href="#notices"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-speakerphone"/></svg><span class="tip">공지</span></a>
+      <a class="il" href="#notices"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-speakerphone"/></svg><span class="tip">공지<span class="new-sr sr" hidden> (새 글 있음)</span></span><span class="new-dot" aria-hidden="true"></span></a>
       <a class="il" href="#world"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-world"/></svg><span class="tip">세계관</span></a>
-      <a class="il" href="#story"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-book-2"/></svg><span class="tip">지난 이야기</span></a>
+      <a class="il" href="#story"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-book-2"/></svg><span class="tip"><span class="wide-only">지난 </span>이야기</span></a>
       <a class="il" href="#shop"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-building-store"/></svg><span class="tip">상점</span></a>
       <a class="il" href="#game"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-cards"/></svg><span class="tip">게임</span></a>
-      <a class="il" href="#settings"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg><span class="tip">설정</span></a>
-      <a class="il admin" href="#admin" data-admin-only hidden><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-tool"/></svg><span class="tip">관리</span></a>
+      <a class="il wide-nav" href="#settings"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg><span class="tip">설정</span></a>
+      <a class="il admin wide-nav" href="#admin" data-admin-only hidden><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-tool"/></svg><span class="tip">관리</span></a>
+      <!-- 좁은 화면: 설정·관리·로그아웃은 '더보기'로 묶음 -->
+      <button class="il more" type="button" id="dock-more" aria-expanded="false" aria-controls="dock-menu"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-dots"/></svg><span class="tip">더보기</span></button>
   </nav>
+  <div class="dock-menu" id="dock-menu" hidden>
+    <a href="#settings"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg>설정</a>
+    <a href="#admin" data-admin-only hidden><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-tool"/></svg>관리</a>
+    <button type="button" data-member-only hidden id="menu-logout"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-logout"/></svg>로그아웃</button>
+  </div>
   <div class="dock-right">
     <!-- 배경음악: config.js의 BGM_URL이 있을 때만 보임. 누르기 전에는 재생하지 않음 -->
     <button class="bgm" type="button" id="bgm" aria-pressed="false" hidden><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-volume-off"/></svg><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-volume"/></svg><span class="sr">배경음악</span></button>
@@ -102,7 +117,7 @@
 <div class="sr" id="sr-status" role="status" aria-live="polite"></div>
 
 <!-- 페이지는 스크롤하지 않고, 각 화면의 창(.pane) 안에서만 스크롤 -->
-<main id="app" tabindex="-1">
+<main id="app" tabindex="-1" aria-busy="true">
 
   <!-- ===================== 홈 ===================== -->
   <section data-page="home" class="page home">
@@ -193,7 +208,7 @@
         <dl class="pf-dl" id="pf-dl"></dl>
         <section class="pf-block"><h2>성격</h2><ul class="kw" id="pf-kw"></ul></section>
         <section class="pf-block"><h2>설명</h2><p class="pf-desc" id="pf-desc"></p></section>
-        <section class="pf-block"><h2 id="pf-inv-h">소지품</h2><div class="inv" id="pf-inv" role="group" aria-labelledby="pf-inv-h"></div><div class="inv-detail" id="pf-inv-detail" aria-live="polite"></div></section>
+        <section class="pf-block"><h2 id="pf-inv-h">소지품</h2><p class="inv-empty" id="pf-inv-empty" hidden>소지품이 없습니다.</p><div class="inv" id="pf-inv" role="group" aria-labelledby="pf-inv-h"></div><div class="inv-detail" id="pf-inv-detail" aria-live="polite"></div></section>
         <nav class="pager" id="pf-pager" aria-label="다른 캐릭터"></nav>
       </div>
     </div>
@@ -236,7 +251,10 @@
       <h1 class="page-title split">지난 이야기</h1>
       <p class="page-lede">진행된 이야기가 순서대로 쌓이는 페이지입니다.</p>
     </header>
-    <div class="g-panel pane-box narrow"><div class="pane" tabindex="0" role="region" aria-label="이야기 목록"><div class="timeline-wrap" id="timeline-wrap"></div></div></div>
+    <div class="story">
+      <div class="g-panel pane-box story-list"><div class="pane" tabindex="0" role="region" aria-label="회차 목록"><div class="timeline-wrap" id="timeline-wrap"></div></div></div>
+      <section class="g-panel pane-box story-detail" aria-label="선택한 회차"><div class="pane" id="story-detail" aria-live="polite" tabindex="0"></div></section>
+    </div>
   </section>
 
   <!-- ===================== 진행 기록 (회차별 코코포리아 로그) ===================== -->
@@ -277,10 +295,12 @@
         </div>
       </div>
     </header>
-    <div class="pane" tabindex="0" role="region" aria-labelledby="shop-h">
-      <h2 class="sr" id="shop-h">상품 목록</h2>
-      <p class="sr" id="buy-note">구매 기능은 준비 중입니다.</p>
-      <div class="shop" id="shop"></div>
+    <div class="shop-wrap">
+      <div class="pane shop-pane" tabindex="0" role="region" aria-labelledby="shop-h">
+        <h2 class="sr" id="shop-h">상품 목록</h2>
+        <div class="shop" id="shop"></div>
+      </div>
+      <aside class="g-panel shop-detail" id="shop-detail" aria-label="선택한 상품" aria-live="polite" tabindex="0"></aside>
     </div>
   </section>
 

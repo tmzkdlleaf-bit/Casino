@@ -1,5 +1,5 @@
 import { refreshAuth } from "./auth.js";
-import { CALM_KEY } from "./config.js";
+import { CALM_KEY, PAGES } from "./config.js";
 import { AUTH_HASH, DB_CONFIGURED, USE_DB, loadAll, sb, showBootError, subscribeNotices } from "./data.js";
 import { $, $$, announce, toast } from "./dom.js";
 import { initBgm, initWorldBg } from "./ambience.js";
@@ -7,7 +7,7 @@ import { applyCalm, applyFilter, applyShow, filterSummary, renderHeroChips, runI
 import { errMsg } from "./forms.js";
 import { focusHeading, route } from "./router.js";
 import { DATA, motionOK, nav, state } from "./state.js";
-import { placeSegInk, renderAccount, renderCast, renderHome, renderInventory, renderNoticeList, renderNoticeSeg, renderShop, renderStory, renderWorld } from "./views.js";
+import { placeSegInk, renderAccount, renderCast, renderHome, renderInventory, renderNext, renderNoticeList, renderNoticeSeg, renderQuickLinks, renderSchedule, renderShop, renderStory, renderWorld } from "./views.js";
 
 /* ---------- events ---------- */
 document.addEventListener("click", e => {
@@ -25,6 +25,28 @@ document.addEventListener("click", e => {
 
   const slot = e.target.closest("#pf-inv button.slot");
   if (slot){ renderInventory(state.invItems, +slot.dataset.slot); $(`#pf-inv [data-slot="${slot.dataset.slot}"]`).focus(); return; }
+
+  // 지난 이야기: 회차 고르기 (넓은 화면은 오른쪽 창에 표시)
+  const ch = e.target.closest("[data-ch]");
+  if (ch){
+    renderStory(Number(ch.dataset.ch));
+    $(`[data-ch="${ch.dataset.ch}"]`).focus();
+    return;
+  }
+
+  // 상점: 상품 고르기
+  const item = e.target.closest("#shop [data-item]");
+  if (item){
+    renderShop(+item.dataset.item);
+    $(`#shop [data-item="${item.dataset.item}"]`).focus();
+    return;
+  }
+
+  // 좁은 화면 하단 메뉴 '더보기'
+  if (e.target.closest("#dock-more")){ setMore($("#dock-more").getAttribute("aria-expanded") !== "true"); return; }
+  if (e.target.closest("#menu-logout")){ setMore(false); $("#logout").click(); return; }
+  if (!e.target.closest("#dock-menu")) setMore(false);
+  else if (e.target.closest("a")) setMore(false);
 
   const cat = e.target.closest("#notice-seg button");
   if (cat){
@@ -56,6 +78,14 @@ document.addEventListener("click", e => {
     announce(filterSummary());
   }
 });
+
+function setMore(open){
+  const b = $("#dock-more"), m = $("#dock-menu");
+  if ((b.getAttribute("aria-expanded") === "true") === open) return;
+  b.setAttribute("aria-expanded", String(open));
+  m.hidden = !open;
+  if (open) $("a:not([hidden]), button:not([hidden])", m)?.focus();
+}
 
 export let spun = 0;
 
@@ -106,6 +136,7 @@ window.addEventListener("beforeunload", e => { if (state.admDirty){ e.preventDef
 addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   $("#site-head").classList.add("tips-off");   // 떠 있는 이름표 닫기
+  if (!$("#dock-menu").hidden){ setMore(false); $("#dock-more").focus(); return; }
   if (e.target.closest?.("input, textarea, select")) return;
   if (nav.current === "profile") location.hash = "#characters";
   else if (nav.current === "notice") location.hash = "#notices";
@@ -149,8 +180,22 @@ $("#cast-pane").addEventListener("pointerup", e => {
 /* 독의 로그아웃 = 설정 화면의 로그아웃 */
 $("#dock-logout").addEventListener("click", () => $("#logout").click());
 
+/* 게임 남은 시간: 홈·게임 화면을 보고 있을 때만 30초마다 고침 */
+setInterval(() => {
+  if (!state.ready || document.hidden) return;
+  if (nav.current === "home") renderNext();
+  else if (nav.current === "game") renderSchedule();
+}, 30000);
+
 /* ---------- boot ---------- */
+// 불러오는 동안: 주소의 화면 뼈대를 먼저 보여 줌 (계정이 필요한 화면은 홈 뼈대로)
+{
+  const base = (location.hash.slice(1) || "home").split("/")[0];
+  if (PAGES.includes(base) && !["admin", "login", "password"].includes(base) && !AUTH_HASH)
+    $$("[data-page]").forEach(s => s.hidden = s.dataset.page !== base);
+}
 renderHeroChips();
+renderQuickLinks();   // 설정 파일 값이라 데이터를 기다릴 필요 없음
 applyCalm();
 initWorldBg();
 initBgm();
@@ -186,5 +231,7 @@ runIntro();
   renderHome(); renderCast(); renderWorld(); renderStory(); renderShop(); renderNoticeSeg(); renderAccount();
   state.ready = true;
   route();
-  $("#boot").classList.add("hide");
+  document.body.classList.remove("loading");
+  $("#app").setAttribute("aria-busy", "false");
+  $("#boot").innerHTML = "";
 })();

@@ -32,7 +32,8 @@ export function route(){
 
   nav.current = view; nav.key = key;
   $$("[data-page]").forEach(s => s.hidden = s.dataset.page !== view);
-  $$("#nav a, #me").forEach(a => navKey && a.getAttribute("href") === "#" + navKey ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+  $$("#nav a, #me, #dock-menu a").forEach(a => navKey && a.getAttribute("href") === "#" + navKey ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+  $("#dock-more").classList.toggle("on", ["settings", "admin"].includes(navKey));
   setTitle(PAGE_TITLES[view] ?? "");
 
   if (view === "profile"){ renderProfile(param); nav.lastProfile = param; }
