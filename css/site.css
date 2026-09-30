@@ -1,28 +1,29 @@
 /* =========================================================
    카지노 커뮤 — 사이트 스타일
-   디자인 언어: 첫 버전(펠트 초록 · 벨벳 빨강 · 아이보리 · 금테 · 칩 · 트럼프 카드 · 유리 패널)
+   디자인 언어: 첫 버전의 구성(칩 · 트럼프 카드 · 유리 패널) + 드림코어 색(남색 밤 · 코발트 · 진홍 · 얼음빛 · 작은 흰 별)
+   색 이름은 첫 버전 그대로 둠: --felt=코발트, --velvet=진홍, --gold=얼음빛 하늘색, --ivory=푸른 흰색
    화면 구성: 페이지 자체는 스크롤하지 않음. 각 화면의 창(.pane) 안에서만 스크롤 — 게임 화면처럼
    목차: 00 토큰 · 01 기본 · 02 공통 부품 · 03 하단 메뉴 · 04 화면 뼈대 · 05 홈 · 06 캐릭터
          07 프로필 · 08 공지 · 09 세계관 · 10 지난 이야기 · 11 상점 · 12 게임 · 13 설정·폼
-         14 인트로 · 15 로딩·빈 상태 · 16 마크다운 · 17 전환 · 18 고대비
-   대비는 #121110 기준으로 검증 (본문 14.7 / smoke 6.2 / gold 8.1 / red-text 6.5 / 입력 경계 3.3)
+         14 인트로 · 15 로딩·빈 상태 · 16 마크다운 · 17 전환 · 18 고대비 · 19 드림코어 배경
+   대비는 #0B0F33 기준으로 검증 (본문 14.7 / smoke 6.2 / gold 8.1 / red-text 6.5 / 입력 경계 3.3)
    ========================================================= */
 
 /* =========================================================
    00. 토큰
    ========================================================= */
 :root{
-  --black:#121110; --black-2:#1B1A18; --black-3:#242220; --black-4:#2E2B28;
-  --felt:#0F3B2E; --felt-deep:#0A241C; --felt-hi:#145040;
-  --velvet:#8C1C26; --red:#B8323A;
-  --ivory:#EDE3C8; --smoke:#9A9486; --gold:#C9A55A; --green-hi:#6FAF8F;
-  --text-2:rgba(237,227,200,.74);
-  --red-text:#E07A82;                 /* 빨간 글자 6.5:1 */
-  --red-hi:#D9636C;                   /* 빨간 수트 그래픽 5.3:1 */
-  --line:rgba(237,227,200,.14); --line-2:rgba(237,227,200,.07);
-  --line-strong:rgba(237,227,200,.42); /* 입력칸·스위치 경계 (1.4.11) */
-  --focus:#E8C877;
-  --glass:rgba(24,23,21,.92);         /* 배경 흐림 대신 거의 불투명한 면 (흐림 효과는 GPU 부담이 큼) */
+  --black:#0B0F33; --black-2:#141A48; --black-3:#1C2458; --black-4:#232A5C;
+  --felt:#2445D8; --felt-deep:#101E70; --felt-hi:#2A47C4;
+  --velvet:#C2154F; --red:#FF2E6E;
+  --ivory:#E6EEFB; --smoke:#95A3CF; --gold:#B4F0FF; --green-hi:#7FB2FF;
+  --text-2:rgba(230,238,251,.74);
+  --red-text:#FF8FB0;                 /* 빨간 글자 6.5:1 */
+  --red-hi:#FF6A96;                   /* 빨간 수트 그래픽 5.3:1 */
+  --line:rgba(230,238,251,.14); --line-2:rgba(230,238,251,.07);
+  --line-strong:rgba(230,238,251,.42); /* 입력칸·스위치 경계 (1.4.11) */
+  --focus:#A8E4FF;
+  --glass:rgba(14,17,48,.92);         /* 배경 흐림 대신 거의 불투명한 면 (흐림 효과는 GPU 부담이 큼) */
 
   --f-serif:"Noto Serif KR","Noto Serif CJK KR","Nanum Myeongjo",serif;
   --f-sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
@@ -77,8 +78,8 @@ body.calm *, body.calm *::before, body.calm *::after{animation:none !important; 
 .world-bg.has-img img{opacity:.55}
 .world-bg::after{content:""; position:absolute; inset:0;
   background:
-    radial-gradient(circle 42rem at 28% 45%, rgba(15,59,46,.62), transparent 70%),
-    radial-gradient(ellipse 80% 60% at 50% 120%, rgba(140,28,38,.26), transparent 70%),
+    radial-gradient(circle 42rem at 28% 45%, rgba(36,69,216,.62), transparent 70%),
+    radial-gradient(ellipse 80% 60% at 50% 120%, rgba(214,25,90,.26), transparent 70%),
     radial-gradient(140% 110% at 50% 45%, transparent 55%, rgba(0,0,0,.5))}
 
 /* =========================================================
@@ -100,7 +101,7 @@ body.calm *, body.calm *::before, body.calm *::after{animation:none !important; 
 .chip.red{--c:var(--velvet)} .chip.green{--c:var(--felt)}
 
 /* 트럼프 카드 */
-.pcard{position:relative; display:block; aspect-ratio:5/7; border-radius:.7rem; background:var(--black-2); border:1px solid rgba(237,227,200,.45); box-shadow:0 18px 40px rgba(0,0,0,.55)}
+.pcard{position:relative; display:block; aspect-ratio:5/7; border-radius:.7rem; background:var(--black-2); border:1px solid rgba(230,238,251,.45); box-shadow:0 18px 40px rgba(0,0,0,.55)}
 .pcard::before{content:""; position:absolute; inset:.4rem; border:1px solid var(--line); border-radius:.45rem}
 .pcard .pip{position:absolute; font-size:1rem; line-height:1; display:flex}
 .pcard .pip.tl{top:.7rem; left:.7rem}
@@ -109,14 +110,14 @@ body.calm *, body.calm *::before, body.calm *::after{animation:none !important; 
 .card-back{
   position:relative; display:block; aspect-ratio:5/7; border-radius:.7rem; overflow:hidden;
   background:radial-gradient(ellipse at 50% 40%, var(--felt), var(--felt-deep));
-  border:1px solid rgba(201,165,90,.6);
+  border:1px solid rgba(180,240,255,.6);
 }
-.card-back::before{content:""; position:absolute; inset:.45rem; border:1px solid rgba(201,165,90,.55); border-radius:.45rem}
+.card-back::before{content:""; position:absolute; inset:.45rem; border:1px solid rgba(180,240,255,.55); border-radius:.45rem}
 .card-back::after{
   content:""; position:absolute; left:50%; top:50%; width:72%; aspect-ratio:1; translate:-50% -50%; border-radius:50%;
   background:
     radial-gradient(circle closest-side, var(--felt) 0 62%, var(--gold) 63% 66%, transparent 67% 86%, var(--gold) 87% 90%, transparent 91%),
-    repeating-conic-gradient(var(--velvet) 0 15deg, #0d0d0d 15deg 30deg);
+    repeating-conic-gradient(var(--velvet) 0 15deg, #080A1F 15deg 30deg);
   -webkit-mask:radial-gradient(circle closest-side, #000 90.5%, transparent 91%);
           mask:radial-gradient(circle closest-side, #000 90.5%, transparent 91%);
 }
@@ -129,14 +130,14 @@ body.calm *, body.calm *::before, body.calm *::after{animation:none !important; 
   font-size:.9375rem; line-height:1.2; touch-action:manipulation;
   transition:background .3s, border-color .3s, color .3s;
 }
-.btn:hover{border-color:var(--ivory); background:rgba(237,227,200,.06)}
+.btn:hover{border-color:var(--ivory); background:rgba(230,238,251,.06)}
 .btn.primary{background:var(--velvet); border-color:var(--velvet)}
-.btn.primary:hover{background:var(--red); border-color:var(--red)}
+.btn.primary:hover{background:#CC1656; border-color:var(--red); box-shadow:0 0 18px rgba(255,46,110,.35)}   /* 흰 글자 4.7:1 */
 .btn[disabled]{opacity:.4; cursor:not-allowed; border-style:dashed}
 .btn[disabled]:hover{background:transparent; border-color:var(--line-strong)}
 .btn[aria-busy="true"]{cursor:progress; opacity:.7}
-.btn.danger{border-color:rgba(224,122,130,.55); color:var(--red-text)}
-.btn.danger:hover{background:rgba(140,28,38,.25); border-color:var(--red-text)}
+.btn.danger{border-color:rgba(255,129,152,.55); color:var(--red-text)}
+.btn.danger:hover{background:rgba(214,25,90,.25); border-color:var(--red-text)}
 .btn.small{min-height:2.25rem; padding:.4rem 1rem; font-size:.875rem}
 .link-btn{display:inline-flex; align-items:center; min-height:var(--tap); padding:0 .25rem; border:0; background:none; cursor:pointer; color:var(--smoke); font-size:.9375rem; text-decoration:underline; text-underline-offset:.25em}
 .link-btn:hover{color:var(--ivory)}
@@ -144,7 +145,7 @@ body.calm *, body.calm *::before, body.calm *::after{animation:none !important; 
 .more:hover, a:hover > .more{color:var(--ivory)}
 
 .tag{display:inline-flex; align-items:center; padding:0 .55rem; margin-right:.45rem; border:1px solid var(--line-strong); border-radius:999px; font-size:.75rem; line-height:1.65; color:var(--smoke); vertical-align:.08em; white-space:nowrap}
-.tag.pin{border-color:rgba(201,165,90,.6); color:var(--gold)}
+.tag.pin{border-color:rgba(180,240,255,.6); color:var(--gold)}
 .tag-d{color:var(--red-text)} .tag-p{color:var(--green-hi)}
 
 /* 세그먼트 — 알약 + 빨간 잉크 */
@@ -173,8 +174,8 @@ body.calm *, body.calm *::before, body.calm *::after{animation:none !important; 
 .table{
   position:relative; overflow:hidden; isolation:isolate; border-radius:1.6rem;
   background:radial-gradient(ellipse at 50% 20%, var(--felt), var(--felt-deep) 75%);
-  border:1px solid rgba(201,165,90,.4);
-  box-shadow:inset 0 0 0 .45rem rgba(10,36,28,.6), inset 0 0 0 calc(.45rem + 1px) rgba(201,165,90,.35), 0 30px 60px rgba(0,0,0,.45);
+  border:1px solid rgba(180,240,255,.4);
+  box-shadow:inset 0 0 0 .45rem rgba(15,26,85,.6), inset 0 0 0 calc(.45rem + 1px) rgba(180,240,255,.35), 0 30px 60px rgba(0,0,0,.45);
 }
 
 h2.h{font-family:var(--f-serif); font-weight:900; font-size:clamp(1.5rem, 2.6vw, 2rem); line-height:1.25; margin:0 0 1rem; letter-spacing:-.01em}
@@ -196,10 +197,10 @@ body.intro-on main .split .ch{animation-play-state:paused}
 .toast.show{opacity:1; translate:-50% 0}
 
 /* 창 안 스크롤 */
-.pane{min-height:0; min-width:0; overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:rgba(237,227,200,.2) transparent}
+.pane{min-height:0; min-width:0; overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:rgba(230,238,251,.2) transparent}
 .pane:focus-visible, .scroll:focus-visible{outline-offset:-2px}
 .pane::-webkit-scrollbar{width:8px; height:8px}
-.pane::-webkit-scrollbar-thumb{background:rgba(237,227,200,.18); border-radius:8px}
+.pane::-webkit-scrollbar-thumb{background:rgba(230,238,251,.18); border-radius:8px}
 
 /* =========================================================
    03. 하단 메뉴 — 반투명 흐림 + 빨간 밑줄
@@ -208,7 +209,7 @@ body.intro-on main .split .ch{animation-play-state:paused}
   position:fixed; left:0; right:0; bottom:0; z-index:50;
   display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:.5rem;
   height:calc(var(--dock) + env(safe-area-inset-bottom)); padding:0 var(--pad) env(safe-area-inset-bottom);
-  background:rgba(16,15,14,.97); border-top:1px solid var(--line-2);
+  background:rgba(9,11,34,.97); border-top:1px solid var(--line-2);
 }
 .mark{justify-self:start; display:flex; align-items:center; gap:.6rem; min-height:var(--tap); font-family:var(--f-serif); font-weight:900; font-size:var(--s1); text-decoration:none; white-space:nowrap}
 .mark .chip{--size:1.5rem; box-shadow:none}
@@ -222,21 +223,21 @@ body.intro-on main .split .ch{animation-play-state:paused}
 .il:hover, .il[aria-current="page"]{color:var(--ivory)}
 .il[aria-current="page"]::after, .il.more.on::after{content:""; position:absolute; left:24%; right:24%; bottom:.1rem; height:2px; background:var(--red)}
 .il.more.on{color:var(--ivory)}   /* 색 외 표시: 막대 (1.4.1) */
-.il.admin{color:#b3938d}
+.il.admin{color:#B7A2D8}
 .il.more{display:none}
 /* 끌어서 순서 바꾸기 */
 .dock-nav .il{touch-action:none; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; transition:color .3s, transform .35s var(--ease)}
-.dock-nav .il.dragging{z-index:3; color:var(--ivory); transition:color .3s; cursor:grabbing; background:rgba(237,227,200,.08); border-radius:.7rem; box-shadow:0 8px 20px rgba(0,0,0,.45)}
+.dock-nav .il.dragging{z-index:3; color:var(--ivory); transition:color .3s; cursor:grabbing; background:rgba(230,238,251,.08); border-radius:.7rem; box-shadow:0 8px 20px rgba(0,0,0,.45)}
 .dock-nav.reordering{cursor:grabbing}
 .dock-nav.reordering .il:not(.dragging){opacity:.75}
 /* 새 공지 점 */
-.new-dot{display:none; position:absolute; top:.55rem; right:.55rem; width:.45rem; height:.45rem; border-radius:50%; background:var(--red-hi); box-shadow:0 0 0 2px rgb(16,15,14)}
+.new-dot{display:none; position:absolute; top:.55rem; right:.55rem; width:.45rem; height:.45rem; border-radius:50%; background:var(--red-hi); box-shadow:0 0 0 2px rgb(9,11,34)}
 .il.has-new .new-dot{display:block}
 /* 더보기 메뉴 (좁은 화면) */
 .dock-menu{position:fixed; right:.5rem; bottom:calc(var(--dock) + env(safe-area-inset-bottom) + .5rem); z-index:60; display:grid; min-width:11rem; padding:.4rem; border:1px solid var(--line-strong); border-radius:.9rem; background:var(--black-2); box-shadow:0 12px 30px rgba(0,0,0,.55)}
 .dock-menu[hidden], .dock-menu [hidden]{display:none}
 .dock-menu a, .dock-menu button{display:flex; align-items:center; gap:.7rem; min-height:2.75rem; padding:0 .9rem; border:0; border-radius:.6rem; background:none; color:var(--ivory); font:inherit; font-size:.9375rem; text-align:left; text-decoration:none; cursor:pointer}
-.dock-menu a:hover, .dock-menu button:hover{background:rgba(237,227,200,.06)}
+.dock-menu a:hover, .dock-menu button:hover{background:rgba(230,238,251,.06)}
 .dock-menu a[aria-current="page"]{color:var(--gold)}
 .dock-menu .ico{width:1.1rem; height:1.1rem; color:var(--smoke)}
 .il:focus-visible{outline-offset:-2px; border-radius:.5rem}
@@ -265,7 +266,7 @@ body.intro-on main .split .ch{animation-play-state:paused}
 .me-bal{font-size:.75rem; color:var(--gold)}
 .me-bal:empty{display:none}
 .dock .login{display:inline-flex; align-items:center; gap:.45rem; min-height:var(--tap); padding:0 1.1rem; border:1px solid var(--line-strong); border-radius:999px; font-size:.9375rem; text-decoration:none; transition:background .3s}
-.dock .login:hover{background:rgba(237,227,200,.06)}
+.dock .login:hover{background:rgba(230,238,251,.06)}
 .dock .login .ico{width:1.1rem; height:1.1rem}
 
 @media (hover:none){
@@ -294,7 +295,7 @@ body.intro-on main .split .ch{animation-play-state:paused}
   .me{padding:0 .3rem; border:0; gap:0}
   .me-text, .dock .login span{position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%)}
   .dock .login{width:var(--tap); padding:0; justify-content:center; border:0}
-  .bgm{position:fixed; top:.75rem; right:.75rem; width:2.5rem; height:2.5rem; background:rgba(18,17,16,.8)}
+  .bgm{position:fixed; top:.75rem; right:.75rem; width:2.5rem; height:2.5rem; background:rgba(10,12,36,.8)}
 }
 
 /* =========================================================
@@ -353,8 +354,8 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .p-cast{grid-column:3; grid-row:3}
 
 /* 창 안 스크롤 + 아래쪽 흐림(더 있다는 표시) */
-.scroll{flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; margin-inline:-1.25rem; padding:0 1.25rem; scrollbar-width:thin; scrollbar-color:rgba(237,227,200,.2) transparent}
-.scroll::after{content:""; position:sticky; bottom:0; display:block; height:1.75rem; margin-top:-1.25rem; background:linear-gradient(rgba(24,23,21,0), var(--glass)); pointer-events:none}
+.scroll{flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; margin-inline:-1.25rem; padding:0 1.25rem; scrollbar-width:thin; scrollbar-color:rgba(230,238,251,.2) transparent}
+.scroll::after{content:""; position:sticky; bottom:0; display:block; height:1.75rem; margin-top:-1.25rem; background:linear-gradient(rgba(14,17,48,0), var(--glass)); pointer-events:none}
 
 /* 공지 줄 (홈·공지 공통) — 올리면 밀리고 무늬가 돎 */
 .row-list{list-style:none; margin:0; padding:0}
@@ -364,7 +365,7 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
   transition:padding .5s var(--ease), background .3s;
 }
 .row-list li:first-child a{border-top:0}
-.row-list li a:hover{padding-inline:.5rem; background:rgba(237,227,200,.03)}
+.row-list li a:hover{padding-inline:.5rem; background:rgba(230,238,251,.03)}
 .row-list li a:focus-visible{outline-offset:-2px}
 .row-list time{color:var(--smoke); font-size:var(--s-1)}
 .row-list .t{min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
@@ -373,7 +374,7 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .row-list li.pinned time{color:var(--red-text)}
 .row-list li.pinned .t{font-weight:500}
 .row-list .empty-note{padding:1.5rem 0}
-.new-mk{display:inline-grid; place-items:center; width:1.05rem; height:1.05rem; margin-left:.4rem; border-radius:50%; background:var(--red); color:var(--ivory); font-size:.625rem; font-weight:700; line-height:1; vertical-align:.12em}
+.new-mk{display:inline-grid; place-items:center; width:1.05rem; height:1.05rem; margin-left:.4rem; border-radius:50%; background:var(--velvet); color:var(--ivory); font-size:.625rem; font-weight:700; line-height:1; vertical-align:.12em}
 .mtabs .has-new::after{content:""; display:inline-block; width:.4rem; height:.4rem; margin-left:.35rem; border-radius:50%; background:var(--red-hi); vertical-align:.2em}
 
 /* 다음 게임 */
@@ -386,8 +387,8 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .slots strong{display:block; font-family:var(--f-serif); font-weight:700; line-height:1.35}
 .slots li:first-child strong{font-weight:900; font-size:var(--s1)}
 .slots .m{display:block; font-size:var(--s-1); color:var(--smoke)}
-.slots .until{display:inline-flex; align-items:center; gap:.35rem; margin-top:.35rem; padding:.05rem .65rem; border:1px solid rgba(201,165,90,.5); border-radius:999px; font-size:.75rem; font-weight:500; color:var(--gold)}
-.slots .live .until{border-color:rgba(217,99,108,.7); color:var(--red-text)}
+.slots .until{display:inline-flex; align-items:center; gap:.35rem; margin-top:.35rem; padding:.05rem .65rem; border:1px solid rgba(180,240,255,.5); border-radius:999px; font-size:.75rem; font-weight:500; color:var(--gold)}
+.slots .live .until{border-color:rgba(255,94,124,.7); color:var(--red-text)}
 .slots .live .until::before{content:""; width:.4rem; height:.4rem; border-radius:50%; background:var(--red-hi); animation:live 1.6s ease-in-out infinite}
 @keyframes live{50%{opacity:.25}}
 /* 게임 페이지: 오늘부터 7일 */
@@ -398,7 +399,7 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .week .sun .wd{color:var(--red-text)}
 .week .has{border-color:var(--line-strong)}
 .week .has .dd{color:var(--ivory)}
-.week .today{border-color:rgba(201,165,90,.7)}
+.week .today{border-color:rgba(180,240,255,.7)}
 .week .today .wd{color:var(--gold)}
 .week .dots{display:flex; gap:3px; height:.4rem}
 .week .dots i{width:.4rem; height:.4rem; border-radius:50%; background:var(--ivory)}
@@ -418,7 +419,7 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .links .off{color:var(--smoke)}
 
 /* 최근 이야기 — 펠트 + 금테 */
-.latest{background:radial-gradient(ellipse at 30% 0%, var(--felt), var(--felt-deep)); border-color:rgba(201,165,90,.4); text-decoration:none; transition:transform .8s var(--ease)}
+.latest{background:radial-gradient(ellipse at 30% 0%, var(--felt), var(--felt-deep)); border-color:rgba(180,240,255,.4); text-decoration:none; transition:transform .8s var(--ease)}
 .latest:hover{transform:translateY(-.3rem)}
 .latest .ep{font-family:var(--f-serif); font-weight:700; color:var(--gold); font-size:var(--s-1)}
 .latest .g-title{margin:.15rem 0 .35rem; font-family:var(--f-serif); font-weight:900; font-size:var(--s2); line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
@@ -429,16 +430,16 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .p-cast{display:flex; flex-direction:column; min-width:0; min-height:0; padding:1rem 1.1rem .9rem}
 .p-cast .g-head{padding-inline:.35rem}
 .p-cast .g-head .more{color:var(--text-2)}
-.show{position:relative; flex:1; min-height:0; margin:.1rem -.35rem 0; border-radius:.9rem; overflow:hidden; isolation:isolate; background:var(--felt-deep); border:1px solid rgba(201,165,90,.35)}
+.show{position:relative; flex:1; min-height:0; margin:.1rem -.35rem 0; border-radius:.9rem; overflow:hidden; isolation:isolate; background:var(--felt-deep); border:1px solid rgba(180,240,255,.35)}
 .show-link{position:absolute; inset:0; display:block; text-decoration:none; color:inherit}
 .show-link:focus-visible{outline-offset:-3px}
 .show-img{position:absolute; inset:0; z-index:-2; opacity:0; transition:opacity var(--fade, .8s) ease}
 .show-img.on{opacity:1}
 .show-img img{width:100%; height:100%; object-fit:cover; object-position:50% 10%}
-.show-link::after{content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(transparent 45%, rgba(10,12,11,.88)); pointer-events:none}
+.show-link::after{content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(transparent 45%, rgba(8,10,30,.88)); pointer-events:none}
 .show-cap{position:absolute; left:.85rem; right:6.75rem; bottom:.75rem; display:flex; align-items:center; gap:.5rem; min-width:0; transition:opacity .4s ease}
 .show.swap .show-cap{opacity:0}
-.show-mk{display:flex; flex:none; font-size:.95rem; color:rgba(237,227,200,.9)}
+.show-mk{display:flex; flex:none; font-size:.95rem; color:rgba(230,238,251,.9)}
 .show-mk.red{color:var(--red-hi)}
 .show-mk .chip{--size:1.05rem; box-shadow:none}
 .show-mk .chip::before{display:none}
@@ -446,7 +447,7 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .show-role{flex:none; font-size:.75rem; color:var(--text-2)}
 .show .ph{position:absolute; inset:0; z-index:-2; display:grid; place-items:center; color:var(--smoke); font-size:.75rem}
 .show-ctl{position:absolute; right:.5rem; bottom:.5rem; display:flex; gap:.25rem}
-.ctl{display:grid; place-items:center; width:2rem; height:2rem; border:1px solid rgba(237,227,200,.3); border-radius:50%; background:rgba(10,20,16,.75); color:var(--ivory); cursor:pointer; padding:0; transition:border-color .3s}
+.ctl{display:grid; place-items:center; width:2rem; height:2rem; border:1px solid rgba(230,238,251,.3); border-radius:50%; background:rgba(10,14,44,.75); color:var(--ivory); cursor:pointer; padding:0; transition:border-color .3s}
 .ctl:hover{border-color:var(--gold)}
 .ctl .ico{grid-area:1 / 1; width:.9rem; height:.9rem}
 #show-toggle[aria-pressed="false"] .ico:nth-of-type(2), #show-toggle[aria-pressed="true"] .ico:nth-of-type(1){visibility:hidden}
@@ -505,16 +506,16 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .strip .img{position:absolute; top:0; bottom:0; left:50%; z-index:-2; width:max(100%, 64vw); translate:-50% 0; display:grid; place-items:center; color:var(--smoke); font-size:var(--s-1); background:var(--black-2); will-change:transform}
 .strip .img img{width:100%; height:100%; object-fit:cover; object-position:50% 20%}
 /* 다른 띠 어둡게: 이미지에 filter를 걸면 매번 다시 그려서 무거움 → 검은 막의 투명도만 바꿈 */
-.strip .dim{position:absolute; inset:0; z-index:-1; background:rgba(8,8,7,.55); opacity:0; transition:opacity .6s ease; pointer-events:none; will-change:opacity}
+.strip .dim{position:absolute; inset:0; z-index:-1; background:rgba(5,6,20,.55); opacity:0; transition:opacity .6s ease; pointer-events:none; will-change:opacity}
 @media (hover:hover){ .strips:hover .strip:not(:hover) .dim{opacity:1} }
-.strip::after{content:""; position:absolute; top:0; bottom:0; left:50%; width:max(100%, 64vw); translate:-50% 0; z-index:-1; background:linear-gradient(transparent 50%, rgba(12,11,10,.92)); pointer-events:none; will-change:transform}
+.strip::after{content:""; position:absolute; top:0; bottom:0; left:50%; width:max(100%, 64vw); translate:-50% 0; z-index:-1; background:linear-gradient(transparent 50%, rgba(7,9,28,.92)); pointer-events:none; will-change:transform}
 .strip .label{position:absolute; left:1.1rem; right:1.1rem; bottom:1.2rem}
 .strip .label .name{display:block; font-family:var(--f-serif); font-weight:900; font-size:clamp(1rem, 1.5vw, 1.6rem); line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .strip .label .sub{display:block; font-size:var(--s-1); color:var(--smoke); max-height:0; opacity:0; overflow:hidden; transition:max-height .6s var(--ease), opacity .4s}
 .strip:hover .label .sub, .strip:focus-visible .label .sub{max-height:2rem; opacity:1}
-.strip.dealer::before{content:""; position:absolute; inset:.6rem; border:1px solid rgba(237,227,200,.32); border-radius:.4rem; pointer-events:none; transition:inset .6s var(--ease), border-color .4s}
-.strip.dealer:hover::before{inset:.9rem; border-color:rgba(201,165,90,.7)}
-.strip .pip{position:absolute; top:1.1rem; left:1.1rem; display:flex; font-size:1.25rem; color:rgba(237,227,200,.9)}
+.strip.dealer::before{content:""; position:absolute; inset:.6rem; border:1px solid rgba(230,238,251,.32); border-radius:.4rem; pointer-events:none; transition:inset .6s var(--ease), border-color .4s}
+.strip.dealer:hover::before{inset:.9rem; border-color:rgba(180,240,255,.7)}
+.strip .pip{position:absolute; top:1.1rem; left:1.1rem; display:flex; font-size:1.25rem; color:rgba(230,238,251,.9)}
 .strip.red-suit .pip{color:var(--red-hi)}
 .strip.player::before{content:""; position:absolute; left:0; right:0; bottom:0; height:4px; background:var(--band); transition:height .5s var(--ease)}
 .strip.player:hover::before{height:8px}
@@ -536,9 +537,9 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .pf-visual{position:relative; height:100%; overflow:hidden; isolation:isolate; background:var(--black-2)}
 .pf-visual .img{position:absolute; inset:0; z-index:-2; display:grid; place-items:center; color:var(--smoke); font-size:var(--s-1); background:var(--black-2)}
 .pf-visual .img img{width:100%; height:100%; object-fit:cover; object-position:50% 20%}
-.pf-visual::after{content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(90deg, transparent 60%, rgba(18,17,16,.8)); pointer-events:none}
-.pf-visual.dealer::before{content:""; position:absolute; inset:1.25rem; border:1px solid rgba(237,227,200,.3); border-radius:.5rem; pointer-events:none}
-.pf-visual .pip{position:absolute; top:2.1rem; left:2.1rem; display:flex; font-size:1.6rem; color:rgba(237,227,200,.9)}
+.pf-visual::after{content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(90deg, transparent 60%, rgba(10,12,36,.8)); pointer-events:none}
+.pf-visual.dealer::before{content:""; position:absolute; inset:1.25rem; border:1px solid rgba(230,238,251,.3); border-radius:.5rem; pointer-events:none}
+.pf-visual .pip{position:absolute; top:2.1rem; left:2.1rem; display:flex; font-size:1.6rem; color:rgba(230,238,251,.9)}
 .pf-visual.red-suit .pip{color:var(--red-hi)}
 .pf-visual .badge{position:absolute; top:1.9rem; left:1.9rem; --size:2.8rem}
 .pf-visual.player::before{content:""; position:absolute; left:0; right:0; bottom:0; height:4px; background:var(--band)}
@@ -554,7 +555,7 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .pf-dl dd{padding-bottom:.9rem; font-size:1.0625rem; font-weight:500}
 .pf-block{margin-bottom:2.25rem}
 .pf-block > h2{margin:0 0 .9rem; font-family:var(--f-serif); font-weight:900; font-size:var(--s1)}
-.pf-desc{margin:0; color:rgba(237,227,200,.86); font-size:1.0625rem; line-height:1.85; white-space:pre-line}
+.pf-desc{margin:0; color:rgba(230,238,251,.86); font-size:1.0625rem; line-height:1.85; white-space:pre-line}
 .kw{display:flex; flex-wrap:wrap; gap:.45rem; list-style:none; margin:0; padding:0}
 .kw li{padding:.3rem .9rem; border:1px solid var(--line-strong); border-radius:999px; font-size:.9375rem}
 .inv{display:grid; grid-template-columns:repeat(6, 1fr); gap:.45rem}
@@ -586,7 +587,7 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
   .pf{display:block; height:100%; overflow:auto}
   .pf-info{overflow:visible; padding-top:1rem}
   .pf-visual{height:62svh}
-  .pf-visual::after{background:linear-gradient(transparent 55%, rgba(18,17,16,.92))}
+  .pf-visual::after{background:linear-gradient(transparent 55%, rgba(10,12,36,.92))}
 }
 
 /* =========================================================
@@ -641,8 +642,8 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 .timeline li::before{content:""; position:absolute; left:-1.4rem; top:1.05rem; width:.7rem; height:.7rem; border-radius:50%; background:var(--black); border:2px solid var(--gold); transition:background .3s}
 .timeline li.on::before{background:var(--gold)}
 .ch-pick{display:grid; gap:.05rem; width:100%; padding:.6rem .8rem; border:0; border-radius:.7rem; background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; transition:background .3s, box-shadow .3s}
-.ch-pick:hover{background:rgba(237,227,200,.04)}
-.ch-pick[aria-pressed="true"]{background:rgba(201,165,90,.09); box-shadow:inset 0 0 0 1px rgba(201,165,90,.45)}
+.ch-pick:hover{background:rgba(230,238,251,.04)}
+.ch-pick[aria-pressed="true"]{background:rgba(180,240,255,.09); box-shadow:inset 0 0 0 1px rgba(180,240,255,.45)}
 .ch-pick:focus-visible{outline-offset:-2px}
 .timeline .ep{font-family:var(--f-serif); font-size:var(--s-1); font-weight:700; color:var(--gold)}
 .ch-pick .h{font-family:var(--f-serif); font-weight:700; font-size:1.0625rem; line-height:1.4}
@@ -671,7 +672,7 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 .log-title{font-size:clamp(2rem, min(4.6vw, 7.5vh), 3.75rem); line-height:1.15}
 .log-tools{display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.5rem}
 .log-tabs button[aria-pressed="true"]{background:var(--velvet); color:var(--ivory)}
-.log-tabs button[aria-pressed="false"]{text-decoration:line-through; text-decoration-color:rgba(237,227,200,.35)}
+.log-tabs button[aria-pressed="false"]{text-decoration:line-through; text-decoration-color:rgba(230,238,251,.35)}
 .log-tabs .num{font-size:.8125rem; color:var(--text-2)}
 .log-size button{min-width:2.6rem; padding-inline:.7rem; font-family:var(--f-serif); font-weight:700}
 .log-size button[data-size="-1"]{font-size:.8125rem} .log-size button[data-size="1"]{font-size:1.0625rem}
@@ -682,23 +683,23 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 .lg-chunk{content-visibility:auto; contain-intrinsic-size:auto 1800px}   /* 화면 밖 묶음은 그리지 않음 */
 .lg{display:grid; grid-template-columns:2.5rem minmax(0, 1fr); gap:.9rem; padding:.95rem 0; border-top:1px solid var(--line-2)}
 .lg-chunk:first-child > .lg:first-child{border-top:0}
-.lg-av{width:2.5rem; height:2.5rem; margin-top:.2rem; border-radius:50%; overflow:hidden; background:var(--black-3); box-shadow:0 0 0 1px rgba(201,165,90,.45)}
+.lg-av{width:2.5rem; height:2.5rem; margin-top:.2rem; border-radius:50%; overflow:hidden; background:var(--black-3); box-shadow:0 0 0 1px rgba(180,240,255,.45)}
 .lg-av img{width:100%; height:100%; object-fit:cover; object-position:50% 12%}
 .lg-av.ini{display:grid; place-items:center; font-family:var(--f-serif); font-weight:900; font-size:1rem; color:var(--c); background:color-mix(in srgb, var(--c) 14%, var(--black-2)); box-shadow:0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent)}
 .lg-n{display:flex; align-items:baseline; gap:.5rem; margin:0 0 .1rem; font-family:var(--f-serif); font-weight:700; font-size:.95em; line-height:1.45}
 .lg-b p, .lg-narr p, .lg-sys p{margin:0; white-space:pre-line; overflow-wrap:anywhere}
-.lg-b > p:not(.lg-n){color:rgba(237,227,200,.9)}
+.lg-b > p:not(.lg-n){color:rgba(230,238,251,.9)}
 .lg-b > p + p{margin-top:.4em}
 .lg-body strong{font-weight:600; color:var(--ivory)}
 .lg-body em{font-style:italic; color:var(--ivory)}
 .lg-tab{flex:none; padding:0 .55em; border:1px solid var(--line-strong); border-radius:999px; font-family:var(--f-sans); font-weight:500; font-size:.7rem; line-height:1.7; color:var(--text-2)}
-.lg-narr{margin:.5rem 0; padding:.8rem 0 .8rem 1.15rem; border-left:2px solid rgba(201,165,90,.55); color:var(--text-2)}
+.lg-narr{margin:.5rem 0; padding:.8rem 0 .8rem 1.15rem; border-left:2px solid rgba(180,240,255,.55); color:var(--text-2)}
 .lg-narr > p + p{margin-top:.6em}
 .lg-narr .lg-tab{float:right; margin-left:.5rem}
 .lg-sys{padding:.5rem 0; text-align:center; font-size:.85em; color:var(--smoke)}
 /* 탭 형식별: 정보=펠트 상자, 비밀=벨벳 상자, 잡담=작고 흐리게 */
-.lg.f-info, .lg-narr.f-info{margin:.45rem 0; padding:.8rem 1rem; border:1px solid rgba(111,175,143,.28); border-radius:.8rem; background:rgba(15,59,46,.32)}
-.lg.f-secret, .lg-narr.f-secret{margin:.45rem 0; padding:.8rem 1rem; border:1px solid rgba(224,122,130,.3); border-radius:.8rem; background:rgba(140,28,38,.14)}
+.lg.f-info, .lg-narr.f-info{margin:.45rem 0; padding:.8rem 1rem; border:1px solid rgba(127,178,255,.28); border-radius:.8rem; background:rgba(36,69,216,.32)}
+.lg.f-secret, .lg-narr.f-secret{margin:.45rem 0; padding:.8rem 1rem; border:1px solid rgba(255,129,152,.3); border-radius:.8rem; background:rgba(214,25,90,.14)}
 .lg.f-info + .lg, .lg.f-secret + .lg{border-top:0}
 .lg.f-other{font-size:.9em; grid-template-columns:2rem minmax(0,1fr)}
 .lg.f-other .lg-av{width:2rem; height:2rem}
@@ -708,16 +709,16 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 .lg-dice .cmd{color:var(--smoke); font-size:.9em}
 .lg-dice .arr{color:var(--smoke)}
 .lg-dice .res{font-weight:600; color:var(--ivory)}
-.lg-dice.g-critical{border-color:rgba(201,165,90,.7)} .lg-dice.g-critical .res{color:var(--gold)}
+.lg-dice.g-critical{border-color:rgba(180,240,255,.7)} .lg-dice.g-critical .res{color:var(--gold)}
 .lg-dice.g-success .res{color:var(--green-hi)}
 .lg-dice.g-failure .res{color:var(--smoke)}
-.lg-dice.g-fumble{border-color:rgba(224,122,130,.6)} .lg-dice.g-fumble .res{color:var(--red-text)}
+.lg-dice.g-fumble{border-color:rgba(255,129,152,.6)} .lg-dice.g-fumble .res{color:var(--red-text)}
 /* 스탠딩 표정: 얼굴이 보이게 위쪽을 잘라 씀 */
 .lg-av.st{width:3.25rem; height:3.25rem; border-radius:.7rem; margin-top:.1rem}
 .lg-av.st img{object-position:50% 8%}
 .lg.has-st{grid-template-columns:3.25rem minmax(0, 1fr)}
 /* 구간 BGM 표시 */
-.lg-bgm{display:flex; flex-wrap:wrap; align-items:center; gap:.4rem .7rem; margin:1rem 0; padding:.55rem .9rem; border:1px dashed rgba(201,165,90,.55); border-radius:.8rem; background:rgba(201,165,90,.06); font-size:.9em}
+.lg-bgm{display:flex; flex-wrap:wrap; align-items:center; gap:.4rem .7rem; margin:1rem 0; padding:.55rem .9rem; border:1px dashed rgba(180,240,255,.55); border-radius:.8rem; background:rgba(180,240,255,.06); font-size:.9em}
 .lg-bgm .note{color:var(--gold); font-size:1.1em}
 .lg-bgm .t{flex:1; min-width:8rem; color:var(--ivory); font-weight:500}
 .lg-bgm.stop{border-style:dotted; background:none; color:var(--smoke)}
@@ -732,8 +733,8 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 .log-editbar{position:sticky; top:0; z-index:3; display:flex; flex-wrap:wrap; align-items:center; gap:.5rem 1rem; padding:.6rem 1rem; border-bottom:1px solid var(--line); border-radius:var(--r) var(--r) 0 0; background:var(--black-2); font-size:var(--s-1); color:var(--text-2)}
 .log-editbar .grow{flex:1}
 .lg-body.editing [data-i], .lg-body.editing .lg-bgm{cursor:pointer; border-radius:.35rem; transition:background .2s, box-shadow .2s}
-.lg-body.editing [data-i]:hover, .lg-body.editing .lg-bgm:hover{background:rgba(237,227,200,.06); box-shadow:0 0 0 1px var(--line-strong)}
-.lg-body .just{background:rgba(201,165,90,.14) !important; box-shadow:0 0 0 1px var(--gold)}
+.lg-body.editing [data-i]:hover, .lg-body.editing .lg-bgm:hover{background:rgba(230,238,251,.06); box-shadow:0 0 0 1px var(--line-strong)}
+.lg-body .just{background:rgba(180,240,255,.14) !important; box-shadow:0 0 0 1px var(--gold)}
 .dlg{width:min(40rem, calc(100vw - 2rem)); max-height:calc(100dvh - 2rem); overflow:auto; padding:1.5rem; border:1px solid var(--line-strong); border-radius:var(--r); background:var(--black-2); color:var(--ivory)}
 .dlg::backdrop{background:rgba(0,0,0,.6)}
 .dlg .row2{display:grid; grid-template-columns:1fr 1fr; gap:1rem}
@@ -755,7 +756,7 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 /* =========================================================
    11. 상점
    ========================================================= */
-.wallet-pill{display:flex; align-items:center; gap:1rem; padding:.45rem .5rem .45rem 1.1rem; border:1px solid rgba(201,165,90,.4); border-radius:999px; background:radial-gradient(ellipse at 30% 0%, var(--felt), var(--felt-deep))}
+.wallet-pill{display:flex; align-items:center; gap:1rem; padding:.45rem .5rem .45rem 1.1rem; border:1px solid rgba(180,240,255,.4); border-radius:999px; background:radial-gradient(ellipse at 30% 0%, var(--felt), var(--felt-deep))}
 .wallet-pill > span:first-child{font-size:var(--s-1); color:var(--text-2)}
 .wallet{display:flex; align-items:center; gap:.6rem; padding-right:.6rem}
 .wallet .chip{--size:1.8rem}
@@ -765,7 +766,7 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 .shop-pane{margin:-.3rem; padding:.3rem}
 .shop{display:grid; grid-template-columns:repeat(auto-fill, minmax(10.5rem, 1fr)); gap:.75rem; padding-bottom:1rem}
 .item{position:relative; display:flex; flex-direction:column; gap:.6rem; padding:.6rem .6rem .75rem; border:1px solid var(--line); border-radius:var(--r); background:var(--glass); color:inherit; font:inherit; text-align:left; cursor:pointer; transition:border-color .3s, transform .5s var(--ease)}
-.item:hover{border-color:rgba(201,165,90,.5); transform:translateY(-.2rem)}
+.item:hover{border-color:rgba(180,240,255,.5); transform:translateY(-.2rem)}
 .item[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 0 1px var(--gold)}
 .item .thumb{aspect-ratio:1; border-radius:.7rem; background:var(--black); display:grid; place-items:center; color:var(--smoke); font-size:var(--s-1); overflow:hidden}
 .item .thumb img{width:100%; height:100%; object-fit:cover}
@@ -814,8 +815,8 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 .game-stage .copy p{color:var(--text-2); margin:0 0 1.5rem}
 .wheel{
   position:relative; width:min(100%, 18rem); aspect-ratio:1; border-radius:50%;
-  background:radial-gradient(circle closest-side, #1f1611 0 60%, var(--gold) 60.5% 61.5%, transparent 62%), repeating-conic-gradient(var(--velvet) 0 9.73deg, #0b0b0b 9.73deg 19.46deg);
-  box-shadow:0 0 0 .7rem #2a1c15, 0 0 0 .78rem rgba(201,165,90,.7), 0 24px 50px rgba(0,0,0,.55);
+  background:radial-gradient(circle closest-side, #141945 0 60%, var(--gold) 60.5% 61.5%, transparent 62%), repeating-conic-gradient(var(--velvet) 0 9.73deg, #080A1F 9.73deg 19.46deg);
+  box-shadow:0 0 0 .7rem #1C2156, 0 0 0 .78rem rgba(180,240,255,.7), 0 24px 50px rgba(0,0,0,.55);
   transition:transform 4s cubic-bezier(.12,.8,.2,1);
 }
 .wheel::before{content:""; position:absolute; inset:30%; border-radius:50%; background:repeating-conic-gradient(var(--gold) 0 2deg, transparent 2deg 45deg); opacity:.55}
@@ -868,8 +869,8 @@ select.input option{background:var(--black-2); color:var(--ivory)}
 .form-actions{display:flex; flex-wrap:wrap; align-items:center; gap:.6rem}
 .field-error{display:block; margin-top:.35rem; color:var(--red-text); font-size:var(--s-1); font-weight:500}
 .field-error::before{content:"! "}
-.form-error{margin:0; padding:.75rem 1rem; border:1px solid rgba(224,122,130,.5); border-left-width:3px; border-radius:.6rem; background:rgba(140,28,38,.18)}
-.form-note{margin:0; padding:.75rem 1rem; border:1px solid rgba(111,175,143,.4); border-left-width:3px; border-radius:.6rem; background:rgba(111,175,143,.07)}
+.form-error{margin:0; padding:.75rem 1rem; border:1px solid rgba(255,129,152,.5); border-left-width:3px; border-radius:.6rem; background:rgba(214,25,90,.18)}
+.form-note{margin:0; padding:.75rem 1rem; border:1px solid rgba(127,178,255,.4); border-left-width:3px; border-radius:.6rem; background:rgba(127,178,255,.07)}
 table.members{width:100%; border-collapse:collapse; font-size:.9375rem}
 table.members td:last-child, table.members th:last-child{text-align:right}
 table.members th{text-align:left; font-weight:500; font-size:var(--s-1); color:var(--smoke); padding:.6rem 0; border-bottom:1px solid var(--line)}
@@ -883,7 +884,7 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
    칩 착지·고리 파동 → 카드가 사방에서 날아와 부채꼴 → 칩 폭발·섬광 → 이름 + 금빛 훑기 → 막이 열림
    ========================================================= */
 .opening{--k:1.6; position:fixed; inset:0; z-index:150; overflow:hidden; cursor:pointer}   /* --k: 인트로 전체 속도 배율 (클수록 느림) */
-.opening .curtain{position:absolute; left:0; right:0; height:50.5%; background:#0b0a09; z-index:0}
+.opening .curtain{position:absolute; left:0; right:0; height:50.5%; background:#07081C; z-index:0}
 .opening .curtain.top{top:0; border-bottom:1px solid transparent}
 .opening .curtain.bottom{bottom:0; border-top:1px solid transparent}
 .opening.out .curtain{border-color:var(--gold)}
@@ -895,8 +896,8 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
 .opening.out .intro-stage{animation:stage-out calc(.6s * var(--k)) var(--ease-io) forwards}
 @keyframes stage-out{to{opacity:0; transform:scale(1.12)}}
 /* 펠트 조명 */
-.intro-stage .glow{position:absolute; inset:0; background:radial-gradient(circle 34rem at 50% 50%, rgba(15,59,46,.85), transparent 70%); opacity:0; animation:fade-in calc(.9s * var(--k)) ease-out calc(.1s * var(--k)) forwards}
-.intro-stage .glow::after{content:""; position:absolute; inset:0; background:radial-gradient(ellipse 70% 50% at 50% 110%, rgba(140,28,38,.45), transparent 70%)}
+.intro-stage .glow{position:absolute; inset:0; background:radial-gradient(circle 34rem at 50% 50%, rgba(36,69,216,.85), transparent 70%); opacity:0; animation:fade-in calc(.9s * var(--k)) ease-out calc(.1s * var(--k)) forwards}
+.intro-stage .glow::after{content:""; position:absolute; inset:0; background:radial-gradient(ellipse 70% 50% at 50% 110%, rgba(214,25,90,.45), transparent 70%)}
 @keyframes fade-in{to{opacity:1}}
 /* 금빛 고리 파동 */
 .intro-stage .ring{position:absolute; left:50%; top:50%; width:12rem; aspect-ratio:1; margin:-6rem 0 0 -6rem; border-radius:50%; border:2px solid var(--gold); opacity:0; animation:ring calc(1.1s * var(--k)) var(--ease) calc(var(--t) * var(--k)) forwards}
@@ -928,21 +929,21 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
   75%{opacity:1}
   100%{opacity:0; transform:translate(var(--bx), var(--by)) rotateX(var(--rx)) rotate(var(--rz)) scale(1)}
 }
-.burst .spark{position:absolute; left:0; top:0; width:4px; height:4px; margin:-2px 0 0 -2px; border-radius:50%; background:#FFE9A8; box-shadow:0 0 8px 2px rgba(232,200,119,.8); opacity:0; animation:spark calc(1.1s * var(--k)) ease-out calc(var(--t) * var(--k)) forwards}
+.burst .spark{position:absolute; left:0; top:0; width:4px; height:4px; margin:-2px 0 0 -2px; border-radius:50%; background:#CFEAFF; box-shadow:0 0 8px 2px rgba(168,228,255,.8); opacity:0; animation:spark calc(1.1s * var(--k)) ease-out calc(var(--t) * var(--k)) forwards}
 @keyframes spark{0%{opacity:1; transform:translate(0,0)} 100%{opacity:0; transform:translate(var(--bx), var(--by))}}
-.flash{position:absolute; inset:0; background:radial-gradient(circle at 50% 50%, rgba(255,236,190,.5), transparent 60%); opacity:0; animation:flash calc(.8s * var(--k)) ease-out calc(var(--t) * var(--k)) forwards}
+.flash{position:absolute; inset:0; background:radial-gradient(circle at 50% 50%, rgba(220,240,255,.5), transparent 60%); opacity:0; animation:flash calc(.8s * var(--k)) ease-out calc(var(--t) * var(--k)) forwards}
 @keyframes flash{0%{opacity:0} 15%{opacity:1} 100%{opacity:0}}
 /* 이름: 글자가 솟고 금빛이 한 번 훑고 지나감 */
 .intro-name{position:absolute; left:0; right:0; top:calc(50% + clamp(3.5rem, 7vw, 5.5rem)); margin:0; text-align:center; font-family:var(--f-serif); font-weight:900; font-size:clamp(2.75rem, 7.5vw, 5.5rem); line-height:1.1; letter-spacing:-.03em}
 .intro-name .ch{animation-delay:calc((var(--i) * 90ms + 2.3s) * var(--k))}
-.intro-name .shine{position:absolute; inset:0; color:transparent; background:linear-gradient(100deg, transparent 38%, #FFF1C9 48%, var(--gold) 53%, transparent 64%) no-repeat; background-size:260% 100%; background-position:130% 0;
+.intro-name .shine{position:absolute; inset:0; color:transparent; background:linear-gradient(100deg, transparent 38%, #F2F8FF 48%, var(--gold) 53%, transparent 64%) no-repeat; background-size:260% 100%; background-position:130% 0;
   -webkit-background-clip:text; background-clip:text; animation:shine calc(1.1s * var(--k)) ease-in-out calc(2.95s * var(--k)) forwards}
 @keyframes shine{to{background-position:-30% 0}}
 .intro-line{position:absolute; left:50%; top:calc(50% + clamp(3.5rem, 7vw, 5.5rem) + clamp(3.4rem, 8.6vw, 6.4rem)); width:min(18rem, 60vw); height:1px; margin-left:max(-9rem, -30vw); background:linear-gradient(90deg, transparent, var(--gold), transparent); transform:scaleX(0); animation:line-in calc(.9s * var(--k)) var(--ease) calc(2.65s * var(--k)) forwards}
 @keyframes line-in{to{transform:scaleX(1)}}
 .intro-skip{
   position:absolute; right:var(--pad); bottom:calc(2rem + env(safe-area-inset-bottom)); z-index:3;
-  min-height:var(--tap); border:1px solid var(--line-strong); border-radius:999px; background:rgba(11,10,9,.6); padding:.5rem 1.2rem; font-size:var(--s-1); color:var(--smoke); cursor:pointer;
+  min-height:var(--tap); border:1px solid var(--line-strong); border-radius:999px; background:rgba(6,8,26,.6); padding:.5rem 1.2rem; font-size:var(--s-1); color:var(--smoke); cursor:pointer;
   transition:color .3s, border-color .3s, opacity .3s;
 }
 .intro-skip:hover{color:var(--ivory); border-color:var(--smoke)}
@@ -954,18 +955,18 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
 /* 불러오는 동안: 비어 있는 창에 줄 모양 자리 표시가 은은하게 흐름 */
 body.loading :is(#notice-list, #next-body, #notice-all, #timeline-wrap, #story-detail, #shop-detail, #schedule, #world-toc, #world-body, #latest-card, #show):empty,
 body.loading #show, body.loading #shop:empty, body.loading :is(#cast-dealers, #cast-players):empty{
-  --sk:rgba(237,227,200,.06);
+  --sk:rgba(230,238,251,.06);
   min-height:8rem; border-radius:.6rem;
   background:
-    linear-gradient(100deg, transparent 35%, rgba(237,227,200,.05) 50%, transparent 65%) 0 0 / 250% 100%,
+    linear-gradient(100deg, transparent 35%, rgba(230,238,251,.05) 50%, transparent 65%) 0 0 / 250% 100%,
     repeating-linear-gradient(180deg, var(--sk) 0 .8rem, transparent .8rem 2.2rem) 0 .4rem / 100% 100% no-repeat;
   background-origin:content-box; background-clip:content-box;   /* 창 안쪽 여백까지만 */
   animation:skel 1.8s linear infinite;
 }
-body.loading #show, body.loading #latest-card:empty, body.loading #shop-detail:empty{background:linear-gradient(100deg, transparent 35%, rgba(237,227,200,.05) 50%, transparent 65%) 0 0 / 250% 100%, var(--black-2); background-clip:padding-box}
+body.loading #show, body.loading #latest-card:empty, body.loading #shop-detail:empty{background:linear-gradient(100deg, transparent 35%, rgba(230,238,251,.05) 50%, transparent 65%) 0 0 / 250% 100%, var(--black-2); background-clip:padding-box}
 body.loading #show > *{visibility:hidden}
-body.loading #shop:empty{background:linear-gradient(100deg, transparent 35%, rgba(237,227,200,.05) 50%, transparent 65%) 0 0 / 250% 100%, repeating-linear-gradient(90deg, var(--sk) 0 calc(25% - .75rem), transparent 0 25%) 0 0 / 100% 14rem no-repeat}
-body.loading :is(#cast-dealers, #cast-players):empty{background:linear-gradient(100deg, transparent 35%, rgba(237,227,200,.04) 50%, transparent 65%) 0 0 / 250% 100%, repeating-linear-gradient(90deg, rgba(237,227,200,.05) 0 calc(100% / 7 - 3px), transparent 0 calc(100% / 7))}
+body.loading #shop:empty{background:linear-gradient(100deg, transparent 35%, rgba(230,238,251,.05) 50%, transparent 65%) 0 0 / 250% 100%, repeating-linear-gradient(90deg, var(--sk) 0 calc(25% - .75rem), transparent 0 25%) 0 0 / 100% 14rem no-repeat}
+body.loading :is(#cast-dealers, #cast-players):empty{background:linear-gradient(100deg, transparent 35%, rgba(230,238,251,.04) 50%, transparent 65%) 0 0 / 250% 100%, repeating-linear-gradient(90deg, rgba(230,238,251,.05) 0 calc(100% / 7 - 3px), transparent 0 calc(100% / 7))}
 @keyframes skel{to{background-position:-250% 0, 0 .4rem}}
 body.loading :is(#cast-dealers, #cast-players):empty, body.loading #show, body.loading #shop:empty{animation-name:skel2}
 @keyframes skel2{to{background-position:-250% 0, 0 0}}
@@ -982,7 +983,7 @@ body.loading :is(#cast-dealers, #cast-players):empty, body.loading #show, body.l
 /* =========================================================
    16. 마크다운 본문
    ========================================================= */
-.md{color:rgba(237,227,200,.86); line-height:1.85}
+.md{color:rgba(230,238,251,.86); line-height:1.85}
 .md > :first-child{margin-top:0}
 .md p, .md ul, .md ol, .md blockquote, .md pre, .md table{margin:0 0 1.1rem}
 .md h2, .md h3, .md h4, .md h5, .md h6{font-family:var(--f-serif); font-weight:700; color:var(--ivory); line-height:1.4; margin:2rem 0 .7rem}
@@ -1028,3 +1029,27 @@ body.loading :is(#cast-dealers, #cast-players):empty, body.loading #show, body.l
   .world-bg::after{display:none}
   .suit-ico{fill:CanvasText}
 }
+
+/* =========================================================
+   19. 드림코어 배경 — 남색 밤 → 형광 코발트 → 창백한 빛, 원근 타일 바닥, 작은 흰 별, 색이 어긋난 제목
+   ========================================================= */
+:root{ --glass:rgba(16,22,70,.95); }
+.split .clip{padding-inline:.12em; margin-inline:-.12em}
+.world-bg{background:linear-gradient(180deg, #080C2C 0%, #13206E 40%, #2F55D6 64%, #8FB8F0 80%, #E8F4FF 100%)}
+.pf-info{background:linear-gradient(90deg, rgba(10,14,50,.72), rgba(10,14,50,.94) 18%)}
+/* 원근 타일 바닥 */
+.world-bg::before{content:""; position:absolute; left:-50%; right:-50%; bottom:-10%; height:55%; z-index:1;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.55) 0 1px, transparent 1px 4.5rem),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.55) 0 1px, transparent 1px 4.5rem);
+  transform:perspective(26rem) rotateX(62deg); transform-origin:50% 100%;
+  -webkit-mask:linear-gradient(transparent, #000 45%); mask:linear-gradient(transparent, #000 45%); opacity:.55}
+.world-bg::after{
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='460'%3E%3Cg fill='%23FFFFFF'%3E%3Cpath d='M110 82l2 6 6 2-6 2-2 6-2-6-6-2 6-2z' opacity='1'/%3E%3Cpath d='M520 55l1.25 3.75 3.75 1.25-3.75 1.25-1.25 3.75-1.25-3.75-3.75-1.25 3.75-1.25z' opacity='0.8'/%3E%3Cpath d='M640 241l2.25 6.75 6.75 2.25-6.75 2.25-2.25 6.75-2.25-6.75-6.75-2.25 6.75-2.25z' opacity='0.9'/%3E%3Cpath d='M300 296l1 3 3 1-3 1-1 3-1-3-3-1 3-1z' opacity='0.7'/%3E%3Cpath d='M60 374l1.5 4.5 4.5 1.5-4.5 1.5-1.5 4.5-1.5-4.5-4.5-1.5 4.5-1.5z' opacity='0.8'/%3E%3Cpath d='M430 405l1.25 3.75 3.75 1.25-3.75 1.25-1.25 3.75-1.25-3.75-3.75-1.25 3.75-1.25z' opacity='0.6'/%3E%3Ccircle cx='240' cy='150' r='1.2'/%3E%3Ccircle cx='690' cy='120' r='1'/%3E%3Ccircle cx='380' cy='200' r='0.9'/%3E%3Ccircle cx='560' cy='360' r='1.1'/%3E%3Ccircle cx='150' cy='250' r='0.8'/%3E%3Ccircle cx='620' cy='430' r='0.9'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 720px 460px,
+    radial-gradient(ellipse 70% 40% at 50% 62%, rgba(180,240,255,.35), transparent 70%),
+    radial-gradient(circle 30rem at 80% 25%, rgba(255,46,110,.22), transparent 70%),
+    radial-gradient(rgba(255,255,255,.08) .6px, transparent .8px) 0 0 / 4px 4px}
+.hero-title, .page-title, .pf-name{text-shadow:-.07em 0 0 rgba(255,46,110,.6), .07em 0 0 rgba(90,200,255,.7)}
+.g-panel, .card{box-shadow:inset 0 0 0 1px rgba(180,240,255,.1), 0 0 30px rgba(60,110,255,.12)}
+.latest, .wallet-pill, .table{background:radial-gradient(ellipse at 30% 0%, #3558F0, #101E70 80%)}

@@ -41,10 +41,10 @@ const lum = hex => {
   const v = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(c => c <= .03928 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4);
   return .2126 * v[0] + .7152 * v[1] + .0722 * v[2];
 };
-const BG_L = lum("#181715");
+const BG_L = lum("#161C4E");   // 기록 창 배경(유리 패널)보다 살짝 밝게 잡아 여유를 둠
 const colorCache = new Map();
 function readable(hex){
-  if (!/^#[0-9a-f]{6}$/i.test(hex)) return "#EDE3C8";
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return "#E6EEFB";
   if (colorCache.has(hex)) return colorCache.get(hex);
   let [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)), out = hex;
   for (let k = 0; k < 12 && (lum(out) + .05) / (BG_L + .05) < 4.5; k++){
