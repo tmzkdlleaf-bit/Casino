@@ -4,832 +4,206 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Titfortat777</title>
+<meta name="description" content="사이트 소개 문구 자리">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Titfortat777">
+<meta property="og:description" content="사이트 소개 문구 자리">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<!-- 링크 공유 미리보기 이미지 (디스코드·트위터 등): 1200×630 이미지를 assets/og.jpg 로 넣고,
+     아래 두 줄의 주석을 푼 뒤 https://사이트주소 부분을 실제 주소로 바꾸세요. 주소는 https:// 부터 전체를 적어야 합니다.
+<meta property="og:url" content="https://사이트주소/">
+<meta property="og:image" content="https://사이트주소/assets/og.jpg">
+-->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23EF1A72'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23ADCFEA' stroke-width='2' stroke-dasharray='3 3'/%3E%3C/svg%3E">
+<!-- 연결 미리 열기: 글꼴·라이브러리·데이터 -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
-<!-- 도트 폰트: 갈무리 (SIL OFL, 웹 사용 가능) -->
-<link href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css" rel="stylesheet">
-<style>
-/* =========================================================
-   0. TOKENS
-   팔레트: #EF1A72 #ADCFEA #5D97D9 #1D367B #000000
-   ========================================================= */
-:root{
-  --bg:#000; --bg-2:#06080E; --bg-3:#0D1222; --panel:#080C18;
-  --navy:#1D367B; --navy-deep:#0B173D; --blue:#5D97D9; --sky:#ADCFEA;
-  --pink:#EF1A72; --pink-deep:#8F0D45;
-  --ink:#EEF3FA; --dim:#7F8AA2; --dim-2:#3A4259;
-  --line:rgba(173,207,234,.2); --line-2:rgba(173,207,234,.09);
-
-  --f-pixel:"Galmuri11","Galmuri9",monospace;
-  --f-sans:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-
-  --s-1:.8125rem; --s0:1rem; --s1:1.25rem; --s2:1.5625rem; --s3:1.953rem; --s4:2.441rem;
-  --pad:clamp(1.25rem, 4vw, 3.5rem);
-  --wrap:82rem;
-  --cut:7px;
-  --ease:cubic-bezier(.22,1,.36,1);
-  --ease-io:cubic-bezier(.65,0,.35,1);
-}
-
-*,*::before,*::after{box-sizing:border-box}
-html{background:var(--bg); scroll-behavior:smooth}
-body{
-  margin:0; min-height:100svh; overflow-x:hidden;
-  background:var(--bg); color:var(--ink);
-  font-family:var(--f-sans); font-weight:300; font-size:var(--s0); line-height:1.7; word-break:keep-all;
-  -webkit-font-smoothing:antialiased;
-}
-body::before{ /* 배경: 남색·분홍 얼룩 + 주사선 */
-  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
-  background:
-    repeating-linear-gradient(0deg, rgba(173,207,234,.025) 0 1px, transparent 1px 3px),
-    radial-gradient(ellipse 50% 40% at 8% 18%, rgba(29,54,123,.35), transparent 70%),
-    radial-gradient(ellipse 45% 35% at 92% 70%, rgba(143,13,69,.22), transparent 70%),
-    radial-gradient(ellipse 60% 50% at 60% 110%, rgba(29,54,123,.28), transparent 70%);
-}
-body::after{ /* 필름 그레인 */
-  content:""; position:fixed; inset:0; pointer-events:none; z-index:200; opacity:.05;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-}
-::selection{background:var(--pink); color:#fff}
-img{max-width:100%; display:block}
-a{color:inherit}
-button,input,textarea,select{font:inherit; color:inherit}
-:focus-visible{outline:2px solid var(--sky); outline-offset:4px}
-[hidden]{display:none !important}
-.wrap{max-width:var(--wrap); margin:0 auto; padding-inline:var(--pad)}
-.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
-.px{font-family:var(--f-pixel); font-weight:400; letter-spacing:0}
-
-@media (prefers-reduced-motion: reduce){ *,*::before,*::after{animation:none !important; transition:none !important; scroll-behavior:auto !important} }
-body.calm *, body.calm *::before, body.calm *::after{animation:none !important; transition:none !important}
-
-/* =========================================================
-   1. SHARED
-   ========================================================= */
-/* 모서리를 깎은 상자 */
-.notch{clip-path:polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut))}
-
-/* 네 귀퉁이 꺾쇠 테두리 */
-.brk{position:relative}
-.brk::after{
-  content:""; position:absolute; inset:var(--bi,-7px); pointer-events:none; transition:opacity .4s, inset .5s var(--ease);
-  --c:var(--bc, var(--ink)); --l:var(--bl, 16px); --w:var(--bw, 2px);
-  background:
-    linear-gradient(var(--c) 0 0) 0 0 / var(--l) var(--w), linear-gradient(var(--c) 0 0) 0 0 / var(--w) var(--l),
-    linear-gradient(var(--c) 0 0) 100% 0 / var(--l) var(--w), linear-gradient(var(--c) 0 0) 100% 0 / var(--w) var(--l),
-    linear-gradient(var(--c) 0 0) 0 100% / var(--l) var(--w), linear-gradient(var(--c) 0 0) 0 100% / var(--w) var(--l),
-    linear-gradient(var(--c) 0 0) 100% 100% / var(--l) var(--w), linear-gradient(var(--c) 0 0) 100% 100% / var(--w) var(--l);
-  background-repeat:no-repeat;
-}
-
-/* 칩 — DB 값 red = 분홍 칩, green = 남색 칩 */
-.chip{
-  --size:4rem; --c:var(--bg-3); --e:var(--ink);
-  position:relative; display:grid; place-items:center;
-  width:var(--size); aspect-ratio:1; border-radius:50%;
-  background:
-    radial-gradient(circle, var(--c) 0 58%, transparent 58.5%),
-    repeating-conic-gradient(var(--e) 0 16deg, var(--c) 16deg 60deg);
-  box-shadow:0 0 0 1px rgba(0,0,0,.7), 0 12px 28px rgba(0,0,0,.6);
-  color:var(--e);
-}
-.chip::before{content:""; position:absolute; inset:24%; border-radius:50%; border:2px dashed var(--e); opacity:.65}
-.chip.red{--c:var(--pink)} .chip.green{--c:var(--navy); --e:var(--sky)}
-
-/* 카드 앞면 */
-.pcard{
-  position:relative; display:block; aspect-ratio:5/7; border-radius:4px;
-  background:var(--bg-2); border:2px solid var(--ink);
-  box-shadow:0 18px 40px rgba(0,0,0,.6);
-}
-.pcard::before{content:""; position:absolute; inset:.35rem; border:1px solid var(--line)}
-.pcard .pip{position:absolute; font-size:1rem; line-height:1}
-.pcard .pip.tl{top:.65rem; left:.65rem}
-.pcard .pip.br{bottom:.65rem; right:.65rem; transform:rotate(180deg)}
-.pcard.red-suit .pip{color:var(--pink)}
-.pcard .face{position:absolute; inset:2rem 1rem; background:var(--bg-3); display:grid; place-items:center; color:var(--dim); font-size:var(--s-1); overflow:hidden}
-.pcard .face img{width:100%; height:100%; object-fit:cover; object-position:50% 20%}
-
-/* 카드 뒷면 */
-.card-back{
-  position:relative; display:block; aspect-ratio:5/7; border-radius:4px; overflow:hidden;
-  background:radial-gradient(ellipse at 50% 40%, var(--navy), var(--navy-deep));
-  border:2px solid var(--sky);
-}
-.card-back::before{content:""; position:absolute; inset:.4rem; border:1px solid rgba(173,207,234,.5)}
-.card-back::after{
-  content:""; position:absolute; left:50%; top:50%; width:72%; aspect-ratio:1; translate:-50% -50%; border-radius:50%;
-  background:
-    radial-gradient(circle closest-side, var(--navy) 0 62%, var(--sky) 63% 66%, transparent 67% 86%, var(--sky) 87% 90%, transparent 91%),
-    repeating-conic-gradient(var(--pink) 0 15deg, #000 15deg 30deg);
-  -webkit-mask:radial-gradient(circle closest-side, #000 90.5%, transparent 91%);
-          mask:radial-gradient(circle closest-side, #000 90.5%, transparent 91%);
-}
-
-/* 버튼 */
-.btn{
-  --cut:6px;
-  position:relative; display:inline-flex; align-items:center; justify-content:center; gap:.6rem;
-  padding:.8rem 1.4rem; border:1px solid rgba(173,207,234,.45);
-  background:rgba(0,0,0,.4); color:var(--ink); text-decoration:none; cursor:pointer; white-space:nowrap;
-  font-family:var(--f-pixel); font-size:.9375rem; line-height:1.2;
-  clip-path:polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut));
-  transition:background .3s, border-color .3s, color .3s, translate .5s var(--ease);
-}
-.btn:hover{border-color:var(--ink); background:rgba(173,207,234,.08)}
-.btn.primary{background:var(--pink); border-color:var(--pink); color:#fff}
-.btn.primary:hover{background:#ff3a8a; border-color:#ff3a8a}
-.btn .tri{display:inline-block; width:.45rem; height:.6rem; background:currentColor; clip-path:polygon(0 0, 100% 50%, 0 100%)}
-.btn[disabled]{opacity:.35; cursor:not-allowed}
-.btn.magnetic{translate:var(--tx,0) var(--ty,0)}
-
-/* 좌우 화살표 (도트 꺾쇠 모양) */
-.arrow{
-  display:grid; place-items:center; width:3.25rem; height:3.75rem; padding:0; border:0; background:none; cursor:pointer;
-}
-.arrow::before{
-  content:""; width:1.6rem; height:2.6rem; background:var(--ink); transition:background .3s, transform .4s var(--ease);
-  clip-path:polygon(100% 0, 55% 50%, 100% 100%, 58% 100%, 12% 50%, 58% 0);
-}
-.arrow.next::before{clip-path:polygon(0 0, 42% 0, 88% 50%, 42% 100%, 0 100%, 45% 50%)}
-.arrow:hover::before{background:var(--pink)}
-.arrow.prev:hover::before{transform:translateX(-4px)}
-.arrow.next:hover::before{transform:translateX(4px)}
-.arrow:active::before{background:var(--sky)}
-
-/* 스크롤 등장 */
-@keyframes reveal{from{opacity:0; transform:translateY(3rem)}}
-@supports (animation-timeline: view()){
-  @media (prefers-reduced-motion: no-preference){
-    .reveal{animation:reveal linear both; animation-timeline:view(); animation-range:entry 0% cover 28%}
-  }
-}
-
-.progress{position:fixed; top:0; left:0; right:0; height:2px; z-index:60; background:var(--pink); transform-origin:0 50%; transform:scaleX(0); display:none}
-@keyframes grow{to{transform:scaleX(1)}}
-@supports (animation-timeline: scroll()){
-  .progress{display:block; animation:grow linear both; animation-timeline:scroll(root)}
-}
-
-/* 세그먼트 버튼 */
-.seg{display:inline-flex; padding:.25rem; border:1px solid var(--line); position:relative; background:rgba(0,0,0,.4)}
-.seg button{position:relative; z-index:1; border:0; background:none; padding:.5rem 1.1rem; color:var(--dim); cursor:pointer; transition:color .3s; font-family:var(--f-pixel); font-size:.9375rem; white-space:nowrap}
-.seg button[aria-pressed="true"]{color:#fff}
-.seg button .n{opacity:.6; margin-left:.35rem}
-.seg .seg-ink{position:absolute; top:.25rem; bottom:.25rem; left:0; width:0; background:var(--pink); transition:left .5s var(--ease), width .5s var(--ease)}
-
-/* =========================================================
-   2. HEADER
-   ========================================================= */
-.site-head{
-  position:fixed; inset:0 0 auto; z-index:50; view-transition-name:site-head;
-  transition:background .4s, border-color .4s, backdrop-filter .4s;
-  border-bottom:1px solid transparent;
-}
-.site-head.scrolled{background:rgba(0,0,0,.72); backdrop-filter:blur(14px); border-color:var(--line-2)}
-.site-head .inner{display:flex; align-items:center; gap:2rem; height:4.5rem}
-.mark{display:flex; align-items:center; gap:.6rem; font-family:var(--f-pixel); font-weight:700; font-size:var(--s1); text-decoration:none; white-space:nowrap}
-.mark .chip{--size:1.5rem; box-shadow:none}
-.mark .chip::before{border-width:1px}
-.nav{position:relative; display:flex; gap:.1rem; overflow-x:auto; scrollbar-width:none; margin-left:auto}
-.nav::-webkit-scrollbar{display:none}
-.nav a{padding:.5rem .85rem; white-space:nowrap; color:var(--dim); text-decoration:none; font-family:var(--f-pixel); font-size:.9375rem; transition:color .3s}
-.nav a:hover, .nav a[aria-current="page"]{color:var(--ink)}
-.nav a.admin{color:#b0647f}
-.nav-ink{position:absolute; bottom:.2rem; left:0; height:2px; width:0; background:var(--pink); transition:left .5s var(--ease), width .5s var(--ease)}
-@media (max-width:760px){
-  .site-head .inner{flex-direction:column; align-items:stretch; gap:0; height:auto; padding-top:.75rem}
-  .nav{margin-left:0; margin-inline:calc(var(--pad) * -1); padding:0 var(--pad) .25rem}
-}
-
-/* =========================================================
-   3. PAGE SHELL
-   ========================================================= */
-main{position:relative; z-index:1}
-.page{padding-top:clamp(7.5rem, 14vh, 10rem); padding-bottom:7rem; min-height:100svh}
-.page-head{display:grid; grid-template-columns:repeat(12, 1fr); gap:1.5rem; align-items:end; padding-bottom:2.5rem; margin-bottom:3.5rem; border-bottom:1px solid var(--line)}
-.page-title{grid-column:1 / span 7; margin:0; font-family:var(--f-pixel); font-weight:700; font-size:clamp(2.75rem, 7vw, 5.75rem); line-height:1.05}
-.page-lede{grid-column:9 / -1; margin:0; color:var(--dim)}
-@media (max-width:760px){ .page-title,.page-lede{grid-column:1 / -1} }
-
-.split .ch{display:inline-block; animation:rise 1s var(--ease) both; animation-delay:calc(var(--i) * 55ms + .15s)}
-.split .clip{display:inline-block; overflow:hidden; vertical-align:bottom; padding-bottom:.06em}
-@keyframes rise{from{transform:translateY(105%)}}
-
-h2.h{font-family:var(--f-pixel); font-weight:700; font-size:var(--s3); line-height:1.3; margin:0 0 1.5rem}
-.muted{color:var(--dim)}
-.slot-note{color:var(--dim); font-size:var(--s-1)}
-.empty-note{padding:3rem var(--pad); color:var(--dim); text-align:center; border-block:1px solid var(--line-2); font-family:var(--f-pixel); margin:0}
-
-/* =========================================================
-   4. HOME
-   ========================================================= */
-.hero{
-  --mx:50%; --my:40%; --px:0; --py:0;
-  position:relative; min-height:100svh; isolation:isolate;
-  display:grid; grid-template-columns:repeat(12, 1fr); grid-template-rows:auto 1fr; column-gap:1.5rem;
-  padding-top:6rem; padding-bottom:clamp(2rem,5vh,3.5rem);
-}
-.hero::before{
-  content:""; position:absolute; inset:0 calc(50% - 50vw); z-index:-2;
-  background:
-    radial-gradient(circle 36rem at var(--mx) var(--my), rgba(29,54,123,.55), transparent 70%),
-    radial-gradient(ellipse 80% 60% at 50% 120%, rgba(239,26,114,.18), transparent 70%);
-}
-.hero-chips{position:absolute; inset:0; z-index:-1; pointer-events:none; overflow:hidden}
-.hero-chips .fall{position:absolute; animation:drop 1.2s cubic-bezier(.3,.75,.3,1) both}
-.hero-chips .float{display:block; transform:translate3d(calc(var(--px) * var(--d) * 1rem), calc(var(--py) * var(--d) * 1rem), 0); transition:transform .9s var(--ease)}
-.hero-chips .chip{transform:perspective(40rem) rotateX(var(--tx,45deg)) rotate(var(--r1,0deg))}
-@keyframes drop{from{transform:translateY(-70vh); opacity:0}}
-@keyframes chips-out{to{transform:translateY(-25vh); opacity:.2}}
-@supports (animation-timeline: scroll()){
-  @media (prefers-reduced-motion: no-preference){
-    .hero-chips{animation:chips-out linear both; animation-timeline:scroll(root); animation-range:0 90vh}
-  }
-}
-.hero-meta{grid-column:1 / -1; display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; font-size:var(--s-1); color:var(--dim); font-family:var(--f-pixel)}
-.hero-meta .scroll-cue{display:flex; align-items:center; gap:.75rem}
-.hero-meta .scroll-cue::after{content:""; width:2px; height:2.5rem; background:linear-gradient(var(--sky), transparent); animation:cue 2.4s var(--ease-io) infinite}
-@keyframes cue{0%{transform:scaleY(0); transform-origin:top} 45%{transform:scaleY(1); transform-origin:top} 55%{transform:scaleY(1); transform-origin:bottom} 100%{transform:scaleY(0); transform-origin:bottom}}
-
-.hero-main{grid-column:1 / span 8; align-self:end}
-.hero-title{
-  margin:0 0 1.75rem; font-family:var(--f-pixel); font-weight:700; line-height:1;
-  font-size:clamp(3rem, 7.6vw, 8.5rem); color:var(--ink); white-space:nowrap;
-  text-shadow:.06em .06em 0 var(--pink-deep), 0 10px 60px rgba(0,0,0,.6);
-}
-.hero-main .intro{max-width:30rem; margin:0 0 2rem; font-size:var(--s1); line-height:1.75}
-.hero-main .actions{display:flex; gap:.75rem; flex-wrap:wrap}
-
-.glance{grid-column:9 / -1; align-self:end; display:grid; gap:.9rem}
-.g-panel{
-  --cut:10px; display:block; border:1px solid var(--line); padding:1.1rem 1.25rem; text-decoration:none;
-  background:rgba(8,12,24,.7); backdrop-filter:blur(16px);
-  animation:panel-in .9s var(--ease) both; animation-delay:calc(var(--n) * .12s + .5s);
-  transition:transform .6s var(--ease), border-color .3s;
-}
-a.g-panel:hover{transform:translateY(-.3rem); border-color:var(--sky)}
-@keyframes panel-in{from{opacity:0; transform:translateX(2rem)}}
-.g-panel .ep{font-family:var(--f-pixel); color:var(--sky); font-size:var(--s-1)}
-.g-panel h3{font-family:var(--f-pixel); font-weight:700; font-size:var(--s1); margin:.2rem 0 .25rem; line-height:1.35}
-.g-panel p{margin:0; color:var(--dim); font-size:.9375rem}
-.g-panel.latest{background:radial-gradient(ellipse at 30% 0%, var(--navy), var(--navy-deep)); border-color:rgba(173,207,234,.45)}
-.g-panel.win{border-color:rgba(239,26,114,.55)}
-.g-panel.win .ep{color:var(--pink)}
-.g-panel.next{display:flex; align-items:center; gap:1rem}
-.g-panel.next .chip{--size:2.4rem; flex:none}
-.g-panel.next strong{display:block; font-family:var(--f-pixel)}
-.g-panel.next span{font-size:var(--s-1); color:var(--dim)}
-
-@media (max-width:1100px){ .hero-main{grid-column:1 / -1} .glance{grid-column:1 / -1; grid-template-columns:repeat(3, 1fr); margin-top:2rem} }
-@media (max-width:820px){
-  .hero{display:flex; flex-direction:column; min-height:auto; padding-top:7rem; padding-bottom:2.5rem; gap:1.25rem}
-  .hero-main{display:contents}
-  .hero-meta{order:0} .hero-title{order:1; margin:0; font-size:clamp(2.5rem, 13vw, 4.5rem)}
-  .glance{order:2; align-self:stretch; min-width:0; display:flex; gap:.75rem; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; margin-top:0;
-    margin-inline:calc(var(--pad) * -1); padding:0 var(--pad) .25rem; scroll-padding-inline:var(--pad)}
-  .glance::-webkit-scrollbar{display:none}
-  .g-panel{flex:0 0 82%; scroll-snap-align:start; animation-name:panel-in-m}
-  .hero-main .intro{order:3; margin:0; font-size:var(--s0)}
-  .hero-main .actions{order:4}
-  .hero-chips .chip{--size:2.6rem !important}
-}
-@keyframes panel-in-m{from{opacity:0; transform:translateY(1rem)}}
-
-@media (hover:none), (max-width:820px){
-  .site-head, .site-head.scrolled{backdrop-filter:none; background:rgba(0,0,0,.94)}
-  .g-panel{backdrop-filter:none; background:rgba(8,12,24,.96)}
-}
-
-body.intro-on .hero *, body.intro-on .hero *::after{animation-play-state:paused !important}
-
-/* 마퀴 */
-.marquee{position:relative; overflow:hidden; background:var(--pink); color:#fff; padding:.9rem 0; transform:rotate(-1.2deg); margin:3rem -1rem; box-shadow:0 20px 50px rgba(0,0,0,.5); border-block:3px solid #000}
-.marquee .track{display:flex; width:max-content; animation:slide 38s linear infinite}
-.marquee:hover .track{animation-play-state:paused}
-.marquee span{font-family:var(--f-pixel); font-weight:700; font-size:clamp(1.4rem, 3.2vw, 2.4rem); line-height:1; padding-inline:1.5rem; white-space:nowrap}
-.marquee i{font-style:normal; color:#000}
-@keyframes slide{to{transform:translateX(-50%)}}
-
-/* 소개 */
-.intro-block{display:grid; grid-template-columns:repeat(12, 1fr); gap:1.5rem; padding-block:clamp(5rem, 12vh, 9rem)}
-.intro-block .statement{grid-column:1 / span 6; position:sticky; top:8rem; align-self:start; margin:0; font-family:var(--f-pixel); font-weight:700; font-size:clamp(1.8rem, 3.6vw, 3rem); line-height:1.4}
-.intro-block .body{grid-column:8 / -1; display:grid; gap:2.5rem}
-.intro-block .body article{padding-top:1.25rem; border-top:1px solid var(--line)}
-.intro-block .body h3{font-family:var(--f-pixel); font-weight:700; font-size:var(--s1); margin:0 0 .5rem; color:var(--sky)}
-.intro-block .body p{margin:0; color:var(--dim)}
-@media (max-width:860px){ .intro-block .statement,.intro-block .body{grid-column:1 / -1; position:static} }
-
-/* 남색 테이블 면 */
-.table{
-  --mx:50%; --my:50%; --bi:-8px; --bc:var(--sky); --bl:22px;
-  position:relative; isolation:isolate;
-  background:radial-gradient(ellipse at 50% 20%, var(--navy), var(--navy-deep) 75%);
-  border:1px solid rgba(173,207,234,.35);
-  box-shadow:inset 0 0 0 .5rem rgba(11,23,61,.6), inset 0 0 0 calc(.5rem + 1px) rgba(173,207,234,.25), 0 40px 80px rgba(0,0,0,.6);
-}
-.table::before{content:""; position:absolute; inset:0; z-index:-1; background:radial-gradient(circle 26rem at var(--mx) var(--my), rgba(173,207,234,.1), transparent 70%)}
-.cast-preview{display:grid; grid-template-columns:repeat(12, 1fr); gap:1.5rem; padding:clamp(2rem, 5vw, 4.5rem); overflow:hidden}
-.cast-preview .copy{grid-column:1 / span 4; align-self:center}
-.cast-preview .copy p{color:rgba(238,243,250,.75); margin:0 0 2rem}
-.cast-preview .stage{grid-column:5 / -1; display:grid; gap:2rem}
-.fan{position:relative; height:clamp(15rem, 28vw, 21rem); margin-bottom:1rem}
-.fan .fan-card{
-  position:absolute; left:50%; bottom:0; width:clamp(6rem, 10.5vw, 9rem);
-  transform-origin:50% 190%;
-  transform:translateX(-50%) rotate(var(--rot)) translateY(var(--lift));
-  transition:transform .6s var(--ease); text-decoration:none;
-}
-.fan .fan-card:hover, .fan .fan-card:focus-visible{transform:translateX(-50%) rotate(var(--rot)) translateY(calc(var(--lift) - 2rem))}
-.fan .pcard .face{inset:1.8rem .8rem}
-.chip-row{display:flex; justify-content:center; padding-left:1.5rem}
-.chip-row .chip{--size:clamp(3.4rem, 6vw, 4.6rem); margin-left:-1.1rem; transition:transform .5s var(--ease)}
-.chip-row .chip:hover{transform:translateY(-.8rem) rotate(40deg)}
-.chip-row .chip .face{position:absolute; inset:21%; border-radius:50%; background:var(--bg-2)}
-@media (max-width:860px){ .cast-preview .copy,.cast-preview .stage{grid-column:1 / -1} }
-[data-page="home"] > .wrap > .table{margin-bottom:clamp(5rem,12vh,8rem)}
-
-/* 푸터 */
-.site-foot{position:relative; z-index:1; border-top:1px solid var(--line); padding-block:4rem 2rem; overflow:hidden}
-.site-foot .big{font-family:var(--f-pixel); font-weight:700; font-size:clamp(3rem, 12.5vw, 11.5rem); line-height:1; color:transparent; -webkit-text-stroke:1px rgba(173,207,234,.28); margin:0 0 2rem; white-space:nowrap}
-.site-foot .fine{display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; font-size:var(--s-1); color:var(--dim)}
-
-/* =========================================================
-   5. CHARACTERS — 캐러셀
-   ========================================================= */
-.cast-head{display:flex; align-items:center; flex-wrap:wrap; gap:1rem 1.75rem; padding-bottom:1rem}
-.cast-head .page-title{font-size:clamp(2.5rem, 5vw, 4.25rem)}
-.cast-head .page-lede{margin-left:auto; max-width:24rem; text-align:right; font-size:.9375rem}
-@media (max-width:760px){ .cast-head .page-lede{margin-left:0; text-align:left} }
-
-.cast-view{
-  --W:clamp(11rem, 18vw, 16rem);
-  position:relative; overflow:hidden; padding-top:2.75rem; touch-action:pan-y; user-select:none; -webkit-user-select:none; cursor:grab;
-  -webkit-mask:linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
-          mask:linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
-}
-.cast-view.grabbing{cursor:grabbing}
-.cast-marker{position:absolute; top:.6rem; left:50%; translate:-50% 0; display:grid; gap:3px; justify-items:center; animation:bob 1.6s var(--ease-io) infinite}
-.cast-marker i{display:block; width:18px; height:8px; background:var(--pink); clip-path:polygon(0 0, 100% 0, 50% 100%)}
-.cast-marker i + i{width:10px; height:5px}
-@keyframes bob{50%{translate:-50% 4px}}
-
-.cc-track{position:relative; height:calc(var(--W) * 1.5 + 11.5rem)}
-.cc{
-  position:absolute; left:50%; top:0; width:var(--W); margin-left:calc(var(--W) / -2);
-  text-decoration:none; color:inherit; -webkit-user-drag:none;
-  transform:translateX(var(--x, 0px)) scale(var(--s, 1)); transform-origin:50% 0;
-  opacity:var(--o, 1); filter:grayscale(var(--g, 0)) brightness(var(--b, 1));
-  transition:transform .7s var(--ease), opacity .5s, filter .5s;
-}
-.cc-track.dragging .cc, .cc.jump{transition:none}
-.cc-in{display:flex; flex-direction:column; align-items:center; gap:.85rem}
-.cc-track.enter .cc-in{animation:cc-in .9s var(--ease) both; animation-delay:calc(var(--a, 0) * 90ms + .1s)}
-@keyframes cc-in{from{opacity:0; transform:translateY(3rem)}}
-
-.cc-name{display:block; max-width:100%; font-family:var(--f-pixel); font-weight:700; font-size:clamp(1.05rem, 1.6vw, 1.5rem); line-height:1.2; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--dim); transition:color .4s}
-.cc-frame{--bi:-9px; --bl:18px; --bw:3px; position:relative; display:block; width:100%; aspect-ratio:2/3; background:var(--bg-3); border:2px solid var(--dim-2); transition:border-color .4s}
-.cc-frame::after{opacity:0}
-.cc-frame .img{position:absolute; inset:5px; display:grid; place-items:center; overflow:hidden; color:var(--dim); font-size:var(--s-1); background:linear-gradient(160deg, var(--navy-deep), var(--bg-3))}
-.cc-frame img{width:100%; height:100%; object-fit:cover; object-position:50% 20%; pointer-events:none}
-.cc-frame .pip{position:absolute; top:.7rem; left:.75rem; font-size:1.3rem; line-height:1; z-index:1; text-shadow:0 2px 6px #000}
-.cc.red-suit .pip{color:var(--pink)}
-.cc-frame .badge{position:absolute; top:.6rem; left:.6rem; --size:2rem; z-index:1}
-.cc-frame .badge::before{border-width:1px}
-.cc-line{display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:2.9em; max-width:100%; margin:0; font-family:var(--f-pixel); font-size:.875rem; line-height:1.45; text-align:center; color:var(--dim); transition:color .4s}
-.cc-kw{--cut:5px; display:flex; flex-wrap:wrap; justify-content:center; gap:.2rem .8rem; max-width:100%; padding:.45rem .9rem; border:1px solid var(--dim-2); font-family:var(--f-pixel); font-size:.8125rem; color:var(--dim); transition:border-color .4s, color .4s}
-.cc-kw span::before{content:"+"; margin-right:.2rem; color:var(--blue)}
-.cc-kw span:nth-child(3)::before{content:"-"; color:var(--pink)}
-.cc.is-center .cc-name{color:var(--ink)}
-.cc.is-center .cc-frame{border-color:var(--ink)}
-.cc.is-center .cc-frame::after{opacity:1}
-.cc.is-center .cc-line{color:var(--ink)}
-.cc.is-center .cc-kw{border-color:var(--ink); color:var(--ink)}
-@media (hover:hover){ .cc:not(.is-center):hover .cc-frame{border-color:var(--sky)} }
-
-.cc-controls{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:1rem; padding-top:.5rem}
-.cc-nav{grid-column:2; display:flex; align-items:center; gap:1.25rem}
-.cc-emblem{display:grid; justify-items:center; gap:.35rem}
-.cc-emblem .chip{--size:3.2rem; transition:transform .7s var(--ease)}
-.cc-count{font-family:var(--f-pixel); font-size:.875rem; color:var(--dim); font-variant-numeric:tabular-nums}
-.cc-count b{color:var(--ink); font-weight:400}
-.cc-go{grid-column:3; justify-self:end}
-@media (max-width:760px){
-  .cast-view{--W:clamp(10rem, 52vw, 14rem)}
-  .cc-controls{grid-template-columns:1fr}
-  .cc-nav{grid-column:1; justify-self:center}
-  .cc-go{grid-column:1; justify-self:center}
-}
-
-/* 프로필 */
-.pf{display:grid; grid-template-columns:minmax(0, 1.15fr) minmax(0, 1fr); min-height:100svh}
-.pf-visual{position:sticky; top:0; height:100svh; overflow:hidden; isolation:isolate; background:var(--bg-2)}
-.pf-visual .img{
-  position:absolute; inset:0; z-index:-2; display:grid; place-items:center; color:var(--dim); font-size:var(--s-1);
-  background:linear-gradient(160deg, var(--navy-deep), var(--bg-3));
-  view-transition-name:portrait;
-}
-.pf-visual .img img{width:100%; height:100%; object-fit:cover; object-position:50% 20%}
-.pf-visual::after{content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(90deg, rgba(0,0,0,.35), transparent 22%, transparent 70%, rgba(0,0,0,.65)); pointer-events:none}
-.pf-frame{--bi:0px; --bl:26px; --bw:3px; position:absolute; inset:5.75rem 1.25rem 1.25rem; pointer-events:none}
-.pf-visual.dealer .pf-frame{border:1px solid rgba(173,207,234,.35)}
-.pf-visual.player .pf-frame{--bc:var(--sky)}
-.pf-visual .pip{position:absolute; top:6.75rem; left:2.25rem; font-size:2rem; line-height:1; text-shadow:0 2px 8px #000}
-.pf-visual.red-suit .pip{color:var(--pink)}
-.pf-visual .badge{position:absolute; top:6.5rem; left:2rem; --size:3.2rem}
-.pf-visual.player::before{content:""; position:absolute; left:0; right:0; bottom:0; height:6px; background:var(--band); z-index:2}
-
-.pf-arrow{position:absolute; top:50%; translate:0 -50%; z-index:3; width:4.5rem; height:6.5rem; text-decoration:none; background:radial-gradient(closest-side, rgba(0,0,0,.6), transparent)}
-.pf-arrow.prev{left:.75rem} .pf-arrow.next{right:.75rem}
-.pf-arrow .nm{position:absolute; top:100%; left:50%; translate:-50% 0; font-family:var(--f-pixel); font-size:.8125rem; white-space:nowrap; padding:.25rem .55rem; background:rgba(0,0,0,.75); border:1px solid var(--line); opacity:0; transition:opacity .3s}
-.pf-arrow.prev .nm{left:.5rem; translate:0 0} .pf-arrow.next .nm{left:auto; right:.5rem; translate:0 0}
-.pf-arrow:hover .nm, .pf-arrow:focus-visible .nm{opacity:1}
-.pf-count{position:absolute; bottom:2.25rem; left:50%; translate:-50% 0; z-index:3; padding:.35rem .9rem; font-family:var(--f-pixel); font-size:.875rem; background:rgba(0,0,0,.7); border:1px solid var(--line); font-variant-numeric:tabular-nums}
-
-.pf-info{display:flex; flex-direction:column; padding:clamp(7rem, 14vh, 9rem) var(--pad) 4rem}
-.pf-back{align-self:flex-start; margin-bottom:auto}
-.pf-head{padding-block:3rem 2rem}
-.pf-head .role{font-size:var(--s-1); font-family:var(--f-pixel)}
-.pf-name{margin:.5rem 0 0; font-family:var(--f-pixel); font-weight:700; font-size:clamp(2.75rem, 5vw, 4.75rem); line-height:1.1}
-.pf-dl{display:grid; grid-template-columns:6rem 1fr; margin:0 0 2.5rem; border-top:1px solid var(--line)}
-.pf-dl dt,.pf-dl dd{margin:0; padding:.8rem 0; border-bottom:1px solid var(--line-2)}
-.pf-dl dt{color:var(--dim); font-family:var(--f-pixel); font-size:.9375rem}
-.pf-block{margin-bottom:2.5rem}
-.pf-block > h2{font-family:var(--f-pixel); font-weight:700; font-size:var(--s1); margin:0 0 1rem; color:var(--sky)}
-.pf-desc{margin:0; color:rgba(238,243,250,.85); line-height:1.85; white-space:pre-line}
-
-.kw{display:flex; flex-wrap:wrap; gap:.5rem; list-style:none; margin:0; padding:0}
-.kw li{--cut:5px; padding:.35rem .9rem; border:1px solid var(--line); font-family:var(--f-pixel); font-size:.875rem; transition:border-color .3s, background .3s}
-.kw li:hover{border-color:var(--pink); background:rgba(239,26,114,.08)}
-
-.inv{display:grid; grid-template-columns:repeat(6, 1fr); gap:.5rem}
-@media (max-width:1200px){ .inv{grid-template-columns:repeat(4, 1fr)} }
-.slot{
-  position:relative; aspect-ratio:1; border:1px solid var(--line-2);
-  background:repeating-linear-gradient(45deg, transparent 0 6px, rgba(173,207,234,.03) 6px 12px), var(--bg-2);
-  display:grid; place-items:center; padding:0; color:var(--dim); font-size:.6875rem;
-}
-button.slot{cursor:pointer; border-color:var(--line); background:var(--bg-3); transition:border-color .3s, transform .4s var(--ease)}
-button.slot:hover{transform:translateY(-2px); border-color:var(--sky)}
-button.slot[aria-pressed="true"]{border-color:var(--pink); box-shadow:0 0 0 1px var(--pink) inset, 0 0 18px rgba(239,26,114,.25)}
-.slot img{width:78%; height:78%; object-fit:contain; image-rendering:pixelated}
-.slot .qty{position:absolute; right:.3rem; bottom:.2rem; font-family:var(--f-pixel); font-size:.6875rem; color:var(--ink)}
-.inv-detail{margin-top:1rem; padding:1rem 1.25rem; border:1px solid var(--line); background:var(--bg-2); min-height:5.5rem}
-.inv-detail .top{display:flex; justify-content:space-between; align-items:baseline; gap:1rem}
-.inv-detail strong{font-family:var(--f-pixel); font-weight:700; font-size:var(--s1)}
-.inv-detail .count{font-size:var(--s-1); color:var(--dim)}
-.inv-detail p{margin:.35rem 0 0; color:var(--dim); font-size:.9375rem}
-.inv-detail .note{color:var(--sky)}
-
-.link-back{display:inline-flex; align-items:center; gap:.5rem; font-family:var(--f-pixel); font-size:var(--s-1); color:var(--dim); text-decoration:none; transition:color .3s}
-.link-back::before{content:""; width:.4rem; height:.6rem; background:currentColor; clip-path:polygon(100% 0, 0 50%, 100% 100%)}
-.link-back:hover{color:var(--ink)}
-
-.pf-head, .pf-dl, .pf-block{animation:reveal .9s var(--ease) both}
-.pf-dl{animation-delay:.1s} .pf-block:nth-of-type(1){animation-delay:.16s} .pf-block:nth-of-type(2){animation-delay:.22s} .pf-block:nth-of-type(3){animation-delay:.28s}
-@media (max-width:860px){
-  .pf{grid-template-columns:1fr}
-  .pf-visual{position:relative; height:72svh}
-  .pf-visual::after{background:linear-gradient(transparent 60%, rgba(0,0,0,.9))}
-  .pf-info{padding-top:1.5rem}
-  .pf-back{margin-bottom:0}
-}
-
-::view-transition-group(portrait){animation-duration:.75s; animation-timing-function:var(--ease)}
-::view-transition-old(portrait), ::view-transition-new(portrait){height:100%; object-fit:cover; overflow:clip}
-::view-transition-old(portrait){animation:none; opacity:0}
-::view-transition-new(portrait){animation:none}
-
-/* =========================================================
-   6. STORY — 타임라인
-   ========================================================= */
-.timeline{position:relative; list-style:none; margin:0; padding:0 0 0 clamp(2.5rem, 8vw, 6rem); max-width:56rem}
-.timeline::before, .timeline .fill{content:""; position:absolute; left:clamp(.75rem, 3vw, 2rem); top:0; bottom:0; width:2px}
-.timeline::before{background:var(--line)}
-.timeline .fill{background:linear-gradient(var(--pink), var(--blue)); transform-origin:top; transform:scaleY(1)}
-@keyframes fill{from{transform:scaleY(0)}}
-@supports (animation-timeline: view()){
-  @media (prefers-reduced-motion: no-preference){
-    .timeline .fill{animation:fill linear both; animation-timeline:view(); animation-range:cover 15% cover 75%}
-  }
-}
-.timeline li{position:relative; padding:0 0 4rem}
-.timeline li::before{
-  content:""; position:absolute; left:calc(clamp(.75rem, 3vw, 2rem) - clamp(2.5rem, 8vw, 6rem) - .4rem); top:.45rem;
-  width:.9rem; height:.9rem; background:var(--bg); border:2px solid var(--sky); rotate:45deg;
-}
-.timeline .ep{font-family:var(--f-pixel); color:var(--pink)}
-.timeline h3{font-family:var(--f-pixel); font-weight:700; font-size:var(--s3); margin:.25rem 0 .5rem; line-height:1.3}
-.timeline time{font-size:var(--s-1); color:var(--dim)}
-.timeline p{color:var(--dim); margin:.75rem 0 0; max-width:36rem}
-
-/* =========================================================
-   7. SHOP
-   ========================================================= */
-.shop-bar{display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:1.25rem 1.75rem; margin-bottom:2.5rem; font-family:var(--f-pixel)}
-.shop-bar .wallet{display:flex; align-items:center; gap:.9rem}
-.shop-bar .chip{--size:2.2rem}
-.shop-bar strong{font-weight:700; font-size:var(--s3); line-height:1}
-.shop{display:grid; grid-template-columns:repeat(12, 1fr); gap:1.5rem}
-.item{--cut:12px; grid-column:span 4; position:relative; display:flex; flex-direction:column; gap:.75rem; padding:1rem 1rem 1.25rem; border:1px solid var(--line); background:var(--panel); transition:transform .6s var(--ease), border-color .4s}
-.item:hover{transform:translateY(-.5rem); border-color:var(--sky)}
-.item.wide{grid-column:span 8}
-.item .thumb{aspect-ratio:4/3; background:var(--bg); display:grid; place-items:center; color:var(--dim); font-size:var(--s-1); overflow:hidden}
-.item.wide .thumb{aspect-ratio:auto; flex:1; min-height:12rem}
-.item .thumb img{width:100%; height:100%; object-fit:cover}
-.item .row{display:flex; justify-content:space-between; align-items:center; gap:1rem}
-.item h3{font-family:var(--f-pixel); font-weight:700; font-size:var(--s1); margin:0}
-.item .price{display:flex; align-items:center; gap:.45rem; font-family:var(--f-pixel)}
-.item .price .chip{--size:1.1rem; box-shadow:none}
-.item .price .chip::before{display:none}
-@media (max-width:980px){ .item, .item.wide{grid-column:span 6} }
-@media (max-width:600px){ .item, .item.wide{grid-column:1 / -1} }
-
-/* =========================================================
-   8. GAME + 전적
-   ========================================================= */
-.game-stage{display:grid; grid-template-columns:repeat(12, 1fr); gap:1.5rem; align-items:center; padding:clamp(2rem, 6vw, 5rem)}
-.game-stage .wheel-wrap{grid-column:1 / span 5; display:grid; place-items:center}
-.game-stage .copy{grid-column:7 / -1}
-.game-stage .copy p{color:rgba(238,243,250,.75); margin:0 0 2rem}
-.wheel{
-  position:relative; width:min(100%, 22rem); aspect-ratio:1; border-radius:50%;
-  background:
-    radial-gradient(circle closest-side, var(--navy-deep) 0 60%, var(--sky) 60.5% 61.5%, transparent 62%),
-    repeating-conic-gradient(var(--pink) 0 9.73deg, #000 9.73deg 19.46deg);
-  box-shadow:0 0 0 .8rem #0a1230, 0 0 0 .9rem var(--sky), 0 30px 60px rgba(0,0,0,.6);
-  transition:transform 4s cubic-bezier(.12,.8,.2,1);
-}
-.wheel::before{content:""; position:absolute; inset:30%; border-radius:50%; background:repeating-conic-gradient(var(--sky) 0 2deg, transparent 2deg 45deg); opacity:.7}
-.wheel::after{content:""; position:absolute; inset:46%; border-radius:50%; background:var(--pink); box-shadow:0 0 12px rgba(239,26,114,.7)}
-@media (max-width:760px){ .game-stage .wheel-wrap,.game-stage .copy{grid-column:1 / -1} }
-
-.records{margin-top:clamp(4rem, 10vh, 6rem)}
-.rec-head{display:flex; align-items:end; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.75rem}
-.rec-head h2{margin:0}
-.rec-stats{display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem; margin-bottom:2rem}
-.stat{--cut:10px; padding:1.1rem 1.25rem; border:1px solid var(--line); background:var(--panel)}
-.stat small{display:block; font-family:var(--f-pixel); color:var(--dim); font-size:var(--s-1)}
-.stat strong{display:block; font-family:var(--f-pixel); font-weight:700; font-size:var(--s2); line-height:1.3; margin-top:.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.stat span{display:block; color:var(--dim); font-size:var(--s-1)}
-.stat.hot{border-color:rgba(239,26,114,.6)} .stat.hot strong{color:var(--pink)}
-@media (max-width:760px){ .rec-stats{grid-template-columns:1fr} }
-
-.rec-layout{display:grid; grid-template-columns:minmax(0, 1fr) 19rem; gap:2rem; align-items:start}
-@media (max-width:980px){ .rec-layout{grid-template-columns:1fr} }
-.table-scroll{overflow-x:auto}
-table.rec{width:100%; border-collapse:collapse; font-size:.9375rem; min-width:40rem}
-table.rec th{text-align:left; font-family:var(--f-pixel); font-weight:400; font-size:var(--s-1); color:var(--dim); padding:.6rem .5rem; border-bottom:1px solid var(--line)}
-table.rec td{padding:.85rem .5rem; border-bottom:1px solid var(--line-2); vertical-align:middle}
-table.rec tbody tr{transition:background .3s}
-table.rec tbody tr:hover{background:rgba(173,207,234,.04)}
-table.rec .when time{display:block; font-family:var(--f-pixel); font-size:.875rem}
-table.rec .when small{color:var(--dim); font-size:var(--s-1)}
-table.rec .game{font-family:var(--f-pixel)}
-table.rec .who{color:var(--dim); font-size:.875rem}
-table.rec .num{font-family:var(--f-pixel); color:var(--sky); text-align:right; white-space:nowrap}
-table.rec .num.minus{color:var(--pink)}
-table.rec .note{color:var(--dim); font-size:.875rem}
-.win-name{display:inline-flex; align-items:center; gap:.5rem; text-decoration:none; font-weight:500; transition:color .3s}
-.win-name:hover{color:var(--pink)}
-.win-name .mk{font-size:1rem; line-height:1}
-.win-name .mk.red{color:var(--pink)}
-.win-name .chip{--size:1.1rem; box-shadow:none}
-.win-name .chip::before{display:none}
-.rec-more{margin-top:1.25rem; text-align:center}
-
-.rank{--cut:10px; padding:1.25rem; border:1px solid var(--line); background:var(--panel)}
-.rank h3{margin:0 0 1rem; font-family:var(--f-pixel); font-weight:700; font-size:var(--s1); color:var(--sky)}
-.rank ol{list-style:none; margin:0; padding:0; display:grid; gap:.8rem}
-.rank li{display:grid; grid-template-columns:1.75rem 1fr auto; gap:.25rem .6rem; align-items:center}
-.rank .no{font-family:var(--f-pixel); color:var(--dim)}
-.rank li:first-child .no{color:var(--pink)}
-.rank .nm{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.rank .w{font-family:var(--f-pixel); font-size:.875rem}
-.rank .bar{grid-column:2 / -1; height:4px; background:var(--line-2)}
-.rank .bar i{display:block; height:100%; width:var(--p); background:linear-gradient(90deg, var(--blue), var(--pink)); transform-origin:0 50%; animation:bar-in 1s var(--ease) both}
-@keyframes bar-in{from{transform:scaleX(0)}}
-
-/* =========================================================
-   9. SETTINGS / ADMIN
-   ========================================================= */
-.form{max-width:36rem; display:grid; gap:1.75rem}
-.field label{display:block; margin-bottom:.5rem; font-family:var(--f-pixel); font-size:.9375rem}
-.hint{display:block; color:var(--dim); font-size:var(--s-1); margin-top:.25rem; font-family:var(--f-sans)}
-.input{width:100%; padding:.85rem 1rem; background:var(--bg-2); border:1px solid var(--line); border-radius:0; transition:border-color .3s, box-shadow .3s}
-.input:focus{outline:none; border-color:var(--sky); box-shadow:0 0 0 3px rgba(173,207,234,.15)}
-.switch{display:flex; align-items:flex-start; justify-content:space-between; gap:1.5rem; padding:1.25rem 0; border-block:1px solid var(--line); font-family:var(--f-pixel)}
-.switch input{appearance:none; flex:none; width:3rem; height:1.6rem; background:var(--bg-3); border:1px solid var(--line); position:relative; cursor:pointer; transition:background .3s}
-.switch input::after{content:""; position:absolute; top:.2rem; left:.2rem; width:1.1rem; height:1.1rem; background:var(--ink); transition:transform .5s var(--ease)}
-.switch input:checked{background:var(--pink)}
-.switch input:checked::after{transform:translateX(1.4rem)}
-
-.admin-grid{display:grid; grid-template-columns:repeat(12, 1fr); gap:1.5rem}
-.admin-grid .panel{--cut:12px; grid-column:span 6; padding:1.75rem; border:1px solid var(--line); background:var(--panel)}
-.admin-grid .panel.full{grid-column:1 / -1}
-@media (max-width:860px){ .admin-grid .panel{grid-column:1 / -1} }
-.admin-grid h2{font-family:var(--f-pixel); font-weight:700; font-size:var(--s2); margin:0 0 1.25rem}
-.admin-grid .form{gap:1.1rem}
-table.members{width:100%; border-collapse:collapse; font-size:.9375rem}
-table.members th{text-align:left; font-weight:400; font-family:var(--f-pixel); color:var(--dim); padding:.6rem 0; border-bottom:1px solid var(--line)}
-table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
-.tag-d{color:var(--pink)} .tag-p{color:var(--sky)}
-
-.toast{--cut:8px; position:fixed; left:50%; bottom:2rem; z-index:80; translate:-50% 1rem; padding:.8rem 1.4rem; background:var(--bg-3); border:1px solid var(--sky); font-family:var(--f-pixel); opacity:0; transition:opacity .4s, translate .5s var(--ease); pointer-events:none}
-.toast.show{opacity:1; translate:-50% 0}
-
-/* =========================================================
-   10. INTRO
-   ========================================================= */
-.opening{position:fixed; inset:0; z-index:150; display:grid; place-items:center; overflow:hidden}
-.intro-half{position:absolute; left:0; right:0; height:50.5%; background:var(--bg)}
-.intro-half.top{top:0; border-bottom:2px solid var(--pink); animation:half-up 1s var(--ease-io) 3.5s forwards}
-.intro-half.bottom{bottom:0; border-top:2px solid var(--pink); animation:half-down 1s var(--ease-io) 3.5s forwards}
-@keyframes half-up{to{transform:translateY(-100%)}}
-@keyframes half-down{to{transform:translateY(100%)}}
-.intro-stage{position:relative; z-index:1; display:grid; justify-items:center; gap:3.5rem; animation:stage-out .5s var(--ease-io) 3.25s forwards}
-@keyframes stage-out{to{opacity:0; transform:scale(.96); filter:blur(6px)}}
-
-.deck{position:relative; width:clamp(6rem, 11vw, 8.5rem); aspect-ratio:5/7}
-.icard{
-  position:absolute; inset:0; transform-origin:50% 170%; transform:rotate(var(--sr));
-  animation:deal-in .75s var(--ease) calc(var(--i) * .11s + .2s) both, fan-out .9s var(--ease) 1.35s forwards;
-}
-@keyframes deal-in{from{transform:translate(var(--fx), var(--fy)) rotate(var(--fr)); opacity:0}}
-@keyframes fan-out{to{transform:rotate(var(--rot)) translateY(var(--lift))}}
-.icard .flipper{position:absolute; inset:0; transform-style:preserve-3d; transform:rotateY(180deg)}
-.icard.top .flipper{animation:flip-up .8s var(--ease) 2.1s forwards}
-@keyframes flip-up{to{transform:rotateY(0)}}
-.icard .side{position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden}
-.icard .card-back{transform:rotateY(180deg); box-shadow:0 18px 40px rgba(0,0,0,.6)}
-.icard .pcard{display:grid; place-items:center}
-.icard .pcard .big{font-size:clamp(2.5rem, 5vw, 3.5rem); line-height:1; color:var(--pink)}
-
-.intro-name{margin:0; font-family:var(--f-pixel); font-weight:700; font-size:clamp(2.25rem, 6.5vw, 4.5rem); line-height:1}
-.intro-name .ch{animation-delay:calc(var(--i) * 60ms + 2.3s)}
-.intro-bar{display:block; width:min(16rem, 60vw); height:2px; background:var(--line); position:relative; overflow:hidden}
-.intro-bar::after{content:""; position:absolute; inset:0; background:var(--sky); transform-origin:0 50%; animation:bar 3s steps(16) .2s both}
-@keyframes bar{from{transform:scaleX(0)}}
-.intro-skip{
-  position:absolute; right:var(--pad); bottom:2rem; z-index:2;
-  border:1px solid var(--line); background:transparent; padding:.55rem 1.1rem; font-family:var(--f-pixel); font-size:var(--s-1); color:var(--dim); cursor:pointer;
-  transition:color .3s, border-color .3s; animation:stage-out .3s 3.25s forwards;
-}
-.intro-skip:hover{color:var(--ink); border-color:var(--sky)}
-.opening.skip .intro-stage, .opening.skip .intro-skip{animation:stage-out .3s var(--ease-io) forwards}
-.opening.skip .intro-half.top{animation:half-up .6s var(--ease-io) .1s forwards}
-.opening.skip .intro-half.bottom{animation:half-down .6s var(--ease-io) .1s forwards}
-
-/* =========================================================
-   11. VIEW TRANSITIONS
-   ========================================================= */
-::view-transition-old(root){animation:vt-out .35s var(--ease-io) both}
-::view-transition-new(root){animation:vt-in .6s var(--ease) both}
-@keyframes vt-out{to{opacity:0; transform:translateY(-1.5rem); filter:blur(4px)}}
-@keyframes vt-in{from{opacity:0; transform:translateY(2rem); filter:blur(6px)}}
-
-/* =========================================================
-   12. 로딩 / 오류
-   ========================================================= */
-.boot{position:fixed; inset:0; z-index:140; display:grid; place-items:center; background:var(--bg); transition:opacity .5s}
-.boot.hide{opacity:0; pointer-events:none}
-.boot .chip{--size:3rem; animation:boot-spin 1.2s linear infinite}
-@keyframes boot-spin{to{transform:rotate(360deg)}}
-.boot-error{display:grid; justify-items:center; gap:1rem; text-align:center; padding:2rem}
-.boot-error h2{margin:0; font-family:var(--f-pixel); font-weight:700; font-size:var(--s2)}
-.boot-error p{margin:0; color:var(--dim); font-size:.9375rem}
-</style>
+<link rel="preconnect" href="https://fuyfqejfqoflygvymbhp.supabase.co" crossorigin>
+<!-- 제목: Noto Serif KR / 본문: IBM Plex Sans KR — 실제 쓰는 굵기만 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700;900&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/site.css">
+<!-- 모듈 미리 받기: import 사슬을 따라 차례로 받는 대기 시간 제거 (관리 모듈은 제외 — 관리자만 필요할 때 받음) -->
+<link rel="modulepreload" href="js/main.js">
+<link rel="modulepreload" href="js/config.js">
+<link rel="modulepreload" href="js/state.js">
+<link rel="modulepreload" href="js/dom.js">
+<link rel="modulepreload" href="js/data.js">
+<link rel="modulepreload" href="js/views.js">
+<link rel="modulepreload" href="js/effects.js">
+<link rel="modulepreload" href="js/router.js">
+<link rel="modulepreload" href="js/auth.js">
+<link rel="modulepreload" href="js/forms.js">
+<link rel="modulepreload" href="js/markdown.js">
+<link rel="modulepreload" href="js/ambience.js">
+<link rel="modulepreload" href="js/navorder.js">
 </head>
-<body class="intro-on">
+<body class="intro-on loading">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="s-spade" viewBox="0 0 24 24"><path d="M12 1.8C9.2 5.6 3.2 9.1 3.2 13.9a4.6 4.6 0 0 0 7.7 3.4c-.3 2.1-1.1 3.8-2.6 4.9h7.4c-1.5-1.1-2.3-2.8-2.6-4.9a4.6 4.6 0 0 0 7.7-3.4c0-4.8-6-8.3-8.8-12.1z"/></symbol>
+  <symbol id="s-heart" viewBox="0 0 24 24"><path d="M12 21.3l-1.4-1.3C5.4 15.4 2 12.3 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.8-3.4 6.9-8.6 11.5L12 21.3z"/></symbol>
+  <symbol id="s-club" viewBox="0 0 24 24"><path d="M12 1.9a4.4 4.4 0 0 0-4 6.2 4.4 4.4 0 1 0 2.6 7.8c-.3 2.6-1.2 4.8-2.7 6h8.2c-1.5-1.2-2.4-3.4-2.7-6a4.4 4.4 0 1 0 2.6-7.8 4.4 4.4 0 0 0-4-6.2z"/></symbol>
+  <symbol id="s-diamond" viewBox="0 0 24 24"><path d="M12 1.5l8 10.5-8 10.5-8-10.5z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M5 7a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"/><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0 -3 -3.85"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 21l8 0"/><path d="M12 17l0 4"/><path d="M7 4l10 0"/><path d="M17 4v8a5 5 0 0 1 -10 0v-8"/><path d="M5 9m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M19 9m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/></symbol>
+  <symbol id="i-book-2" viewBox="0 0 24 24"><path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12"/><path d="M19 16h-12a2 2 0 0 0 -2 2"/><path d="M9 8h6"/></symbol>
+  <symbol id="i-building-store" viewBox="0 0 24 24"><path d="M3 21l18 0"/><path d="M3 7v1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1h-18l2 -4h14l2 4"/><path d="M5 21l0 -10.15"/><path d="M19 21l0 -10.15"/><path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4"/></symbol>
+  <symbol id="i-cards" viewBox="0 0 24 24"><path d="M3.604 7.197l7.138 -3.109a.96 .96 0 0 1 1.27 .527l4.924 11.902a1 1 0 0 1 -.514 1.304l-7.137 3.109a.96 .96 0 0 1 -1.271 -.527l-4.924 -11.903a1 1 0 0 1 .514 -1.304l0 .001"/><path d="M15 4h1a1 1 0 0 1 1 1v3.5"/><path d="M20 6c.264 .112 .52 .217 .768 .315a1 1 0 0 1 .53 1.311l-2.298 5.374"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065"/><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/></symbol>
+  <symbol id="i-tool" viewBox="0 0 24 24"><path d="M7 10h3v-3l-3.5 -3.5a6 6 0 0 1 8 8l6 6a2 2 0 0 1 -3 3l-6 -6a6 6 0 0 1 -8 -8l3.5 3.5"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2"/><path d="M9 12h12l-3 -3"/><path d="M18 15l3 -3"/></symbol>
+  <symbol id="i-login-2" viewBox="0 0 24 24"><path d="M9 8v-2a2 2 0 0 1 2 -2h7a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-2"/><path d="M3 12h13l-3 -3"/><path d="M13 15l3 -3"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><path d="M15 8a5 5 0 0 1 0 8"/><path d="M17.7 5a9 9 0 0 1 0 14"/><path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.5 -4.5a.8 .8 0 0 1 1.5 .5v14a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5"/></symbol>
+  <symbol id="i-volume-off" viewBox="0 0 24 24"><path d="M15 8a5 5 0 0 1 1.912 4.934m-1.377 2.602a5 5 0 0 1 -.535 .464"/><path d="M17.7 5a9 9 0 0 1 2.362 11.086m-1.676 2.299a9 9 0 0 1 -.686 .615"/><path d="M9.069 5.054l.431 -.554a.8 .8 0 0 1 1.5 .5v2m0 4v8a.8 .8 0 0 1 -1.5 .5l-3.5 -4.5h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l1.294 -1.664"/><path d="M3 3l18 18"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M5 12l-2 0l9 -9l9 9l-2 0"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7"/><path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="M15 6l-6 6l6 6"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="M9 6l6 6l-6 6"/></symbol>
+  <symbol id="i-player-pause" viewBox="0 0 24 24"><path d="M6 6a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -12"/><path d="M14 6a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -12"/></symbol>
+  <symbol id="i-player-play" viewBox="0 0 24 24"><path d="M7 4v16l13 -8l-13 -8"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24"><path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/></symbol>
+  <symbol id="i-external-link" viewBox="0 0 24 24"><path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6"/><path d="M11 13l9 -9"/><path d="M15 4h5v5"/></symbol>
+</svg>
+<noscript><style>.boot,.opening{display:none}</style><p class="noscript">이 사이트는 자바스크립트가 켜져 있어야 정상적으로 표시됩니다.</p></noscript>
 
-<div class="boot" id="boot" aria-live="polite"><span class="chip red" aria-hidden="true"></span><span class="sr">불러오는 중</span></div>
+<!-- 불러오는 동안에는 화면 뼈대 위에 자리 표시(body.loading)가 보이고, 이 상자는 오류 화면으로만 쓰임 -->
+<div class="boot hide" id="boot" role="status"><span class="sr">불러오는 중</span></div>
 
+<!-- 인트로: 장식용. 재생 중에는 뒤쪽 화면을 inert로 막고 '건너뛰기'만 조작 가능. 내용은 effects.js의 runIntro가 채움 -->
 <div class="opening" id="intro">
-  <div class="intro-half top"></div>
-  <div class="intro-half bottom"></div>
-  <div class="intro-stage">
-    <div class="deck" id="deck" aria-hidden="true"></div>
-    <p class="intro-name split">Titfortat777</p>
-    <span class="intro-bar" aria-hidden="true"></span>
-  </div>
-  <button class="intro-skip" type="button" id="intro-skip">건너뛰기</button>
+  <div class="intro-stage" id="intro-stage" aria-hidden="true"></div>
+  <button class="intro-skip" type="button" id="intro-skip">인트로 건너뛰기</button>
 </div>
 
-<div class="progress" aria-hidden="true"></div>
+<a class="skip-link" id="skip-link" href="#app">본문 바로가기</a>
 
-<header class="site-head" id="site-head">
-  <div class="inner wrap">
-    <a class="mark" href="#home"><span class="chip red" aria-hidden="true"></span>Titfortat777</a>
-    <nav class="nav" id="nav" aria-label="주 메뉴">
-      <a href="#home">홈</a>
-      <a href="#characters">캐릭터</a>
-      <a href="#story">지난 이야기</a>
-      <a href="#shop">상점</a>
-      <a href="#game">게임</a>
-      <a href="#settings">설정</a>
-      <a href="#admin" class="admin" data-admin-only hidden>관리</a>
-      <span class="nav-ink" aria-hidden="true"></span>
-    </nav>
+<!-- 배경: 검정 + 남색·분홍 얼룩 + 주사선. config.js의 BG_IMAGE를 채우면 그 위에 일러스트가 깔림 -->
+<div class="world-bg" id="world-bg" aria-hidden="true"></div>
+
+<!-- 하단 메뉴 -->
+<header class="dock" id="site-head">
+  <a class="mark" href="#home"><span class="chip red" aria-hidden="true"></span><span class="mark-name">Titfortat777</span><span class="sr"> 홈</span></a>
+  <nav class="dock-nav" id="nav" aria-label="주 메뉴">
+      <a class="il" href="#home"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-home"/></svg><span class="tip">홈</span></a>
+      <a class="il" href="#characters"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span class="tip">캐릭터</span></a>
+      <a class="il" href="#story"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-book-2"/></svg><span class="tip"><span class="wide-only">지난 </span>이야기</span></a>
+      <a class="il" href="#shop"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-building-store"/></svg><span class="tip">상점</span></a>
+      <a class="il" href="#game"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-cards"/></svg><span class="tip">게임</span></a>
+      <a class="il wide-nav" href="#settings"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg><span class="tip">설정</span></a>
+      <a class="il admin wide-nav" href="#admin" data-admin-only hidden><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-tool"/></svg><span class="tip">관리</span></a>
+      <!-- 좁은 화면: 설정·관리·로그아웃은 '더보기'로 묶음 -->
+      <button class="il more" type="button" id="dock-more" aria-expanded="false" aria-controls="dock-menu"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-dots"/></svg><span class="tip">더보기</span></button>
+  </nav>
+  <div class="dock-menu" id="dock-menu" hidden>
+    <a href="#settings"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-settings"/></svg>설정</a>
+    <a href="#admin" data-admin-only hidden><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-tool"/></svg>관리</a>
+    <button type="button" data-member-only hidden id="menu-logout"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-logout"/></svg>로그아웃</button>
+  </div>
+  <div class="dock-right">
+    <!-- 배경음악: config.js의 BGM_URL이 있을 때만 보임. 누르기 전에는 재생하지 않음 -->
+    <button class="bgm" type="button" id="bgm" aria-pressed="false" hidden><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-volume-off"/></svg><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-volume"/></svg><span class="sr">배경음악</span></button>
+    <a class="me" href="#settings" id="me" data-member-only hidden><span class="chip green me-chip" id="me-chip" aria-hidden="true"></span><span class="me-text"><span class="sr">내 계정: </span><span class="me-name" id="me-name"></span><span class="me-bal" id="me-bal"></span></span></a>
+    <a class="login" href="#login" data-guest-only hidden><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-login-2"/></svg><span>로그인</span></a>
+    <button class="il" type="button" id="dock-logout" data-member-only hidden><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-logout"/></svg><span class="tip">로그아웃</span></button>
   </div>
 </header>
 
-<main id="app">
+<!-- 화면 밖 공지용 라이브 영역 -->
+<div class="sr" id="sr-status" role="status" aria-live="polite"></div>
+
+<!-- 페이지는 스크롤하지 않고, 각 화면의 창(.pane) 안에서만 스크롤 -->
+<main id="app" tabindex="-1" aria-busy="true">
 
   <!-- ===================== 홈 ===================== -->
-  <section data-page="home">
-    <div class="hero wrap" id="hero">
-      <div class="hero-chips" id="hero-chips" aria-hidden="true"></div>
-      <div class="hero-meta">
-        <span id="roster-meta"></span>
-        <span class="scroll-cue">SCROLL</span>
-      </div>
-
-      <div class="hero-main">
-        <h1 class="hero-title split">Titfortat777</h1>
-        <p class="intro">소개 문구가 들어갈 자리입니다. 두세 문장 정도의 분량을 기준으로 잡았습니다.</p>
-        <div class="actions">
-          <a class="btn primary magnetic" href="#characters">캐릭터 보기 <span class="tri"></span></a>
-          <a class="btn magnetic" href="#game">게임 · 전적</a>
-        </div>
-      </div>
-
-      <aside class="glance" aria-label="한눈에 보기">
-        <a class="g-panel latest notch" href="#story" style="--n:0" id="latest-card"></a>
-        <a class="g-panel win notch" href="#game" style="--n:1" id="win-card"></a>
-        <div class="g-panel next notch" style="--n:2">
-          <span class="chip red" aria-hidden="true"></span>
-          <div><strong>다음 게임</strong><span>게임 일정이 들어갈 자리입니다.</span></div>
-        </div>
-      </aside>
+  <section data-page="home" class="page home">
+    <div class="hero-chips" id="hero-chips" aria-hidden="true"></div>
+    <div class="meta"><span id="roster-meta"></span><span class="fine">푸터 문구 자리 · 연락처 자리</span></div>
+    <div class="hero">
+      <h1 class="hero-title split">Titfortat777</h1>
+      <p class="intro">소개 문구가 들어갈 자리입니다. 두세 문장 정도의 분량을 기준으로 잡았습니다.</p>
+      <div class="actions"><a class="btn primary" href="#characters">캐릭터 보기</a><a class="btn" href="#game">게임 · 전적</a></div>
     </div>
 
-    <div class="marquee" aria-hidden="true"><div class="track" id="marquee"></div></div>
-
-    <div class="wrap">
-      <div class="intro-block">
-        <p class="statement reveal">대표 문구가 들어갈 자리입니다. 두 줄 정도의 분량을 기준으로 잡았습니다.</p>
-        <div class="body">
-          <article class="reveal"><h3>소제목 자리</h3><p>본문 자리입니다. 커뮤 소개가 들어갈 수 있습니다.</p></article>
-          <article class="reveal"><h3>소제목 자리</h3><p>본문 자리입니다.</p></article>
-          <article class="reveal"><h3>소제목 자리</h3><p>본문 자리입니다.</p></article>
-        </div>
+    <div class="board">
+      <div class="mtabs" role="group" aria-label="홈 정보 보기" id="mtabs">
+        <button type="button" data-panel="p-rec" aria-controls="p-rec" aria-pressed="true">최근 전적</button>
+        <button type="button" data-panel="p-next" aria-controls="p-next" aria-pressed="false">다음 게임</button>
+        <button type="button" data-panel="p-links" aria-controls="p-links" aria-pressed="false">바로가기</button>
+        <button type="button" data-panel="p-cast" aria-controls="p-cast" aria-pressed="false">캐릭터</button>
       </div>
 
-      <div class="table brk reveal" data-spot>
-        <div class="cast-preview">
-          <div class="copy">
-            <h2 class="h">딜러와 참가자</h2>
-            <p>캐릭터 소개 문구 자리입니다.</p>
-            <a class="btn magnetic" href="#characters">캐릭터 전체 보기 <span class="tri"></span></a>
-          </div>
-          <div class="stage">
-            <div class="fan" id="fan"></div>
-            <div class="chip-row" id="chip-row" aria-hidden="true"></div>
+      <section class="g-panel p-rec on" id="p-rec" aria-labelledby="h-rec">
+        <div class="g-head"><h2 id="h-rec">최근 전적</h2><a class="more" href="#game">전적 전체</a></div>
+        <div class="scroll"><ul class="rec-mini" id="rec-home"></ul></div>
+      </section>
+
+      <section class="g-panel p-next" id="p-next" aria-labelledby="h-next">
+        <div class="g-head"><h2 id="h-next">다음 게임</h2><a class="more" href="#game">일정 전체</a></div>
+        <div class="scroll" id="next-body" tabindex="0" role="group" aria-label="다음 게임 목록"></div>
+      </section>
+
+      <section class="g-panel p-links" id="p-links" aria-labelledby="h-links">
+        <div class="g-head"><h2 id="h-links">바로가기</h2></div>
+        <ul class="links" id="quick-links"></ul>
+      </section>
+
+      <a class="g-panel latest" id="latest-card" href="#story"></a>
+
+      <section class="table p-cast" id="p-cast" aria-labelledby="h-cast">
+        <div class="g-head">
+          <h2 id="h-cast">딜러와 참가자</h2>
+          <a class="more" href="#characters">전체 보기</a>
+        </div>
+        <div class="show" id="show">
+          <a class="show-link" id="show-link" href="#characters">
+            <span class="show-img"><img alt="" decoding="async"></span>
+            <span class="show-img"><img alt="" decoding="async"></span>
+            <span class="show-cap"><span class="show-mk" aria-hidden="true"></span><strong class="show-nm" id="show-nm"></strong><span class="show-role" id="show-role"></span></span>
+          </a>
+          <div class="show-ctl">
+            <button class="ctl" type="button" id="show-prev"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-chevron-left"/></svg><span class="sr">이전 캐릭터</span></button>
+            <button class="ctl" type="button" id="show-toggle" aria-pressed="false"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-player-pause"/></svg><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-player-play"/></svg><span class="sr">자동 넘김 멈춤</span></button>
+            <button class="ctl" type="button" id="show-next"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-chevron-right"/></svg><span class="sr">다음 캐릭터</span></button>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   </section>
-
-  <!-- ===================== 캐릭터 ===================== -->
-  <section data-page="characters" class="page" hidden>
-    <div class="wrap">
-      <header class="cast-head">
-        <h1 class="page-title split">캐릭터</h1>
-        <div class="seg" role="group" aria-label="딜러 / 참가자 전환" id="seg">
-          <button type="button" data-group="dealer" aria-pressed="true">딜러<span class="n" id="count-dealer"></span></button>
-          <button type="button" data-group="player" aria-pressed="false">참가자<span class="n" id="count-player"></span></button>
-          <span class="seg-ink" aria-hidden="true"></span>
-        </div>
-        <p class="page-lede">좌우로 밀거나 화살표를 눌러 넘길 수 있습니다.</p>
-      </header>
-    </div>
-
-    <div class="cast-view" id="cast-view" aria-roledescription="carousel" aria-label="캐릭터 목록">
-      <div class="cast-marker" aria-hidden="true"><i></i><i></i></div>
-      <div class="cc-track" id="cc-track"></div>
-    </div>
-
-    <div class="wrap cc-controls">
-      <div class="cc-nav">
-        <button class="arrow prev" type="button" id="cc-prev" aria-label="이전 캐릭터"></button>
-        <div class="cc-emblem">
-          <span class="chip red" id="cc-chip" aria-hidden="true"></span>
-          <span class="cc-count" id="cc-count" aria-live="polite"></span>
-        </div>
-        <button class="arrow next" type="button" id="cc-next" aria-label="다음 캐릭터"></button>
+  <!-- ===================== 캐릭터: 다섯 명을 앞에 세우고 가운데를 크게. 끌기·화살표·방향키로 넘김 ===================== -->
+  <section data-page="characters" class="page cast-page" hidden>
+    <header class="page-head cast-head">
+      <h1 class="page-title split">캐릭터</h1>
+      <div class="seg" role="group" aria-label="딜러·참가자 전환" id="seg">
+        <button type="button" data-filter="dealer" aria-pressed="true">딜러 <span class="num" id="count-dealer"></span></button>
+        <button type="button" data-filter="player" aria-pressed="false">참가자 <span class="num" id="count-player"></span></button>
+        <span class="seg-ink" aria-hidden="true"></span>
       </div>
-      <a class="btn cc-go" id="cc-go" href="#characters">프로필 보기 <span class="tri"></span></a>
+      <p class="page-lede">좌우로 밀거나 화살표를 눌러 넘깁니다.</p>
+    </header>
+    <div class="cast-stage">
+      <div class="cast-view" id="cast-view" role="region" aria-roledescription="회전 목록" aria-label="캐릭터 목록" tabindex="0">
+        <div class="cast-marker" aria-hidden="true"><i></i><i></i></div>
+        <div class="cc-track" id="cc-track"></div>
+      </div>
+      <div class="cc-controls">
+        <div class="cc-nav">
+          <button class="arrow prev" type="button" id="cc-prev"><span class="sr">이전 캐릭터</span></button>
+          <div class="cc-emblem"><span class="chip red" id="cc-chip" aria-hidden="true"></span><span class="cc-count" id="cc-count" aria-live="polite"></span></div>
+          <button class="arrow next" type="button" id="cc-next"><span class="sr">다음 캐릭터</span></button>
+        </div>
+        <a class="btn cc-go" id="cc-go" href="#characters">프로필 보기 <span class="tri" aria-hidden="true"></span></a>
+      </div>
     </div>
   </section>
 
   <!-- ===================== 캐릭터 프로필 ===================== -->
-  <section data-page="profile" hidden>
+  <section data-page="profile" class="page pf-page" hidden>
     <div class="pf">
       <div class="pf-visual" id="pf-visual"></div>
-      <div class="pf-info">
+      <div class="pf-info pane">
         <a class="link-back pf-back" href="#characters">캐릭터 목록으로</a>
         <div class="pf-head">
           <span class="role" id="pf-role"></span>
@@ -838,901 +212,253 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
         <dl class="pf-dl" id="pf-dl"></dl>
         <section class="pf-block"><h2>성격</h2><ul class="kw" id="pf-kw"></ul></section>
         <section class="pf-block"><h2>설명</h2><p class="pf-desc" id="pf-desc"></p></section>
-        <section class="pf-block"><h2>소지품</h2><div class="inv" id="pf-inv"></div><div class="inv-detail" id="pf-inv-detail" aria-live="polite"></div></section>
+        <section class="pf-block"><h2 id="pf-inv-h">소지품</h2><p class="inv-empty" id="pf-inv-empty" hidden>소지품이 없습니다.</p><div class="inv" id="pf-inv" role="group" aria-labelledby="pf-inv-h"></div><div class="inv-detail" id="pf-inv-detail" aria-live="polite"></div></section>
       </div>
     </div>
   </section>
 
   <!-- ===================== 지난 이야기 ===================== -->
   <section data-page="story" class="page" hidden>
-    <div class="wrap">
-      <header class="page-head">
-        <h1 class="page-title split">지난 이야기</h1>
-        <p class="page-lede">진행된 이야기가 순서대로 쌓이는 페이지입니다.</p>
-      </header>
-      <ol class="timeline" id="timeline"></ol>
+    <header class="page-head">
+      <h1 class="page-title split">지난 이야기</h1>
+      <p class="page-lede">진행된 이야기가 순서대로 쌓이는 페이지입니다.</p>
+    </header>
+    <div class="story">
+      <div class="g-panel pane-box story-list"><div class="pane" tabindex="0" role="region" aria-label="회차 목록"><div class="timeline-wrap" id="timeline-wrap"></div></div></div>
+      <section class="g-panel pane-box story-detail" aria-label="선택한 회차"><div class="pane" id="story-detail" aria-live="polite" tabindex="0"></div></section>
+    </div>
+  </section>
+
+  <!-- ===================== 진행 기록 (회차별 코코포리아 로그) ===================== -->
+  <section data-page="log" class="page" hidden>
+    <header class="page-head">
+      <div class="log-id">
+        <a class="link-back" href="#story">지난 이야기로</a>
+        <p class="eyebrow" id="log-ep"></p>
+        <h1 class="page-title log-title" id="log-title"></h1>
+      </div>
+      <div class="head-side">
+        <p class="page-lede" id="log-meta"></p>
+        <div class="log-tools">
+          <div class="seg log-tabs" role="group" aria-label="보이는 탭" id="log-tabs"></div>
+          <button class="btn small log-btn" type="button" id="log-follow" aria-pressed="false" hidden>BGM 따라 듣기</button>
+          <button class="btn small log-btn" type="button" id="log-edit" aria-pressed="false" hidden>편집</button>
+          <div class="seg log-size" role="group" aria-label="글자 크기">
+            <button type="button" data-size="-1" aria-label="글자 작게">가<span aria-hidden="true">−</span></button>
+            <button type="button" data-size="1" aria-label="글자 크게">가<span aria-hidden="true">+</span></button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="g-panel pane-box log-box">
+      <div class="pane log-pane" id="log-pane" tabindex="0" role="region" aria-label="진행 기록 본문"><div class="lg-body" id="log-body"></div></div>
     </div>
   </section>
 
   <!-- ===================== 상점 ===================== -->
   <section data-page="shop" class="page" hidden>
-    <div class="wrap">
-      <header class="page-head">
-        <h1 class="page-title split">상점</h1>
+    <header class="page-head">
+      <h1 class="page-title split">상점</h1>
+      <div class="head-side">
         <p class="page-lede">상점 안내 문구 자리입니다.</p>
-      </header>
-      <div class="table brk shop-bar" data-spot>
-        <span>보유 칩</span>
-        <span class="wallet"><span class="chip red" aria-hidden="true"></span><strong id="wallet">0</strong></span>
+        <div class="wallet-pill">
+          <span id="wallet-label">보유 칩</span>
+          <span class="wallet"><span class="chip red" aria-hidden="true"></span><strong id="wallet" aria-describedby="wallet-label">—</strong></span>
+        </div>
       </div>
-      <div class="shop" id="shop"></div>
+    </header>
+    <div class="shop-wrap">
+      <div class="pane shop-pane" tabindex="0" role="region" aria-labelledby="shop-h">
+        <h2 class="sr" id="shop-h">상품 목록</h2>
+        <div class="shop" id="shop"></div>
+      </div>
+      <aside class="g-panel shop-detail" id="shop-detail" aria-label="선택한 상품" aria-live="polite" tabindex="0"></aside>
     </div>
   </section>
 
   <!-- ===================== 게임 ===================== -->
   <section data-page="game" class="page" hidden>
-    <div class="wrap">
-      <header class="page-head">
-        <h1 class="page-title split">게임</h1>
-        <p class="page-lede">게임 페이지 안내 문구 자리입니다. 아래에서 지난 게임 전적을 확인할 수 있습니다.</p>
-      </header>
-      <div class="table brk game-stage" data-spot>
+    <header class="page-head">
+      <h1 class="page-title split">게임</h1>
+      <p class="page-lede">게임 페이지 안내 문구 자리입니다. 지난 게임 전적도 여기서 볼 수 있습니다.</p>
+    </header>
+    <div class="game-grid">
+      <div class="table game-stage">
         <div class="wheel-wrap"><div class="wheel" id="wheel" aria-hidden="true"></div></div>
         <div class="copy">
           <h2 class="h">게임 준비 중</h2>
           <p>도박 시스템이 들어갈 자리입니다.</p>
-          <button class="btn magnetic" type="button" id="spin">휠 돌리기</button>
+          <button class="btn" type="button" id="spin">휠 돌리기</button>
         </div>
       </div>
-
-      <section class="records" aria-labelledby="rec-title">
-        <div class="rec-head">
-          <h2 class="h" id="rec-title">전적</h2>
-          <div class="seg" role="group" aria-label="게임 종류" id="rec-seg"></div>
+      <section class="g-panel pane-box rec-panel" aria-labelledby="h-records">
+        <div class="g-head rec-head">
+          <h2 id="h-records">전적</h2>
+          <div class="seg rec-seg" role="group" aria-label="게임 종류" id="rec-seg"></div>
         </div>
         <div class="rec-stats" id="rec-stats"></div>
-        <div class="rec-layout">
-          <div>
+        <div class="pane rec-pane" tabindex="0" role="region" aria-label="전적 목록">
+          <div class="rec-layout">
             <div class="table-scroll">
               <table class="rec">
-                <thead><tr><th>일시</th><th>게임</th><th>승자</th><th>참가</th><th style="text-align:right">칩</th><th>메모</th></tr></thead>
+                <caption class="sr">게임 전적 — 일시, 게임, 승자, 참가, 칩, 메모</caption>
+                <thead><tr><th scope="col">일시</th><th scope="col">게임</th><th scope="col">승자</th><th scope="col">참가</th><th scope="col" class="num">칩</th><th scope="col">메모</th></tr></thead>
                 <tbody id="rec-body"></tbody>
               </table>
+              <div class="rec-more" id="rec-more" hidden><button class="btn small" type="button" id="rec-more-btn">더 보기</button></div>
             </div>
-            <div class="rec-more" id="rec-more" hidden><button class="btn" type="button" id="rec-more-btn">더 보기</button></div>
+            <aside class="rank" aria-labelledby="h-rank"><h3 id="h-rank">승리 순위</h3><ol id="rec-rank"></ol></aside>
           </div>
-          <aside class="rank notch" aria-label="승리 순위">
-            <h3>승리 순위</h3>
-            <ol id="rec-rank"></ol>
-          </aside>
         </div>
+      </section>
+      <section class="g-panel pane-box sched-panel" aria-labelledby="h-sched">
+        <div class="g-head"><h2 id="h-sched">게임 일정</h2></div>
+        <div class="pane" id="schedule" tabindex="0" role="group" aria-label="게임 일정 목록"></div>
       </section>
     </div>
   </section>
 
   <!-- ===================== 설정 ===================== -->
   <section data-page="settings" class="page" hidden>
-    <div class="wrap">
-      <header class="page-head">
-        <h1 class="page-title split">설정</h1>
-        <p class="page-lede">내 표시 정보와 화면 효과를 바꿀 수 있습니다.</p>
-      </header>
-      <form class="form" id="settings-form">
+    <header class="page-head">
+      <h1 class="page-title split">설정</h1>
+      <p class="page-lede">내 표시 정보와 화면 효과를 바꿀 수 있습니다.</p>
+    </header>
+    <div class="pane">
+      <div class="settings-grid">
+        <section class="g-panel card" aria-labelledby="acct-h">
+          <h2 class="card-h" id="acct-h">계정</h2>
+          <div id="acct-guest">
+            <p class="muted">로그인하면 표시 이름과 보유 칩을 확인할 수 있습니다.</p>
+            <a class="btn primary" href="#login">로그인</a>
+          </div>
+          <form class="form" id="acct-form" novalidate hidden>
+            <dl class="kv">
+              <dt>이메일</dt><dd id="acct-email"></dd>
+              <dt>내 캐릭터</dt><dd id="acct-char"></dd>
+              <dt>보유 칩</dt><dd id="acct-chips"></dd>
+            </dl>
+            <p class="hint">캐릭터 연결과 칩은 관리자가 관리합니다. 칩은 캐릭터별로 쌓입니다.</p>
+            <div class="field">
+              <label for="set-name">표시 이름</label>
+              <input class="input" id="set-name" name="nickname" type="text" autocomplete="nickname" maxlength="30" required aria-describedby="set-name-err">
+              <span class="field-error" id="set-name-err" hidden></span>
+            </div>
+            <div class="form-actions">
+              <button class="btn primary" type="submit">저장</button>
+              <a class="btn" href="#password">비밀번호 변경</a>
+              <button class="btn" type="button" id="logout">로그아웃</button>
+            </div>
+          </form>
+        </section>
+        <section class="g-panel card" aria-labelledby="disp-h">
+          <h2 class="card-h" id="disp-h">화면</h2>
+          <div class="switch">
+            <div>
+              <label for="set-calm">애니메이션 끄기</label>
+              <span class="hint" id="set-calm-hint">인트로, 칩 낙하, 캐릭터 자동 넘김, 전환 효과를 멈춥니다. 바로 적용되고, 로그인 중이면 계정에도 저장됩니다.</span>
+            </div>
+            <input type="checkbox" role="switch" id="set-calm" name="calm" aria-describedby="set-calm-hint">
+          </div>
+          <div class="switch">
+            <div>
+              <span class="label-like" id="replay-l">인트로 다시 보기</span>
+              <span class="hint">첫 접속 때 나오는 인트로를 지금 다시 재생합니다.</span>
+            </div>
+            <button class="btn small" type="button" id="replay-intro" aria-describedby="replay-l">재생</button>
+          </div>
+        </section>
+        <section class="g-panel card" aria-labelledby="navo-h">
+          <h2 class="card-h" id="navo-h">하단 메뉴 순서</h2>
+          <p class="hint" id="navo-hint">하단 메뉴 아이콘을 끌어서(휴대폰은 길게 누른 뒤 끌어서) 옮기거나, 아래 버튼으로 바꿀 수 있습니다. 이 브라우저에만 저장됩니다.</p>
+          <ol class="nav-order" id="nav-order" aria-describedby="navo-hint"></ol>
+          <div class="form-actions"><button class="btn small" type="button" id="nav-order-reset">기본 순서로</button></div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 로그인 ===================== -->
+  <section data-page="login" class="page" hidden>
+    <header class="page-head">
+      <h1 class="page-title split">로그인</h1>
+      <p class="page-lede">계정은 관리자 초대로만 만들어집니다.</p>
+    </header>
+    <div class="pane">
+      <form class="form g-panel card auth-card" id="login-form" novalidate>
+        <p class="form-error" id="login-error" role="alert" hidden></p>
         <div class="field">
-          <label for="set-name">표시 이름</label>
-          <input class="input" id="set-name" type="text" autocomplete="off">
+          <label for="login-email">이메일</label>
+          <input class="input" id="login-email" name="email" type="email" autocomplete="email" inputmode="email" required aria-describedby="login-email-err">
+          <span class="field-error" id="login-email-err" hidden></span>
         </div>
         <div class="field">
-          <label for="set-char">연결된 캐릭터</label>
-          <select class="input" id="set-char"></select>
+          <label for="login-pw">비밀번호</label>
+          <input class="input" id="login-pw" name="password" type="password" autocomplete="current-password" required aria-describedby="login-pw-err">
+          <span class="field-error" id="login-pw-err" hidden></span>
         </div>
-        <label class="switch">
-          <span>애니메이션 끄기<span class="hint">칩 낙하, 카드 넘김, 탭 전환 효과를 멈춥니다.</span></span>
-          <input type="checkbox" id="set-calm">
-        </label>
-        <div><button class="btn primary" type="submit">설정 저장</button></div>
+        <div class="form-actions">
+          <button class="btn primary" type="submit">로그인</button>
+          <button class="link-btn" type="button" id="forgot">비밀번호를 잊으셨나요?</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ===================== 비밀번호 설정 (초대·재설정 링크 / 변경) ===================== -->
+  <section data-page="password" class="page" hidden>
+    <header class="page-head">
+      <h1 class="page-title split">비밀번호</h1>
+      <p class="page-lede" id="pw-lede">새 비밀번호를 정해 주세요.</p>
+    </header>
+    <div class="pane">
+      <form class="form g-panel card auth-card" id="pw-form" novalidate>
+        <p class="form-error" id="pw-error" role="alert" hidden></p>
+        <input type="email" name="username" autocomplete="username" id="pw-user" hidden>
+        <div class="field">
+          <label for="pw-new">새 비밀번호</label>
+          <input class="input" id="pw-new" name="new-password" type="password" autocomplete="new-password" minlength="8" required aria-describedby="pw-new-hint pw-new-err">
+          <span class="hint" id="pw-new-hint">8자 이상</span>
+          <span class="field-error" id="pw-new-err" hidden></span>
+        </div>
+        <div class="field">
+          <label for="pw-new2">새 비밀번호 확인</label>
+          <input class="input" id="pw-new2" name="confirm-password" type="password" autocomplete="new-password" minlength="8" required aria-describedby="pw-new2-err">
+          <span class="field-error" id="pw-new2-err" hidden></span>
+        </div>
+        <div class="form-actions"><button class="btn primary" type="submit">비밀번호 저장</button></div>
       </form>
     </div>
   </section>
 
   <!-- ===================== 관리 ===================== -->
   <section data-page="admin" class="page" hidden>
-    <div class="wrap">
-      <header class="page-head">
-        <h1 class="page-title split">관리</h1>
-        <p class="page-lede">관리자에게만 보이는 페이지입니다.</p>
-      </header>
-      <div class="admin-grid">
-        <div class="panel notch">
-          <h2>전적 기록</h2>
-          <div class="form">
-            <div class="field"><label for="ad-game">게임</label><input class="input" id="ad-game" placeholder="예: 블랙잭"></div>
-            <div class="field"><label for="ad-winner">승자</label><select class="input" id="ad-winner"></select></div>
-            <div class="field"><label for="ad-chips">획득 칩</label><input class="input" id="ad-chips" type="number" value="0"></div>
-            <div class="field"><label for="ad-note">메모</label><input class="input" id="ad-note"></div>
-            <div><button class="btn primary" type="button" disabled>기록하기</button><span class="hint">관리자 로그인 연결 후 사용합니다.</span></div>
-          </div>
-        </div>
-        <div class="panel notch">
-          <h2>게임 일정</h2>
-          <p class="slot-note">스탭 시간대별 게임 개설 기능이 들어갈 자리입니다.</p>
-        </div>
-        <div class="panel notch full">
-          <h2>멤버 관리</h2>
-          <div class="table-scroll">
-            <table class="members">
-              <thead><tr><th>이름</th><th>구분</th><th>승리</th><th>칩</th></tr></thead>
-              <tbody id="admin-members"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+    <header class="page-head">
+      <h1 class="page-title split">관리</h1>
+      <p class="page-lede">관리자에게만 보이는 페이지입니다.</p>
+    </header>
+    <div class="admin-shell">
+      <div class="admin-tabs" role="tablist" aria-label="관리 항목" id="admin-tabs"></div>
+      <div class="admin-panel pane" role="tabpanel" id="admin-panel" tabindex="0"></div>
     </div>
+  </section>
+
+  <!-- ===================== 404 ===================== -->
+  <section data-page="notfound" class="page" hidden>
+    <header class="page-head">
+      <h1 class="page-title split">없는 페이지</h1>
+      <p class="page-lede">주소가 바뀌었거나 삭제된 페이지입니다.</p>
+    </header>
+    <div><a class="btn primary" href="#home">홈으로</a></div>
   </section>
 
 </main>
 
-<footer class="site-foot">
-  <div class="wrap">
-    <p class="big" aria-hidden="true">Titfortat777</p>
-    <div class="fine"><span>푸터 문구 자리</span><span>연락처 자리</span></div>
-  </div>
-</footer>
-
-<div class="toast notch" id="toast" role="status" aria-live="polite"></div>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-/* =========================================================
-   CONFIG
-   ========================================================= */
-const CONFIG = {
-  // 공개용 anon 키. service_role 키는 절대 넣지 말 것
-  SUPABASE_URL: "https://fuyfqejfqoflygvymbhp.supabase.co",
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1eWZxZWpmcW9mbHlndnltYmhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4OTI5MTAsImV4cCI6MjA5NjQ2ODkxMH0.Bb3eevn__xlaILyKywMvZ6maIgaKMCFYBu6dv9BJtr4",
-  DEV_SHOW_ADMIN: true   // 뼈대 확인용. 운영 전 false
-};
-const SITE = "Titfortat777";
-
-const mqReduce = matchMedia("(prefers-reduced-motion: reduce)");
-const mqFine = matchMedia("(hover: hover) and (pointer: fine)");
-const state = { isAdmin: CONFIG.DEV_SHOW_ADMIN, calm: false, group: "dealer", ready: false };
-const motionOK = () => !mqReduce.matches && !state.calm;
-
-/* ---------- 더미 데이터 (DB 연결 시 덮어씀) ---------- */
-const SUITS = ["♠", "♥", "♣", "♦"];
-const INVENTORY_SLOTS = 12;
-function PROFILE_DUMMY(){
-  return {
-    age: "나이 자리", height: "키 자리",
-    keywords: ["키워드", "키워드", "키워드"],
-    description: "짧은 설명글 자리입니다.",
-    inventory: Array.from({ length: 4 }, (_, i) => ({ name: "소지품 이름", quantity: i === 0 ? 3 : 1, note: i === 1 ? "캐릭터별 메모 자리" : "", description: "아이템 설명 자리", img: "" }))
-  };
-}
-const DATA = {
-  dealers: Array.from({ length: 7 }, (_, i) => ({ id: "d" + (i + 1), uuid: "d" + (i + 1), name: "딜러 " + (i + 1), role: "딜러", suit: SUITS[i % 4], img: "", ...PROFILE_DUMMY() })),
-  players: Array.from({ length: 7 }, (_, i) => ({ id: "p" + (i + 1), uuid: "p" + (i + 1), name: "참가자 " + (i + 1), role: "참가자", chip: i % 2 ? "red" : "green", img: "", ...PROFILE_DUMMY() })),
-  chapters: Array.from({ length: 5 }, (_, i) => ({ number: i + 1, title: "회차 제목", summary: "요약 자리입니다.", date: "0000.00.00" })),
-  items: Array.from({ length: 8 }, () => ({ name: "아이템 이름", price: 0 })),
-  records: []
-};
-(() => { // 더미 전적
-  const games = ["블랙잭", "포커", "룰렛", "바카라"];
-  DATA.records = Array.from({ length: 26 }, (_, i) => {
-    const w = (i % 3 === 0 ? DATA.dealers : DATA.players)[(i * 5) % 7];
-    return { id: "r" + i, date: "0000.00.00", time: "00:00", game: games[i % 4], winner: w,
-      players: [DATA.players[i % 7].name, DATA.players[(i + 2) % 7].name], chips: (i % 4 ? 1 : -1) * (100 + i * 50), note: i % 5 ? "" : "메모 자리" };
-  });
-})();
-
-const HERO_CHIPS = [
-  [58,  8, 4.5, "",      18, 55, .00, 1.2],
-  [80,  4, 3.0, "red",  -30, 30, .10, 2.4],
-  [69, 24, 7.0, "",      -8, 60, .18, .8 ],
-  [90, 30, 3.5, "green", 40, 20, .28, 2.0],
-  [46, 30, 2.6, "red",   12, 65, .36, 2.8],
-  [78, 48, 10,  "green",-22, 40, .44, .5 ],
-  [94, 60, 4.0, "",      64, 50, .56, 1.6],
-  [30, 12, 3.2, "green", 20, 58, .62, 2.2]
-];
-
-/* ---------- helpers ---------- */
-const $ = (s, r = document) => r.querySelector(s);
-const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-const isRed = s => s === "♥" || s === "♦";
-const pad2 = n => String(n).padStart(2, "0");
-
-function toast(msg){
-  const t = $("#toast");
-  t.textContent = msg; t.classList.add("show");
-  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2200);
-}
-
-function splitText(el){
-  if (!el.dataset.text) el.dataset.text = el.textContent.trim();
-  const text = el.dataset.text;
-  el.setAttribute("aria-label", text);
-  el.innerHTML = [...text].map((ch, i) =>
-    ch === " " ? " " : `<span class="clip" aria-hidden="true"><span class="ch" style="--i:${i}">${esc(ch)}</span></span>`
-  ).join("");
-}
-
-function inkTo(seg){
-  const a = $('button[aria-pressed="true"]', seg), ink = $(".seg-ink", seg);
-  if (!a || !ink) return;
-  ink.style.left = a.offsetLeft + "px"; ink.style.width = a.offsetWidth + "px";
-}
-
-/* 캐릭터 표시용 작은 표식 */
-const markOf = c => c.role === "딜러"
-  ? `<span class="mk ${isRed(c.suit) ? "red" : ""}">${c.suit}</span>`
-  : `<span class="chip ${c.chip}"></span>`;
-
-/* ---------- render: home ---------- */
-function renderHero(){
-  $("#hero-chips").innerHTML = HERO_CHIPS.map(([l, t, s, c, r, tx, d, depth]) => `
-    <span class="fall" style="left:${l}%;top:${t}%;animation-delay:${d}s">
-      <span class="float" style="--d:${depth}">
-        <span class="chip ${c}" style="--size:${s}rem;--tx:${tx}deg;--r1:${r}deg"></span>
-      </span>
-    </span>`).join("");
-}
-
-const imgSlot = c => c.img ? `<img src="${esc(c.img)}" alt="" loading="lazy" draggable="false">` : "이미지";
-
-function renderHome(){
-  const unit = `<span>${SITE}</span><span><i>♠</i></span><span>문구 자리</span><span><i>♥</i></span><span>${SITE}</span><span><i>♣</i></span><span>문구 자리</span><span><i>♦</i></span>`;
-  $("#marquee").innerHTML = unit + unit;
-
-  const mid = (DATA.dealers.length - 1) / 2;
-  $("#fan").innerHTML = DATA.dealers.map((c, i) => {
-    const off = i - mid;
-    return `<a class="fan-card" href="#characters/${c.id}" style="--rot:${off * 7}deg;--lift:${Math.abs(off) * .35}rem;z-index:${i}" aria-label="${esc(c.name)}">
-      <span class="pcard ${isRed(c.suit) ? "red-suit" : ""}">
-        <span class="pip tl">${c.suit}</span><span class="face">${imgSlot(c)}</span><span class="pip br">${c.suit}</span>
-      </span></a>`;
-  }).join("");
-
-  $("#chip-row").innerHTML = DATA.players.map(c => `<span class="chip ${c.chip}"><span class="face"></span></span>`).join("");
-
-  const last = DATA.chapters[DATA.chapters.length - 1];
-  $("#latest-card").innerHTML = last
-    ? `<span class="ep">최근 이야기 / 제${last.number}화</span><h3>${esc(last.title)}</h3><p>${esc(last.summary)}</p>`
-    : `<span class="ep">최근 이야기</span><h3>아직 기록이 없습니다</h3>`;
-
-  const r = DATA.records[0];
-  $("#win-card").innerHTML = r
-    ? `<span class="ep">최근 승리 / ${esc(r.game)}</span><h3>${esc(r.winner?.name || "—")}</h3><p>${esc(r.date)} ${esc(r.time)}${r.chips ? ` · 칩 ${r.chips > 0 ? "+" : ""}${r.chips.toLocaleString()}` : ""}</p>`
-    : `<span class="ep">최근 승리</span><h3>아직 전적이 없습니다</h3><p>게임 결과가 쌓이면 여기에 보입니다.</p>`;
-
-  $("#roster-meta").textContent = `DEALER ${DATA.dealers.length} / PLAYER ${DATA.players.length}`;
-}
-
-/* =========================================================
-   캐릭터 캐러셀
-   pos = 가운데에 올 캐릭터 번호(소수 가능, 드래그 중)
-   ========================================================= */
-const cast = { pos: { dealer: 0, player: 0 } };
-const groupList = g => g === "dealer" ? DATA.dealers : DATA.players;
-const castList = () => groupList(state.group);
-const norm = (i, n) => ((i % n) + n) % n;
-
-// |거리|별 위치(카드 폭 배수), 크기, 투명도, 흑백, 밝기
-const LAYOUT = {
-  P: [0, .98, 1.84, 2.62, 3.3],
-  S: [1, .8, .74, .68, .64],
-  O: [1, .92, .62, 0, 0],
-  G: [0, .8, 1, 1, 1],
-  B: [1, .72, .5, .4, .4]
-};
-const lerpTab = (t, a) => { const i = Math.min(Math.floor(t), a.length - 2), f = Math.min(t - i, 1); return a[i] + (a[i + 1] - a[i]) * f; };
-function wrapOff(i, pos, n){ let o = norm(i - pos, n); if (o > n / 2) o -= n; return o; }
-
-function buildCast(enter = false){
-  const list = castList(), track = $("#cc-track");
-  $$("#seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.group === state.group));
-  $("#count-dealer").textContent = DATA.dealers.length;
-  $("#count-player").textContent = DATA.players.length;
-  inkTo($("#seg"));
-
-  if (!list.length){
-    track.innerHTML = `<p class="empty-note">등록된 캐릭터가 없습니다.</p>`;
-    $("#cc-count").textContent = "00 / 00"; $("#cc-go").hidden = true;
-    return;
-  }
-  $("#cc-go").hidden = false;
-  track.innerHTML = list.map((c, i) => {
-    const dealer = c.role === "딜러";
-    const kw = (c.keywords || []).slice(0, 3);
-    return `<a class="cc ${dealer ? "dealer" : "player"} ${dealer && isRed(c.suit) ? "red-suit" : ""}" href="#characters/${c.id}" data-i="${i}" data-id="${c.id}" draggable="false">
-      <span class="cc-in">
-        <span class="cc-name">${esc(c.name)}</span>
-        <span class="cc-frame brk">
-          <span class="img">${imgSlot(c)}</span>
-          ${dealer ? `<span class="pip" aria-hidden="true">${c.suit}</span>` : `<span class="chip ${c.chip} badge" aria-hidden="true"></span>`}
-        </span>
-        <span class="cc-line">${esc((c.description || "").split("\n")[0])}</span>
-        ${kw.length ? `<span class="cc-kw notch">${kw.map(k => `<span>${esc(k)}</span>`).join("")}</span>` : ""}
-      </span>
-    </a>`;
-  }).join("");
-  layoutCast(true);
-  if (enter && motionOK()){
-    track.classList.remove("enter"); void track.offsetWidth; track.classList.add("enter");
-  }
-}
-
-function layoutCast(instant = false){
-  const track = $("#cc-track"), cards = $$(".cc", track), n = cards.length;
-  if (!n) return;
-  const W = cards[0].offsetWidth;
-  if (!W) return;   // 화면에 안 보일 때
-  const pos = cast.pos[state.group];
-
-  cards.forEach((el, i) => {
-    const off = wrapOff(i, pos, n), a = Math.min(Math.abs(off), 4), sign = off < 0 ? -1 : 1;
-    const prev = parseFloat(el.dataset.off);
-    if (instant || (!isNaN(prev) && Math.abs(off - prev) > n / 2)) el.classList.add("jump");
-    el.dataset.off = off;
-    el.style.setProperty("--x", (sign * lerpTab(a, LAYOUT.P) * W).toFixed(1) + "px");
-    el.style.setProperty("--s", lerpTab(a, LAYOUT.S).toFixed(3));
-    el.style.setProperty("--o", lerpTab(a, LAYOUT.O).toFixed(3));
-    el.style.setProperty("--g", lerpTab(a, LAYOUT.G).toFixed(3));
-    el.style.setProperty("--b", lerpTab(a, LAYOUT.B).toFixed(3));
-    el.style.setProperty("--a", a.toFixed(2));
-    el.style.zIndex = 100 - Math.round(a * 10);
-    el.style.pointerEvents = a > 2.4 ? "none" : "";
-    el.classList.toggle("is-center", a < .5);
-    el.tabIndex = a < .5 ? 0 : -1;
-    el.setAttribute("aria-hidden", a >= .5);
-  });
-  requestAnimationFrame(() => requestAnimationFrame(() => cards.forEach(el => el.classList.remove("jump"))));
-
-  const idx = norm(Math.round(pos), n), c = castList()[idx];
-  $("#cc-count").innerHTML = `<b>${pad2(idx + 1)}</b> / ${pad2(n)}`;
-  $("#cc-go").href = "#characters/" + c.id;
-  $("#cc-go").setAttribute("aria-label", c.name + " 프로필 보기");
-  $("#cc-chip").style.transform = `rotate(${Math.round(pos) * 60}deg)`;
-}
-
-function castGo(d){
-  if (!castList().length) return;
-  cast.pos[state.group] = Math.round(cast.pos[state.group]) + d;
-  layoutCast();
-}
-function castGoIndex(i){
-  const n = castList().length, pos = Math.round(cast.pos[state.group]);
-  cast.pos[state.group] = pos + wrapOff(i, pos, n);
-  layoutCast();
-}
-function castSelect(id){   // 특정 캐릭터를 가운데로 (애니메이션 없이)
-  for (const g of ["dealer", "player"]){
-    const i = groupList(g).findIndex(c => c.id === id);
-    if (i >= 0){ state.group = g; cast.pos[g] = i; return; }
-  }
-}
-
-/* 드래그 / 스와이프 */
-let drag = null, suppressClick = false;
-function bindCast(){
-  const view = $("#cast-view"), track = $("#cc-track");
-  const step = () => ($(".cc", track)?.offsetWidth || 200) * LAYOUT.P[1];
-
-  view.addEventListener("dragstart", e => e.preventDefault());
-  view.addEventListener("pointerdown", e => {
-    if (e.button !== 0 || !castList().length) return;
-    drag = { x: e.clientX, y: e.clientY, start: Math.round(cast.pos[state.group]), moved: false, id: e.pointerId, dx: 0 };
-  });
-  view.addEventListener("pointermove", e => {
-    if (!drag) return;
-    drag.dx = e.clientX - drag.x;
-    if (!drag.moved){
-      if (Math.abs(e.clientY - drag.y) > 10 && Math.abs(drag.dx) < 10){ drag = null; return; } // 세로 스크롤
-      if (Math.abs(drag.dx) < 6) return;
-      drag.moved = true;
-      try { view.setPointerCapture(drag.id); } catch (_) {}
-      track.classList.add("dragging"); view.classList.add("grabbing");
-    }
-    cast.pos[state.group] = drag.start - drag.dx / step();
-    layoutCast();
-  });
-  const end = () => {
-    if (!drag) return;
-    if (drag.moved){
-      track.classList.remove("dragging"); view.classList.remove("grabbing");
-      let t = Math.round(cast.pos[state.group]);
-      if (t === drag.start && Math.abs(drag.dx) > 40) t = drag.start - Math.sign(drag.dx);  // 짧게 튕겨도 한 칸
-      cast.pos[state.group] = t;
-      layoutCast();
-      suppressClick = true; setTimeout(() => suppressClick = false, 80);
-    }
-    drag = null;
-  };
-  view.addEventListener("pointerup", end);
-  view.addEventListener("pointercancel", end);
-
-  // 트랙패드 가로 스크롤
-  let acc = 0, lock = 0;
-  view.addEventListener("wheel", e => {
-    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
-    e.preventDefault();
-    if (Date.now() < lock) return;
-    acc += e.deltaX;
-    if (Math.abs(acc) > 45){ castGo(Math.sign(acc)); acc = 0; lock = Date.now() + 380; }
-  }, { passive: false });
-
-  $("#cc-prev").addEventListener("click", () => castGo(-1));
-  $("#cc-next").addEventListener("click", () => castGo(1));
-}
-
-/* ---------- 프로필 ---------- */
-function renderProfile(id){
-  castSelect(id);
-  const list = castList(), idx = list.findIndex(x => x.id === id);
-  if (idx < 0) return false;
-  const c = list[idx], dealer = c.role === "딜러", n = list.length;
-  const prev = list[norm(idx - 1, n)], next = list[norm(idx + 1, n)];
-
-  const v = $("#pf-visual");
-  v.className = "pf-visual " + (dealer ? "dealer" : "player") + (dealer && isRed(c.suit) ? " red-suit" : "");
-  v.style.setProperty("--band", c.chip === "red" ? "var(--pink)" : "var(--navy)");
-  v.innerHTML = `<span class="img">${imgSlot(c)}</span><span class="pf-frame brk" aria-hidden="true"></span>` +
-    (dealer ? `<span class="pip" aria-hidden="true">${c.suit}</span>` : `<span class="chip ${c.chip} badge" aria-hidden="true"></span>`) +
-    (n > 1 ? `
-      <a class="pf-arrow arrow prev" href="#characters/${prev.id}" aria-label="이전 캐릭터: ${esc(prev.name)}"><span class="nm">${esc(prev.name)}</span></a>
-      <a class="pf-arrow arrow next" href="#characters/${next.id}" aria-label="다음 캐릭터: ${esc(next.name)}"><span class="nm">${esc(next.name)}</span></a>` : "") +
-    `<span class="pf-count">${c.role} ${pad2(idx + 1)} / ${pad2(n)}</span>`;
-
-  const role = $("#pf-role");
-  role.textContent = c.role;
-  role.className = "role " + (dealer ? "tag-d" : "tag-p");
-  const name = $("#pf-name");
-  name.dataset.text = c.name;
-  splitText(name);
-
-  $("#pf-dl").innerHTML = `<dt>이름</dt><dd>${esc(c.name)}</dd><dt>나이</dt><dd>${esc(c.age || "—")}</dd><dt>키</dt><dd>${esc(c.height || "—")}</dd>`;
-  $("#pf-kw").innerHTML = (c.keywords || []).map(k => `<li class="notch">${esc(k)}</li>`).join("");
-  $("#pf-desc").textContent = c.description;
-  renderInventory(c.inventory);
-  document.title = `${c.name} | ${SITE}`;
-  return true;
-}
-
-function renderInventory(inv, selected = 0){
-  const filled = inv.map((it, i) => `
-    <button class="slot" type="button" data-slot="${i}" aria-pressed="${i === selected}" aria-label="${esc(it.name)} ${it.quantity}개">
-      ${it.img ? `<img src="${esc(it.img)}" alt="">` : "이미지"}
-      ${it.quantity > 1 ? `<span class="qty">×${it.quantity}</span>` : ""}
-    </button>`).join("");
-  const empty = Array.from({ length: Math.max(0, INVENTORY_SLOTS - inv.length) }, () => `<span class="slot" aria-hidden="true"></span>`).join("");
-  $("#pf-inv").innerHTML = filled + empty;
-  $("#pf-inv").dataset.items = JSON.stringify(inv);
-  const it = inv[selected];
-  $("#pf-inv-detail").innerHTML = it
-    ? `<div class="top"><strong>${esc(it.name)}</strong><span class="count">${it.quantity}개</span></div>
-       <p>${esc(it.description)}</p>${it.note ? `<p class="note">${esc(it.note)}</p>` : ""}`
-    : `<p>소지품이 없습니다.</p>`;
-}
-
-/* ---------- 지난 이야기 / 상점 ---------- */
-function renderStory(){
-  if (!DATA.chapters.length){ $("#timeline").innerHTML = `<p class="slot-note">아직 기록이 없습니다.</p>`; return; }
-  $("#timeline").innerHTML = `<span class="fill" aria-hidden="true"></span>` + DATA.chapters.map(c => `
-    <li class="reveal">
-      <span class="ep">제${c.number}화</span>
-      <h3>${esc(c.title)}</h3>
-      <time>${esc(c.date)}</time>
-      <p>${esc(c.summary)}</p>
-    </li>`).join("");
-}
-
-function renderShop(){
-  if (!DATA.items.length){ $("#shop").innerHTML = `<p class="empty-note" style="grid-column:1 / -1">판매 중인 아이템이 없습니다.</p>`; return; }
-  $("#shop").innerHTML = DATA.items.map((it, i) => `
-    <div class="item notch reveal ${i === 0 ? "wide" : ""}">
-      <div class="thumb">${it.img ? `<img src="${esc(it.img)}" alt="" loading="lazy">` : "이미지"}</div>
-      <div class="row">
-        <h3>${esc(it.name)}</h3>
-        <span class="price"><span class="chip red" aria-hidden="true"></span>${it.price}</span>
-      </div>
-      <button class="btn" type="button" disabled>구매하기</button>
-    </div>`).join("");
-}
-
-/* ---------- 전적 ---------- */
-let recFilter = "전체", recLimit = 20;
-const winCounts = recs => {
-  const m = new Map();
-  recs.forEach(r => { if (r.winner) m.set(r.winner.id, { c: r.winner, w: (m.get(r.winner.id)?.w || 0) + 1 }); });
-  return [...m.values()].sort((a, b) => b.w - a.w);
-};
-
-function renderRecords(){
-  const all = DATA.records;
-  const games = [...new Set(all.map(r => r.game).filter(Boolean))];
-  if (recFilter !== "전체" && !games.includes(recFilter)) recFilter = "전체";
-  const seg = $("#rec-seg");
-  seg.hidden = games.length < 2;
-  seg.innerHTML = ["전체", ...games].map(g => `<button type="button" data-game="${esc(g)}" aria-pressed="${g === recFilter}">${esc(g)}</button>`).join("") + `<span class="seg-ink" aria-hidden="true"></span>`;
-  requestAnimationFrame(() => inkTo(seg));
-
-  const recs = recFilter === "전체" ? all : all.filter(r => r.game === recFilter);
-  const ranks = winCounts(recs), top = ranks[0], latest = recs[0];
-
-  $("#rec-stats").innerHTML = `
-    <div class="stat notch"><small>진행한 게임</small><strong>${recs.length}판</strong><span>${recFilter === "전체" ? "전체 게임" : esc(recFilter)}</span></div>
-    <div class="stat notch hot"><small>최다 승리</small><strong>${top ? esc(top.c.name) : "—"}</strong><span>${top ? top.w + "승" : "기록 없음"}</span></div>
-    <div class="stat notch"><small>최근 게임</small><strong>${latest ? esc(latest.game) : "—"}</strong><span>${latest ? `${esc(latest.date)} ${esc(latest.time)} · ${esc(latest.winner?.name || "—")} 승` : "기록 없음"}</span></div>`;
-
-  if (!recs.length){
-    $("#rec-body").innerHTML = `<tr><td colspan="6" class="empty-note">아직 기록된 게임이 없습니다.</td></tr>`;
-  } else {
-    $("#rec-body").innerHTML = recs.slice(0, recLimit).map(r => `
-      <tr>
-        <td class="when"><time>${esc(r.date)}</time><small>${esc(r.time)}</small></td>
-        <td class="game">${esc(r.game)}</td>
-        <td>${r.winner ? `<a class="win-name" href="#characters/${r.winner.id}">${markOf(r.winner)}${esc(r.winner.name)}</a>` : "—"}</td>
-        <td class="who">${esc(r.players.join(", ")) || "—"}</td>
-        <td class="num ${r.chips < 0 ? "minus" : ""}">${r.chips ? (r.chips > 0 ? "+" : "") + r.chips.toLocaleString() : "—"}</td>
-        <td class="note">${esc(r.note || "")}</td>
-      </tr>`).join("");
-  }
-  $("#rec-more").hidden = recs.length <= recLimit;
-
-  const max = top?.w || 1;
-  $("#rec-rank").innerHTML = ranks.length
-    ? ranks.slice(0, 5).map((x, i) => `
-      <li><span class="no">${pad2(i + 1)}</span><a class="nm win-name" href="#characters/${x.c.id}">${markOf(x.c)}${esc(x.c.name)}</a><span class="w">${x.w}승</span>
-      <span class="bar"><i style="--p:${(x.w / max * 100).toFixed(1)}%"></i></span></li>`).join("")
-    : `<li class="slot-note">기록이 쌓이면 순위가 보입니다.</li>`;
-}
-
-/* ---------- 설정 / 관리 ---------- */
-function renderSettings(){
-  $("#set-char").innerHTML = `<option value="">선택 안 함</option>` +
-    [...DATA.dealers, ...DATA.players].map(c => `<option value="${c.id}">${esc(c.name)} (${c.role})</option>`).join("");
-}
-function renderAdmin(){
-  const wins = new Map(winCounts(DATA.records).map(x => [x.c.id, x.w]));
-  $("#admin-members").innerHTML = [...DATA.dealers, ...DATA.players].map(c => `
-    <tr><td>${esc(c.name)}</td><td class="${c.role === "딜러" ? "tag-d" : "tag-p"}">${c.role}</td><td>${wins.get(c.id) || 0}</td><td>0</td></tr>`).join("");
-  $("#ad-winner").innerHTML = [...DATA.dealers, ...DATA.players].map(c => `<option value="${c.uuid}">${esc(c.name)} (${c.role})</option>`).join("");
-}
-
-/* ---------- effects ---------- */
-function moveNavInk(){
-  const nav = $("#nav"), a = $('#nav a[aria-current="page"]'), ink = $(".nav-ink", nav);
-  if (!a){ ink.style.width = "0"; return; }
-  const pad = parseFloat(getComputedStyle(a).paddingLeft);
-  ink.style.left = (a.offsetLeft + pad) + "px";
-  ink.style.width = (a.offsetWidth - pad * 2) + "px";
-  a.scrollIntoView({ block: "nearest", inline: "nearest" });
-}
-function onScroll(){ $("#site-head").classList.toggle("scrolled", scrollY > 40); }
-
-function bindHero(){
-  const hero = $("#hero");
-  let raf = 0;
-  hero.addEventListener("pointermove", e => {
-    if (!mqFine.matches) return;
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => {
-      const r = hero.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
-      hero.style.setProperty("--mx", x * 100 + "%");
-      hero.style.setProperty("--my", y * 100 + "%");
-      if (motionOK()){
-        hero.style.setProperty("--px", ((x - .5) * 2).toFixed(3));
-        hero.style.setProperty("--py", ((y - .5) * 2).toFixed(3));
-      }
-    });
-  });
-  hero.addEventListener("pointerleave", () => { hero.style.setProperty("--px", 0); hero.style.setProperty("--py", 0); });
-}
-function bindSpots(){
-  document.addEventListener("pointermove", e => {
-    if (!mqFine.matches) return;
-    const el = e.target.closest("[data-spot]");
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    el.style.setProperty("--mx", e.clientX - r.left + "px");
-    el.style.setProperty("--my", e.clientY - r.top + "px");
-  }, { passive: true });
-}
-function bindMagnetic(){
-  document.addEventListener("pointermove", e => {
-    if (!mqFine.matches || !motionOK()) return;
-    const b = e.target.closest(".magnetic");
-    $$(".magnetic.pulled").forEach(x => { if (x !== b){ x.classList.remove("pulled"); x.style.setProperty("--tx","0px"); x.style.setProperty("--ty","0px"); }});
-    if (!b) return;
-    const r = b.getBoundingClientRect();
-    b.classList.add("pulled");
-    b.style.setProperty("--tx", (e.clientX - r.left - r.width / 2) * .25 + "px");
-    b.style.setProperty("--ty", (e.clientY - r.top - r.height / 2) * .35 + "px");
-  }, { passive: true });
-}
-
-/* ---------- router ----------
-   #home  #characters  #characters/d3  #story  #shop  #game ...
-   ------------------------------------------------------------ */
-const PAGES = ["home","characters","story","shop","game","settings","admin"];
-const ALL = () => [...DATA.dealers, ...DATA.players];
-let current = null, currentKey = null, lastProfile = null;
-
-function resolve(){
-  let [page, param] = (location.hash.slice(1) || "home").split("/");
-  if (!PAGES.includes(page)) page = "home";
-  if (page === "admin" && !state.isAdmin) page = "home";
-  let view = page;
-  if (page === "characters" && param) view = ALL().some(c => c.id === param) ? "profile" : "characters";
-  const navKey = view === "profile" ? "characters" : view;
-  return { view, param, navKey };
-}
-
-function route(){
-  if (!state.ready) return;
-  const { view, param, navKey } = resolve();
-  const key = view + "/" + (param || "");
-  if (key === currentKey) return;
-  const from = current;
-
-  // 캐릭터 목록 -> 프로필: 가운데 카드 이미지를 공유 요소로
-  let src = null;
-  if (from === "characters" && view === "profile"){
-    src = $(`.cc[data-id="${param}"] .img`);
-    if (src) src.style.viewTransitionName = "portrait";
-  }
-
-  const swap = () => {
-    if (src) src.style.viewTransitionName = "";
-    current = view; currentKey = key;
-    $$("[data-page]").forEach(s => s.hidden = s.dataset.page !== view);
-    $$("#nav a").forEach(a => a.getAttribute("href") === "#" + navKey ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
-    document.title = SITE;
-
-    if (view === "profile"){ renderProfile(param); lastProfile = param; }
-
-    if (view === "characters"){
-      if (from === "profile" && lastProfile) castSelect(lastProfile);
-      buildCast(from !== "profile");
-      if (from === "profile"){
-        const back = $(`.cc[data-id="${lastProfile}"] .img`);
-        if (back) back.style.viewTransitionName = "portrait";
-      }
-    }
-    window.scrollTo({ top: 0, behavior: "instant" });
-
-    const section = $(`[data-page="${view}"]`);
-    $$(".page-title.split, .hero-title.split", section).forEach(splitText);
-    if (view === "home") renderHero();
-    if (view === "game") renderRecords();
-    moveNavInk();
-    onScroll();
-  };
-
-  const clearNames = () => $$(".cc .img").forEach(el => el.style.viewTransitionName = "");
-  if (document.startViewTransition && motionOK() && from !== null){
-    document.startViewTransition(swap).finished.finally(clearNames);
-  } else { swap(); clearNames(); }
-}
-
-function applyAdmin(){ $$("#nav [data-admin-only]").forEach(el => el.hidden = !state.isAdmin); }
-
-/* ---------- events ---------- */
-document.addEventListener("click", e => {
-  const card = e.target.closest(".cc");
-  if (card){
-    if (suppressClick){ e.preventDefault(); return; }
-    if (Math.abs(parseFloat(card.dataset.off)) > .5){ e.preventDefault(); castGoIndex(+card.dataset.i); }
-    return;
-  }
-
-  const slot = e.target.closest("#pf-inv button.slot");
-  if (slot){ renderInventory(JSON.parse($("#pf-inv").dataset.items), +slot.dataset.slot); $(`#pf-inv [data-slot="${slot.dataset.slot}"]`).focus(); return; }
-
-  const g = e.target.closest("#seg button");
-  if (g){
-    if (g.dataset.group === state.group) return;
-    state.group = g.dataset.group;
-    const run = () => buildCast(true);
-    if (document.startViewTransition && motionOK()) document.startViewTransition(run); else run();
-    return;
-  }
-
-  const game = e.target.closest("#rec-seg button");
-  if (game){ recFilter = game.dataset.game; recLimit = 20; renderRecords(); return; }
-
-  if (e.target.closest("#rec-more-btn")){ recLimit += 20; renderRecords(); }
-});
-
-let spun = 0;
-$("#spin").addEventListener("click", () => {
-  spun += 1440 + Math.floor(Math.random() * 360);
-  $("#wheel").style.transform = `rotate(${spun}deg)`;
-});
-
-$("#settings-form").addEventListener("submit", e => {
-  e.preventDefault();
-  state.calm = $("#set-calm").checked;
-  document.body.classList.toggle("calm", state.calm);
-  // TODO: Supabase profiles 테이블에 저장
-  toast("설정을 저장했습니다");
-});
-
-window.addEventListener("hashchange", route);
-addEventListener("keydown", e => {
-  if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) return;
-  if (current === "characters"){
-    if (e.key === "ArrowLeft"){ e.preventDefault(); castGo(-1); }
-    if (e.key === "ArrowRight"){ e.preventDefault(); castGo(1); }
-  } else if (current === "profile"){
-    if (e.key === "Escape") location.hash = "#characters";
-    if (e.key === "ArrowLeft") $(".pf-arrow.prev")?.click();
-    if (e.key === "ArrowRight") $(".pf-arrow.next")?.click();
-  }
-});
-window.addEventListener("scroll", onScroll, { passive: true });
-window.addEventListener("resize", () => {
-  moveNavInk();
-  if (current === "characters"){ inkTo($("#seg")); layoutCast(true); }
-  if (current === "game") inkTo($("#rec-seg"));
-});
-
-/* ---------- intro ---------- */
-function runIntro(){
-  const intro = $("#intro");
-  let seen = false;
-  try { seen = sessionStorage.getItem("intro-seen") === "1"; } catch (_) {}
-  const force = new URLSearchParams(location.search).has("intro");
-
-  const finish = () => {
-    document.body.classList.remove("intro-on");
-    intro.remove();
-    try { sessionStorage.setItem("intro-seen", "1"); } catch (_) {}
-  };
-  if ((seen && !force) || !motionOK()){ finish(); return; }
-
-  const n = 5, mid = (n - 1) / 2;
-  $("#deck").innerHTML = Array.from({ length: n }, (_, i) => {
-    const off = i - mid, top = i === Math.round(mid);
-    const fx = (Math.random() - .5) * 120 + "vw", fy = (Math.random() > .5 ? 1 : -1) * (60 + Math.random() * 20) + "vh";
-    return `<span class="icard ${top ? "top" : ""}" style="--i:${i};--sr:${(Math.random() - .5) * 8}deg;--fx:${fx};--fy:${fy};--fr:${(Math.random() - .5) * 200}deg;--rot:${off * 11}deg;--lift:${Math.abs(off) * .4}rem;z-index:${top ? 9 : i}">
-      <span class="flipper">
-        <span class="side card-back"></span>
-        <span class="side pcard red-suit"><span class="pip tl">♥</span><span class="big">♥</span><span class="pip br">♥</span></span>
-      </span>
-    </span>`;
-  }).join("");
-  $$(".split", intro).forEach(splitText);
-
-  let done = false;
-  const release = setTimeout(() => document.body.classList.remove("intro-on"), 3500);
-  const end = setTimeout(() => { done = true; finish(); }, 4600);
-  const skip = () => {
-    if (done) return; done = true;
-    clearTimeout(release); clearTimeout(end);
-    intro.classList.add("skip");
-    document.body.classList.remove("intro-on");
-    setTimeout(finish, 750);
-  };
-  $("#intro-skip").addEventListener("click", skip);
-  intro.addEventListener("click", e => { if (e.target !== $("#intro-skip")) skip(); });
-  addEventListener("keydown", e => { if (e.key === "Escape" || e.key === "Enter" || e.key === " ") skip(); }, { once: true });
-}
-
-/* =========================================================
-   DATA LAYER — Supabase 조회 → 화면용 DATA 모양으로 변환
-   ========================================================= */
-const USE_DB = !!(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase);
-const sb = USE_DB ? supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY) : null;
-
-const SUIT_MAP = { spade: "♠", heart: "♥", club: "♣", diamond: "♦" };
-const publicUrl = (bucket, path) => path ? sb.storage.from(bucket).getPublicUrl(path).data.publicUrl : "";
-const fmtDate = iso => {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return `${d.getFullYear()}.${pad2(d.getMonth() + 1)}.${pad2(d.getDate())}`;
-};
-const fmtTime = iso => { if (!iso) return ""; const d = new Date(iso); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
-
-function mapCharacter(r){
-  return {
-    id: r.slug,
-    uuid: r.id,
-    name: r.name,
-    role: r.kind === "dealer" ? "딜러" : "참가자",
-    suit: SUIT_MAP[r.suit] || "♠",
-    chip: r.chip_color || "green",
-    img: publicUrl("characters", r.image_path),
-    age: r.age, height: r.height,
-    keywords: r.keywords || [],
-    description: r.description || "",
-    inventory: (r.inventory || [])
-      .sort((a, b) => a.sort_order - b.sort_order)
-      .map(v => ({
-        name: v.items?.name ?? "",
-        description: v.items?.description ?? "",
-        img: publicUrl("items", v.items?.image_path),
-        quantity: v.quantity,
-        note: v.note
-      }))
-  };
-}
-
-function withTimeout(promise, ms = 12000){
-  return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
-}
-
-async function loadAll(){
-  const q = await withTimeout(Promise.all([
-    sb.from("characters")
-      .select("*, inventory(quantity, note, sort_order, items(name, description, image_path))")
-      .order("sort_order"),
-    sb.from("chapters").select("number, title, summary, played_on").order("number"),
-    sb.from("items").select("id, name, description, image_path, price, stock, sort_order")
-      .eq("is_for_sale", true).order("sort_order")
-  ]));
-  const failed = q.find(r => r.error);
-  if (failed) throw failed.error;
-  const [chars, chapters, items] = q.map(r => r.data);
-  const all = chars.map(mapCharacter);
-
-  // 전적: 테이블이 아직 없어도 사이트는 열리도록 따로 조회
-  let records = [];
-  try {
-    const r = await withTimeout(sb.from("game_records")
-      .select("id, played_at, game_name, winner_id, participant_ids, chips, note")
-      .order("played_at", { ascending: false }).limit(500));
-    if (r.error) throw r.error;
-    const byUuid = new Map(all.map(c => [c.uuid, c]));
-    records = r.data.map(x => ({
-      id: x.id, date: fmtDate(x.played_at), time: fmtTime(x.played_at), game: x.game_name || "",
-      winner: byUuid.get(x.winner_id) || null,
-      players: (x.participant_ids || []).map(id => byUuid.get(id)?.name).filter(Boolean),
-      chips: x.chips || 0, note: x.note || ""
-    }));
-  } catch (err){ console.warn("[data] game_records:", err); }
-
-  return {
-    dealers: all.filter(c => c.role === "딜러"),
-    players: all.filter(c => c.role === "참가자"),
-    chapters: chapters.map(c => ({ number: c.number, title: c.title, summary: c.summary, date: fmtDate(c.played_on) })),
-    items: items.map(it => ({ id: it.id, name: it.name, description: it.description, price: it.price, stock: it.stock, img: publicUrl("items", it.image_path) })),
-    records
-  };
-}
-
-function showBootError(err){
-  console.error("[data] load failed:", err);
-  $("#boot").classList.remove("hide");
-  $("#boot").innerHTML = `
-    <div class="boot-error">
-      <h2>불러오지 못했습니다</h2>
-      <p>잠시 후 다시 시도해 주세요.</p>
-      <button class="btn" type="button" onclick="location.reload()">다시 시도</button>
-    </div>`;
-  document.body.classList.remove("intro-on");
-  $("#intro")?.remove();
-}
-
-/* ---------- boot ---------- */
-runIntro();
-bindHero(); bindSpots(); bindMagnetic(); bindCast();
-applyAdmin();
-
-(async () => {
-  if (USE_DB){
-    try { Object.assign(DATA, await loadAll()); }
-    catch (err){ showBootError(err); return; }
-  }
-  renderHome(); renderStory(); renderShop(); renderSettings(); renderAdmin();
-  state.ready = true;
-  route();
-  $("#boot").classList.add("hide");
-  document.fonts?.ready.then(() => { moveNavInk(); if (current === "characters") layoutCast(true); });
-})();
-</script>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- 버전 고정 + 무결성 해시(SRI): CDN 파일이 바뀌면 브라우저가 실행을 거부 -->
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"
+        integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
+<script type="module" src="js/main.js"></script>
 </body>
 </html>

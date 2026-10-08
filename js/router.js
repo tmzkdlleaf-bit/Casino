@@ -2,9 +2,9 @@ import { showLoginNotice } from "./auth.js";
 import { PAGES, PAGE_TITLES } from "./config.js";
 import { USE_DB } from "./data.js";
 import { $, $$, setTitle, splitText } from "./dom.js";
-import { applyFilter, bindSpy, showStart, showStop } from "./effects.js";
+import { applyFilter, castSelect, showStart, showStop } from "./effects.js";
 import { DATA, motionOK, nav, state } from "./state.js";
-import { ALL, renderAccount, renderNotice, renderNoticeList, renderProfile } from "./views.js";
+import { ALL, renderAccount, renderProfile, renderRecords } from "./views.js";
 import { renderNavOrderList } from "./navorder.js";
 
 export function resolve(){
@@ -16,9 +16,8 @@ export function resolve(){
   else if (page === "login" && state.session) view = "settings";
   else if ((page === "login" || page === "password") && !USE_DB) view = "notfound";
   else if (page === "characters" && param) view = ALL().some(c => c.id === param) ? "profile" : "notfound";
-  else if (page === "notices" && param) view = DATA.notices.some(n => String(n.id) === param) ? "notice" : "notfound";
   else if (page === "story" && param) view = DATA.chapters.some(c => String(c.number) === param) ? "log" : "notfound";
-  const navKey = view === "profile" ? "characters" : view === "log" ? "story" : ["notice", "notices", "notfound", "password"].includes(view) ? null : view;
+  const navKey = view === "profile" ? "characters" : view === "log" ? "story" : ["notfound", "password"].includes(view) ? null : view;
   return { view, param, navKey };
 }
 
@@ -29,7 +28,6 @@ export function route(){
   if (key === nav.key) return;
   const from = nav.current;
 
-  if (from === "characters") nav.listScroll = $("#cast-pane").scrollTop;
 
   nav.current = view; nav.key = key;
   $$("[data-page]").forEach(s => s.hidden = s.dataset.page !== view);
@@ -38,18 +36,14 @@ export function route(){
   setTitle(PAGE_TITLES[view] ?? "");
 
   if (view === "profile"){ renderProfile(param); nav.lastProfile = param; }
-  if (view === "notice") renderNotice(param);
 
   // DOM 쓰기를 먼저 모두 끝내고(렌더·글자 쪼개기), 레이아웃은 한 번만 계산
   const section = $(`[data-page="${view}"]`);
   $$(".page-title.split", section).forEach(splitText);
-  // 프로필에서 돌아오면 그 캐릭터가 속한 쪽(딜러/참가자)을 보여 줌
-  if (view === "characters" && from === "profile"){
-    const c = ALL().find(x => x.id === nav.lastProfile);
-    if (c) state.filter = c.role === "참가자" ? "player" : "dealer";
-  }
-  if (view === "characters") applyFilter({ instant: from === "profile" });
-  if (view === "notices") renderNoticeList();
+  // 프로필에서 돌아오면 방금 보던 캐릭터를 가운데로
+  if (view === "characters" && from === "profile" && nav.lastProfile) castSelect(nav.lastProfile);
+  if (view === "characters") applyFilter({ instant: from === "profile", enter: from !== "profile" });
+  if (view === "game") renderRecords();
   if (view === "settings"){ renderAccount(); renderNavOrderList(); }
   if (view === "admin") import("./admin.js").then(m => m.admOpen());
   if (view === "login") showLoginNotice();
@@ -58,10 +52,8 @@ export function route(){
     $("#pw-form").reset(); $("#pw-error").hidden = true;
   }
 
-  if (view === "characters" && from === "profile") $("#cast-pane").scrollTop = nav.listScroll;
-  else $$(".pane, .scroll", section).forEach(p => p.scrollTop = 0);   // 페이지는 고정, 창 안만 처음으로
+  $$(".pane, .scroll", section).forEach(p => p.scrollTop = 0);   // 페이지는 고정, 창 안만 처음으로
 
-  if (view === "world") bindSpy();
   if (view === "log") import("./logview.js").then(m => m.openLog(param));
   view === "home" ? showStart() : showStop();
 

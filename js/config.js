@@ -11,7 +11,7 @@ export const CONFIG = {
   // 업로드 이미지 규격 (가로·세로 중 긴 변 px). WebP로 변환해 저장
   IMG: { character: 1600, characterThumb: 640, item: 512 },
 
-  // 세계관 배경 이미지 — 화면 전체에 흐리게 깔림. 비우면 안개만 표시
+  // 배경 이미지 — 화면 전체에 흐리게 깔림. 비우면 검정 바탕 + 얼룩만 표시
   //   예) "assets/bg.webp" (저장소에 파일을 넣은 경우) 또는 https:// 로 시작하는 주소
   BG_IMAGE: "",
   // 배경음악 — 오른쪽 아래 버튼으로 켜고 끔. 비우면 버튼이 나타나지 않음. 방문자가 누르기 전에는 재생하지 않음
@@ -20,10 +20,10 @@ export const CONFIG = {
   BGM_VOLUME: 0.35,
 
   // 홈 '바로가기' — label: 보이는 이름, href: 주소(비우면 '준비 중'으로 표시)
-  //   사이트 안: "#world"  /  바깥: "https://..." (새 창으로 열림)
+  //   사이트 안: "#game"  /  바깥: "https://..." (새 창으로 열림)
   QUICK_LINKS: [
     { label: "룰·가이드",   href: "" },
-    { label: "세계관",      href: "#world" },
+    { label: "캐릭터",      href: "#characters" },
     { label: "신청서 양식", href: "" },
     { label: "캐입 계정",   href: "" },
     { label: "게임 규칙",   href: "#game" },
@@ -43,15 +43,14 @@ export const HERO_CHIPS = [
   [21,  9, 3.0, "green", 20, 58, .62]
 ];
 
-export const SITE_NAME = "사이트명";
+export const SITE_NAME = "Titfortat777";
 
 // 문서 제목(탭 이름)에 쓰임
-export const PAGE_TITLES = { home: "", characters: "캐릭터", world: "세계관", story: "지난 이야기", log: "지난 이야기", shop: "상점", game: "게임", settings: "설정", admin: "관리", notices: "공지", login: "로그인", password: "비밀번호", notfound: "없는 페이지" };
+export const PAGE_TITLES = { home: "", characters: "캐릭터", story: "지난 이야기", log: "지난 이야기", shop: "상점", game: "게임", settings: "설정", admin: "관리", login: "로그인", password: "비밀번호", notfound: "없는 페이지" };
 
 export const CALM_KEY = "comu-calm";
 export const BGM_KEY = "comu-bgm";
 export const NAV_ORDER_KEY = "comu-nav-order";      // 하단 메뉴 순서 (방문자별)
-export const NOTICE_READ_KEY = "comu-notice-read";   // 이 브라우저에서 읽은 공지 (새 글 표시용)
 
 /* ---------- 더미 데이터 (Supabase 테이블로 교체) ---------- */
 export const SUITS = ["♠", "♥", "♣", "♦"];
@@ -60,6 +59,6 @@ export const SUITS = ["♠", "♥", "♣", "♦"];
 
 
 /* ---------- router ----------
-   #home  #characters  #characters/d3  #notices  #notices/n2  #world ...
+   #home  #characters  #characters/d3  #story  #story/3  #game ...
    ------------------------------------------------------------------ */
-export const PAGES = ["home","characters","world","story","shop","game","settings","admin","notices","login","password"];
+export const PAGES = ["home","characters","story","shop","game","settings","admin","login","password"];

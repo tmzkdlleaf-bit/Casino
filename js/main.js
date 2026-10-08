@@ -1,14 +1,14 @@
 import { refreshAuth } from "./auth.js";
 import { CALM_KEY, PAGES } from "./config.js";
-import { AUTH_HASH, DB_CONFIGURED, USE_DB, loadAll, sb, showBootError, subscribeNotices } from "./data.js";
+import { AUTH_HASH, DB_CONFIGURED, USE_DB, loadAll, sb, showBootError } from "./data.js";
 import { $, $$, announce, toast } from "./dom.js";
 import { initBgm, initWorldBg } from "./ambience.js";
-import { applyCalm, applyFilter, applyShow, filterSummary, renderHeroChips, runIntro, setShowHover, showStep } from "./effects.js";
+import { applyCalm, applyFilter, applyShow, castGo, castGoIndex, castStep, filterSummary, layoutCast, renderHeroChips, runIntro, setShowHover, showStep } from "./effects.js";
 import { errMsg } from "./forms.js";
 import { focusHeading, route } from "./router.js";
 import { applyNavOrder } from "./navorder.js";
 import { DATA, motionOK, nav, state } from "./state.js";
-import { placeSegInk, renderAccount, renderCast, renderHome, renderInventory, renderNext, renderNoticeList, renderNoticeSeg, renderQuickLinks, renderSchedule, renderShop, renderStory, renderWorld } from "./views.js";
+import { placeSegInk, renderAccount, renderCast, renderHome, renderInventory, renderNext, renderQuickLinks, renderRecords, renderSchedule, renderShop, renderStory } from "./views.js";
 
 /* ---------- events ---------- */
 document.addEventListener("click", e => {
@@ -49,17 +49,31 @@ document.addEventListener("click", e => {
   if (!e.target.closest("#dock-menu")) setMore(false);
   else if (e.target.closest("a")) setMore(false);
 
-  const cat = e.target.closest("#notice-seg button");
-  if (cat){
-    state.noticeFilter = cat.dataset.cat;
-    announce(`${state.noticeFilter} 공지 ${renderNoticeList()}건`);
+  // 캐릭터 카드: 옆 카드를 누르면 가운데로, 가운데 카드는 프로필로 (끌고 난 뒤의 클릭은 무시)
+  const card = e.target.closest(".cc");
+  if (card){
+    if (castDrag.suppress){ e.preventDefault(); return; }
+    if (Math.abs(parseFloat(card.dataset.off)) > .5){ e.preventDefault(); castGoIndex(+card.dataset.i); }
     return;
   }
+  if (e.target.closest("#cc-prev")){ castGo(-1); return; }
+  if (e.target.closest("#cc-next")){ castGo(1); return; }
+
+  // 전적: 게임 종류
+  const g = e.target.closest("#rec-seg button");
+  if (g){
+    if (g.dataset.game === state.recFilter) return;
+    state.recFilter = g.dataset.game; state.recLimit = 20;
+    renderRecords();
+    announce(`${state.recFilter} 전적`);
+    return;
+  }
+  if (e.target.closest("#rec-more-btn")){ state.recLimit += 20; renderRecords(); return; }
 
   // 좁은 화면 홈: 창 하나에 보일 정보 전환 (다음 게임에는 최근 이야기도 함께)
   const mt = e.target.closest("#mtabs button");
   if (mt){
-    const show = { "p-next": ["p-next", "latest-card"] }[mt.dataset.panel] || [mt.dataset.panel];
+    const show = { "p-next": ["p-next", "latest-card"] }[mt.dataset.panel] || [mt.dataset.panel];   // 다음 게임에는 최근 이야기도
     $$("#mtabs button").forEach(b => b.setAttribute("aria-pressed", b === mt));
     $$(".board > .g-panel, .board > .table").forEach(el => el.classList.toggle("on", show.includes(el.id)));
     return;
@@ -74,8 +88,7 @@ document.addEventListener("click", e => {
   if (f){
     if (f.dataset.filter === state.filter) return;
     state.filter = f.dataset.filter;
-    $("#cast-pane").scrollTop = 0;
-    applyFilter();
+    applyFilter({ enter: true });
     announce(filterSummary());
   }
 });
@@ -134,20 +147,28 @@ window.addEventListener("hashchange", e => {
 
 window.addEventListener("beforeunload", e => { if (state.admDirty){ e.preventDefault(); e.returnValue = ""; } });
 
+/* 방향키: 캐릭터 화면은 캐러셀 넘김, 프로필은 이전·다음 캐릭터 */
+addEventListener("keydown", e => {
+  if (!["ArrowLeft", "ArrowRight"].includes(e.key) || e.altKey || e.ctrlKey || e.metaKey) return;
+  if (e.target.closest?.("input, textarea, select, [role=tablist], .seg, #pf-inv, .dock")) return;
+  const d = e.key === "ArrowLeft" ? -1 : 1;
+  if (nav.current === "characters"){ e.preventDefault(); castGo(d); }
+  else if (nav.current === "profile"){ const a = $(`.pf-arrow.${d < 0 ? "prev" : "next"}`); if (a){ e.preventDefault(); location.hash = a.getAttribute("href"); } }
+});
+
 addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   $("#site-head").classList.add("tips-off");   // 떠 있는 이름표 닫기
   if (!$("#dock-menu").hidden){ setMore(false); $("#dock-more").focus(); return; }
   if (e.target.closest?.("input, textarea, select")) return;
   if (nav.current === "profile") location.hash = "#characters";
-  else if (nav.current === "notice") location.hash = "#notices";
   else if (nav.current === "log") location.hash = "#story";
 });
 
 
 window.addEventListener("resize", () => {
-  if (nav.current === "characters") applyFilter();
-  if (nav.current === "notices") placeSegInk($("#notice-seg"));
+  if (nav.current === "characters"){ placeSegInk($("#seg")); layoutCast(true); }
+  if (nav.current === "game") placeSegInk($("#rec-seg"));
 });
 
 // 이름표는 다음 조작 때 다시 쓸 수 있게
@@ -167,16 +188,53 @@ show.addEventListener("focusin", () => setShowHover(true));
 show.addEventListener("focusout", e => { if (!show.contains(e.relatedTarget)) setShowHover(false); });
 document.addEventListener("visibilitychange", () => setShowHover(false));
 
-/* 캐릭터 페이지: 손가락으로 옆으로 밀어서 딜러 ↔ 참가자 */
-let sw = null;
-$("#cast-pane").addEventListener("pointerdown", e => { if (e.pointerType !== "mouse") sw = { x: e.clientX, y: e.clientY }; });
-$("#cast-pane").addEventListener("pointerup", e => {
-  if (!sw) return;
-  const dx = e.clientX - sw.x, dy = e.clientY - sw.y; sw = null;
-  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-  const to = dx < 0 ? "player" : "dealer";
-  if (to !== state.filter) $(`#seg button[data-filter="${to}"]`).click();
-});
+/* 캐릭터 캐러셀: 마우스로 끌거나 손가락으로 밀어서 넘김. 세로로 움직이면 평소 스크롤
+   (끌기 대체 수단: 화살표 버튼·방향키 — WCAG 2.5.7) */
+const castDrag = { p: null, suppress: false };
+{
+  const view = $("#cast-view"), track = $("#cc-track");
+  view.addEventListener("dragstart", e => e.preventDefault());
+  view.addEventListener("pointerdown", e => {
+    if (e.button !== 0 || !e.isPrimary || castDrag.p) return;
+    castDrag.p = { x: e.clientX, y: e.clientY, id: e.pointerId, start: Math.round(state.castPos[state.filter]), moved: false, dx: 0 };
+  });
+  view.addEventListener("pointermove", e => {
+    const p = castDrag.p;
+    if (!p || e.pointerId !== p.id) return;
+    p.dx = e.clientX - p.x;
+    if (!p.moved){
+      if (Math.abs(e.clientY - p.y) > 10 && Math.abs(p.dx) < 10){ castDrag.p = null; return; }
+      if (Math.abs(p.dx) < 6) return;
+      p.moved = true;
+      try { view.setPointerCapture(p.id); } catch (_) {}
+      track.classList.add("dragging"); view.classList.add("grabbing");
+    }
+    state.castPos[state.filter] = p.start - p.dx / castStep();
+    layoutCast();
+  });
+  const end = () => {
+    const p = castDrag.p;
+    castDrag.p = null;
+    if (!p?.moved) return;
+    track.classList.remove("dragging"); view.classList.remove("grabbing");
+    let t = Math.round(state.castPos[state.filter]);
+    if (t === p.start && Math.abs(p.dx) > 40) t = p.start - Math.sign(p.dx);   // 짧게 튕겨도 한 칸
+    state.castPos[state.filter] = t;
+    layoutCast();
+    castDrag.suppress = true; setTimeout(() => castDrag.suppress = false, 80);
+  };
+  view.addEventListener("pointerup", end);
+  view.addEventListener("pointercancel", end);
+  // 트랙패드 가로 밀기
+  let acc = 0, lock = 0;
+  view.addEventListener("wheel", e => {
+    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+    e.preventDefault();
+    if (Date.now() < lock) return;
+    acc += e.deltaX;
+    if (Math.abs(acc) > 45){ castGo(Math.sign(acc)); acc = 0; lock = Date.now() + 380; }
+  }, { passive: false });
+}
 
 /* 독의 로그아웃 = 설정 화면의 로그아웃 */
 $("#dock-logout").addEventListener("click", () => $("#logout").click());
@@ -228,9 +286,8 @@ runIntro();
       if (event === "PASSWORD_RECOVERY") state.pwMode = "recovery";
       setTimeout(() => refreshAuth(session), 0);   // 콜백 안에서 바로 DB를 부르면 교착될 수 있어 한 박자 뒤에
     });
-    subscribeNotices();
   }
-  renderHome(); renderCast(); renderWorld(); renderStory(); renderShop(); renderNoticeSeg(); renderAccount();
+  renderHome(); renderCast(); renderStory(); renderShop(); renderAccount();
   state.ready = true;
   route();
   document.body.classList.remove("loading");

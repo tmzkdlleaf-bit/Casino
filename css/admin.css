@@ -6,7 +6,7 @@
 .admin-tabs::-webkit-scrollbar{display:none}
 .admin-tabs [role="tab"]{flex:none; min-height:2.5rem; padding:.45rem 1.1rem; border:0; border-radius:999px; background:none; color:var(--smoke); cursor:pointer; white-space:nowrap; transition:color .3s, background .3s}
 .admin-tabs [role="tab"]:hover{color:var(--ivory)}
-.admin-tabs [role="tab"][aria-selected="true"]{background:var(--velvet); color:var(--ivory); font-weight:500}
+.admin-tabs [role="tab"][aria-selected="true"]{background:var(--pink-fill); color:#fff; font-weight:500}
 .admin-tabs [role="tab"]:focus-visible{outline-offset:-2px}
 .admin-panel:focus-visible{outline-offset:6px; border-radius:1rem}
 .adm{display:grid; grid-template-columns:minmax(15rem, 20rem) minmax(0, 1fr); gap:1.5rem; align-items:start}
@@ -18,8 +18,8 @@
   display:grid; width:100%; gap:.1rem; padding:.7rem .75rem; border:0; border-bottom:1px solid var(--line-2); border-radius:0;
   background:none; color:var(--ivory); text-align:left; cursor:pointer; transition:background .2s;
 }
-.adm-list li button:hover{background:rgba(230,238,251,.04)}
-.adm-list li button[aria-current="true"]{background:rgba(214,25,90,.18); box-shadow:inset 3px 0 0 var(--red)}
+.adm-list li button:hover{background:rgba(238,243,250,.04)}
+.adm-list li button[aria-current="true"]{background:rgba(239,26,114,.18); box-shadow:inset 3px 0 0 var(--red)}
 .adm-list li button:focus-visible{outline-offset:-2px}
 .adm-list .t{font-weight:400; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .adm-list .m{font-size:var(--s-1); color:var(--smoke)}
@@ -75,3 +75,9 @@ table.members .input{min-height:2.25rem; padding:.35rem .6rem}
 .rng input{flex:1; accent-color:var(--gold); min-height:2rem}
 .rng output{min-width:2.2rem; text-align:right; font-variant-numeric:tabular-nums; color:var(--text-2)}
 .focus-f .form-actions{align-items:center}
+
+/* 전적: 참가한 캐릭터 고르기 */
+.multi-f{margin:0; padding:.6rem .9rem .8rem; border:1px solid var(--line); border-radius:.7rem; min-width:0}
+.multi-f legend{padding:0 .3rem; font-size:.9375rem; font-weight:500}
+.multi{display:grid; grid-template-columns:repeat(auto-fill, minmax(9rem, 1fr)); gap:0 .75rem}
+.multi .check{min-height:2.25rem; font-size:.9375rem}

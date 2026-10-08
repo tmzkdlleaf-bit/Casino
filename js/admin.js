@@ -1,6 +1,6 @@
 import { loadMine } from "./auth.js";
 import { CONFIG } from "./config.js";
-import { FOCUS, LOGS, USE_DB, fmtDate, parseFocus, publicUrl, refreshPublic, sb } from "./data.js";
+import { FOCUS, LOGS, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js";
 import { $, $$, announce, esc, toast } from "./dom.js";
 import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js";
 import { renderMarkdown } from "./markdown.js";
@@ -10,14 +10,14 @@ import { ALL, renderAccount } from "./views.js";
 /* =========================================================
    ADMIN — 관리 페이지. 화면만 관리자에게 보이고, 실제 차단은 RLS + RPC가 담당
    ========================================================= */
-export const ADM = { tab: "notices", rows: {}, sel: null, dirty: false, tabsDrawn: false };
+export const ADM = { tab: "characters", rows: {}, sel: null, dirty: false, tabsDrawn: false };
 
-export const ADMIN_TABS = [["notices", "공지"], ["notice_categories", "공지 분류"], ["characters", "캐릭터"], ["items", "아이템"], ["chapters", "지난 이야기"], ["game_slots", "게임 일정"], ["members", "멤버"]];
+export const ADMIN_TABS = [["characters", "캐릭터"], ["items", "아이템"], ["chapters", "지난 이야기"], ["game_slots", "게임 일정"], ["game_records", "전적"], ["members", "멤버"]];
 
 export const OPT = {
   kind: [["dealer", "딜러"], ["player", "참가자"]],
   suit: [["spade", "♠ 스페이드"], ["heart", "♥ 하트"], ["club", "♣ 클럽"], ["diamond", "♦ 다이아"]],
-  chip: [["green", "초록"], ["red", "빨강"]]
+  chip: [["green", "남색"], ["red", "분홍"]]
 };
 
 /* 캐릭터 입력 칸 — 이미지 초점(image_focus)은 update-4.sql을 실행한 DB에서만 보임 */
@@ -47,32 +47,6 @@ const CHAR_FIELDS = [
 ];
 
 export const SCHEMAS = {
-  notices: {
-    label: "공지", key: "id", touch: true, needs: ["notice_categories"],
-    select: "id, title, body, is_pinned, pin_order, published_at, category_id",
-    order: [["is_pinned", { ascending: false }], ["published_at", { ascending: false }]],
-    title: r => r.title, meta: r => [r.is_pinned ? "고정" : "", fmtDate(r.published_at)].filter(Boolean).join(" · "),
-    fields: [
-      { k: "title", label: "제목", type: "text", required: true, max: 120 },
-      { row: [
-        { k: "category_id", label: "분류", type: "select", options: () => [["", "분류 없음"], ...(ADM.rows.notice_categories || []).map(c => [c.id, c.name])] },
-        { k: "published_at", label: "게시 시각", type: "datetime", hint: "비우면 저장하는 시각" }
-      ] },
-      { row: [
-        { k: "is_pinned", label: "상단 고정", type: "check" },
-        { k: "pin_order", label: "고정 순서", type: "number", min: 0, hint: "작을수록 위" }
-      ] },
-      { k: "body", label: "내용", type: "markdown", required: true, hint: "마크다운 사용 가능 — **굵게**, [링크](https://…), - 목록, > 인용" }
-    ]
-  },
-  notice_categories: {
-    label: "공지 분류", key: "id", select: "id, name, sort_order", order: [["sort_order"]],
-    title: r => r.name, meta: r => r.sort_order != null ? `순서 ${r.sort_order}` : "",
-    fields: [
-      { k: "name", label: "분류 이름", type: "text", required: true, max: 20 },
-      { k: "sort_order", label: "표시 순서", type: "number", min: 0, hint: "작을수록 앞" }
-    ]
-  },
   characters: {
     label: "캐릭터", key: "id", touch: true, needs: ["items"],
     get select(){ return `id, slug, name, kind, suit, chip_color, image_path, thumb_path${FOCUS.ok ? ", image_focus" : ""}, age, height, keywords, description, sort_order`; },
@@ -123,6 +97,24 @@ export const SCHEMAS = {
         { k: "ends_at", label: "끝", type: "datetime" }
       ] },
       { k: "memo", label: "메모", type: "textarea", hint: "화면에는 표시되지 않지만 누구나 조회할 수 있는 칸입니다. 비밀 내용은 적지 마세요." }
+    ]
+  },
+  game_records: {
+    label: "전적", key: "id", needs: ["characters"],
+    select: "id, played_at, game_name, winner_id, participant_ids, chips, note", order: [["played_at", { ascending: false }]],
+    title: r => `${r.game_name || "게임"} · ${(ADM.rows.characters || []).find(c => c.id === r.winner_id)?.name || "승자 없음"}`,
+    meta: r => r.played_at ? `${fmtDate(r.played_at)} ${fmtTime(r.played_at)}` : "",
+    fields: [
+      { row: [
+        { k: "game_name", label: "게임", type: "text", required: true, max: 40, hint: "같은 이름끼리 묶여서 전적 화면에서 걸러 볼 수 있습니다 — 예: 블랙잭" },
+        { k: "played_at", label: "일시", type: "datetime", hint: "비우면 저장하는 시각" }
+      ] },
+      { row: [
+        { k: "winner_id", label: "승자", type: "select", options: () => [["", "없음 (무승부 등)"], ...(ADM.rows.characters || []).map(c => [c.id, `${c.name} (${c.kind === "dealer" ? "딜러" : "참가자"})`])] },
+        { k: "chips", label: "칩 변동", type: "number", hint: "표시용 숫자 — 실제 칩 지급·차감은 ‘멤버’ 탭에서" }
+      ] },
+      { k: "participant_ids", label: "참가한 캐릭터", type: "multi", options: () => (ADM.rows.characters || []).map(c => [c.id, c.name]) },
+      { k: "note", label: "메모", type: "text", max: 120, hint: "전적 표에 그대로 보입니다" }
     ]
   },
   chapters: {
@@ -201,7 +193,10 @@ export async function admShow(tab){
     await Promise.all([admLoad(tab), ...(s.needs || []).map(admLoad)]);
     admRenderCrud(tab);
   } catch (err){
-    panel.innerHTML = `<p class="form-error" role="alert">${esc(errMsg(err))}</p>`;
+    const missing = tab === "game_records" && /42P01|PGRST205|game_records/.test(`${err?.code} ${err?.message}`);
+    panel.innerHTML = missing
+      ? `<p class="form-note">전적 표가 아직 없습니다. Supabase → SQL Editor에서 <strong>supabase/update-5.sql</strong>을 한 번 실행한 뒤 이 화면을 새로 고침해 주세요.</p>`
+      : `<p class="form-error" role="alert">${esc(errMsg(err))}</p>`;
   }
 }
 
@@ -255,6 +250,9 @@ export function admField(table, f, v){
       return `<div class="field">${label}<input class="input" type="datetime-local" name="${f.k}" id="${id}" value="${toLocalInput(val)}"${req} ${desc}>${hint}${err}</div>`;
     case "date":
       return `<div class="field">${label}<input class="input" type="date" name="${f.k}" id="${id}" value="${esc(val ?? "")}"${req} ${desc}>${hint}${err}</div>`;
+    case "multi":
+      return `<fieldset class="field multi-f" aria-describedby="${f.hint ? id + "-hint" : ""}"><legend>${esc(f.label)}</legend>
+        <div class="multi">${f.options().map(([ov, ol]) => `<label class="check"><input type="checkbox" name="${f.k}" value="${esc(ov)}"${(val || []).includes(ov) ? " checked" : ""}>${esc(ol)}</label>`).join("") || `<span class="hint">캐릭터가 없습니다.</span>`}</div>${hint}</fieldset>`;
     case "tags":
       return `<div class="field">${label}<input class="input" type="text" name="${f.k}" id="${id}" value="${esc((val || []).join(", "))}"${req} ${desc}>${hint}${err}</div>`;
     case "image": {
@@ -315,6 +313,7 @@ export function admRenderEditor(table){
 export function admCollect(form, s){
   const out = {};
   for (const f of flatFields(s)){
+    if (f.type === "multi"){ out[f.k] = $$(`input[name="${f.k}"]:checked`, form).map(i => i.value); continue; }
     const el = form.elements[f.k];
     if (!el || f.type === "image") continue;
     const raw = typeof el.value === "string" ? el.value.trim() : el.value;
@@ -322,7 +321,7 @@ export function admCollect(form, s){
       case "check": out[f.k] = el.checked; break;
       case "number": out[f.k] = raw === "" ? (f.nullable ? null : 0) : Number(raw); break;   // 대부분 NOT NULL default 0
       case "tags": out[f.k] = raw.split(/[,，、]/).map(t => t.trim()).filter(Boolean); break;
-      case "datetime": out[f.k] = raw ? new Date(raw).toISOString() : (f.k === "published_at" ? new Date().toISOString() : null); break;
+      case "datetime": out[f.k] = raw ? new Date(raw).toISOString() : (f.k === "played_at" ? new Date().toISOString() : null); break;
       case "select": case "date": case "focus": out[f.k] = raw === "" ? null : raw; break;
       default: out[f.k] = raw;   // 텍스트는 빈 문자열 그대로 (NOT NULL default '' 컬럼)
     }

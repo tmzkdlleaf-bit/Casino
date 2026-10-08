@@ -1,7 +1,7 @@
 import { HERO_CHIPS, SUITS } from "./config.js";
-import { $, $$, isRed, splitText, suitIcon } from "./dom.js";
+import { $, $$, esc, isRed, splitText, suitIcon } from "./dom.js";
 import { DATA, motionOK, state } from "./state.js";
-import { ALL, placeSegInk } from "./views.js";
+import { ALL, placeSegInk, renderCast } from "./views.js";
 
 /* ---------- effects ---------- */
 
@@ -18,44 +18,75 @@ export function renderHeroChips(){
     `<span class="fall" style="left:${l}%;top:${t}%;--d:${d}s"><span class="chip ${c}" style="--size:${size}rem;--tx:${tx}deg;--r1:${r}deg"></span></span>`).join("");
 }
 
-/* 보이는 쪽(딜러/참가자) 스트립이 아래에서 차례로 떠오름 — 투명도·위치만 움직여 가볍게 */
-export function deal(){
-  const g = $(`#grp-${state.filter}`);
-  if (!g) return;
-  const strips = $$(".strip:not(.dealt)", g);
-  if (!motionOK()){ strips.forEach(m => m.classList.add("dealt")); return; }
-  requestAnimationFrame(() => requestAnimationFrame(() => strips.forEach(m => m.classList.add("dealt"))));
+/* =========================================================
+   캐릭터 캐러셀 — 다섯 명이 보이고 가운데가 가장 큼. 양 끝은 이어져 돎
+   state.castPos[쪽] = 가운데 캐릭터 번호 (끄는 동안에는 소수)
+   ========================================================= */
+// 가운데에서 떨어진 칸 수별: 위치(카드 폭 배수), 크기, 투명도, 흑백, 밝기
+const CC = { P: [0, .98, 1.84, 2.62, 3.3], S: [1, .8, .74, .68, .64], O: [1, .92, .62, 0, 0], G: [0, .8, 1, 1, 1], B: [1, .7, .5, .4, .4] };
+const lerp = (t, a) => { const i = Math.min(Math.floor(t), a.length - 2), f = Math.min(t - i, 1); return a[i] + (a[i + 1] - a[i]) * f; };
+const norm = (i, n) => ((i % n) + n) % n;
+export const castList = () => state.filter === "player" ? DATA.players : DATA.dealers;
+export function wrapOff(i, pos, n){ let o = norm(i - pos, n); if (o > n / 2) o -= n; return o; }
+export const castStep = () => ($(".cc", $("#cc-track"))?.offsetWidth || 200) * CC.P[1];
+
+export function layoutCast(instant = false){
+  const cards = $$("#cc-track .cc"), n = cards.length;
+  if (!n) return;
+  const W = cards[0].offsetWidth;
+  if (!W) return;                     // 화면에 안 보일 때는 다음에
+  const pos = state.castPos[state.filter];
+  cards.forEach((el, i) => {
+    const off = wrapOff(i, pos, n), a = Math.min(Math.abs(off), 4), sign = off < 0 ? -1 : 1, prev = parseFloat(el.dataset.off);
+    // 끝에서 끝으로 넘어가는 카드는 움직임 없이 바로 옮김
+    if (instant || (!isNaN(prev) && Math.abs(off - prev) > n / 2)) el.classList.add("jump");
+    el.dataset.off = off;
+    el.style.setProperty("--x", (sign * lerp(a, CC.P) * W).toFixed(1) + "px");
+    el.style.setProperty("--s", lerp(a, CC.S).toFixed(3));
+    el.style.setProperty("--o", lerp(a, CC.O).toFixed(3));
+    el.style.setProperty("--g", lerp(a, CC.G).toFixed(3));
+    el.style.setProperty("--b", lerp(a, CC.B).toFixed(3));
+    el.style.setProperty("--a", a.toFixed(2));
+    el.style.zIndex = 100 - Math.round(a * 10);
+    el.style.pointerEvents = a > 2.4 ? "none" : "";
+    el.classList.toggle("is-center", a < .5);
+    el.tabIndex = a < .5 ? 0 : -1;
+    a < .5 ? el.removeAttribute("aria-hidden") : el.setAttribute("aria-hidden", "true");
+  });
+  requestAnimationFrame(() => requestAnimationFrame(() => cards.forEach(el => el.classList.remove("jump"))));
+  const idx = norm(Math.round(pos), n), c = castList()[idx];
+  $("#cc-count").innerHTML = `<b>${String(idx + 1).padStart(2, "0")}</b> / ${String(n).padStart(2, "0")}<span class="sr"> — ${esc(c.name)}</span>`;
+  $("#cc-go").href = "#characters/" + c.id;
+  $("#cc-go").setAttribute("aria-label", `${c.name} 프로필 보기`);
+  $("#cc-chip").style.transform = `rotate(${Math.round(pos) * 60}deg)`;
 }
 
-/* 세계관 목차 스크롤 추적 */
-export let spyIO;
-
-export function bindSpy(){
-  spyIO?.disconnect();
-  spyIO = new IntersectionObserver(entries => {
-    entries.forEach(en => {
-      if (!en.isIntersecting) return;
-      $$("#world-toc a").forEach(a => {
-        const on = a.dataset.jump === en.target.id;
-        a.classList.toggle("active", on);
-        on ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current");
-      });
-    });
-  }, { rootMargin: "-40% 0px -55% 0px" });
-  $$("#world-body section").forEach(s => spyIO.observe(s));
+export function castGo(d){
+  if (castList().length < 2) return;
+  state.castPos[state.filter] = Math.round(state.castPos[state.filter]) + d;
+  layoutCast();
+}
+export function castGoIndex(i){
+  const n = castList().length, pos = Math.round(state.castPos[state.filter]);
+  state.castPos[state.filter] = pos + wrapOff(i, pos, n);
+  layoutCast();
+}
+/* 특정 캐릭터를 가운데로 (그 캐릭터가 속한 쪽으로 전환) */
+export function castSelect(id){
+  for (const g of ["dealer", "player"]){
+    const i = (g === "player" ? DATA.players : DATA.dealers).findIndex(c => c.id === id);
+    if (i >= 0){ state.filter = g; state.castPos[g] = i; return; }
+  }
 }
 
-/* 캐릭터: 딜러 ↔ 참가자 가로로 넘김. 보이지 않는 쪽은 inert (Tab·스크린리더에서 빠짐) */
-export function applyFilter({ instant = false } = {}){
-  const player = state.filter === "player", track = $("#cast-track");
+/* 딜러 ↔ 참가자 전환 */
+export function applyFilter({ instant = false, enter = false } = {}){
   $$("#seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.filter === state.filter));
-  if (instant) track.style.transition = "none";
-  track.classList.toggle("to-player", player);
-  if (instant){ void track.offsetWidth; track.style.transition = ""; }
-  $("#grp-dealer").inert = player;
-  $("#grp-player").inert = !player;
   placeSegInk($("#seg"));
-  deal();
+  renderCast();
+  layoutCast(true);
+  const track = $("#cc-track");
+  if (enter && !instant && motionOK()){ track.classList.remove("enter"); void track.offsetWidth; track.classList.add("enter"); }
 }
 
 export function filterSummary(){
@@ -65,7 +96,6 @@ export function filterSummary(){
 export function applyCalm(){
   document.body.classList.toggle("calm", state.calm);
   $("#set-calm").checked = state.calm;
-  if (state.calm) $$(".strip").forEach(m => m.classList.add("dealt"));
   applyShow();
 }
 

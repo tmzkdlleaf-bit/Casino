@@ -3,11 +3,10 @@ import { CONFIG } from "./config.js";
 import { $ } from "./dom.js";
 import { route } from "./router.js";
 import { DATA, nav, state } from "./state.js";
-import { renderAccount, renderCast, renderHome, renderHomeNotices, renderNotice, renderNoticeList, renderNoticeSeg, renderShop, renderStory } from "./views.js";
+import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js";
 
 /* =========================================================
    DATA LAYER — Supabase 조회 → 화면용 DATA 모양으로 변환
-   세계관(DATA.world)은 DB가 아니라 이 파일의 더미 데이터 자리에서 직접 작성합니다.
    ========================================================= */
 export const DB_CONFIGURED = !!(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY);
 
@@ -68,16 +67,6 @@ export function mapCharacter(r){
   };
 }
 
-export const noticeQuery = () => sb.from("notices")
-  .select("id, title, body, is_pinned, pin_order, published_at, notice_categories(name)")
-  .order("is_pinned", { ascending: false }).order("pin_order")
-  .order("published_at", { ascending: false });
-
-export const mapNotice = n => ({
-  id: String(n.id), title: n.title, body: n.body, date: fmtDate(n.published_at), iso: n.published_at,
-  category: n.notice_categories?.name ?? "", pinned: n.is_pinned, pinOrder: n.pin_order
-});
-
 export function withTimeout(promise, ms = 12000){
   return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
 }
@@ -91,6 +80,24 @@ const charQuery = () => sb.from("characters")
   .order("sort_order");
 const chapterQuery = () => sb.from("chapters").select(`id, number, title, summary, played_on${LOGS.ok ? ", log_path" : ""}`).order("number");
 const missingCol = (e, col) => e && (e.code === "42703" || e.code === "PGRST204") && new RegExp(col).test(e.message || "");
+
+/* 전적: 최신순. game_records 표는 update-5.sql로 만듦 — 아직 없거나 읽을 수 없으면 빈 목록으로 두고 화면은 계속 */
+export const pad2 = n => String(n).padStart(2, "0");
+export const fmtTime = iso => { if (!iso) return ""; const d = new Date(iso); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+export const RECORDS = { ok: true };
+export async function loadRecords(byUuid){
+  const { data, error } = await sb.from("game_records")
+    .select("id, played_at, game_name, winner_id, participant_ids, chips, note")
+    .order("played_at", { ascending: false }).limit(500);
+  if (error){ RECORDS.ok = false; console.warn("[data] game_records:", error.message); return []; }
+  RECORDS.ok = true;
+  return (data || []).map(r => ({
+    id: r.id, iso: r.played_at, date: fmtDate(r.played_at), time: fmtTime(r.played_at), game: r.game_name || "",
+    winner: byUuid[r.winner_id] || null,
+    players: (r.participant_ids || []).map(id => byUuid[id]?.name).filter(Boolean),
+    chips: r.chips || 0, note: r.note || ""
+  }));
+}
 
 /* 게임 일정: 지금부터 끝나지 않은 것만, 가까운 순. 읽기 권한이 없거나 표가 비어도 화면은 계속 */
 export async function loadSlots(){
@@ -106,29 +113,27 @@ export async function loadAll(){
   let q = await withTimeout(Promise.all([
     // 필요한 컬럼만 명시 — 나중에 비공개 컬럼을 추가해도 노출되지 않게
     charQuery(),
-    noticeQuery(),
-    sb.from("notice_categories").select("name").order("sort_order"),
     chapterQuery(),
     sb.from("items").select("id, name, description, image_path, price, stock, sort_order")
       .eq("is_for_sale", true).order("sort_order"),
     loadSlots().then(data => ({ data, error: null }))
   ]));
   if (FOCUS.ok && missingCol(q[0].error, "image_focus")){ FOCUS.ok = false; q = [...q]; q[0] = await charQuery(); }
-  if (LOGS.ok && missingCol(q[3].error, "log_path")){ LOGS.ok = false; q = [...q]; q[3] = await chapterQuery(); }
+  if (LOGS.ok && missingCol(q[1].error, "log_path")){ LOGS.ok = false; q = [...q]; q[1] = await chapterQuery(); }
   const failed = q.find(r => r.error);
   if (failed) throw failed.error;
-  const [chars, notices, cats, chapters, items, slots] = q.map(r => r.data);
+  const [chars, chapters, items, slots] = q.map(r => r.data);
 
   const all = chars.map(mapCharacter);
   const byUuid = Object.fromEntries(all.map(c => [c.uuid, c]));
+  const records = await withTimeout(loadRecords(byUuid)).catch(() => []);
   return {
     dealers: all.filter(c => c.role === "딜러"),
     players: all.filter(c => c.role === "참가자"),
-    categories: cats.map(c => c.name),
-    notices: notices.map(mapNotice),
     chapters: chapters.map(c => ({ id: c.id, number: c.number, title: c.title, summary: c.summary, date: fmtDate(c.played_on), iso: c.played_on, log: publicUrl("logs", c.log_path) })),
     items: items.map(it => ({ id: it.id, name: it.name, description: it.description, price: it.price, stock: it.stock, img: publicUrl("items", it.image_path) })),
-    slots: slots.map(s => ({ id: s.id, game: s.game || "", start: s.starts_at, end: s.ends_at, dealer: byUuid[s.dealer_character_id] || null }))
+    slots: slots.map(s => ({ id: s.id, game: s.game || "", start: s.starts_at, end: s.ends_at, dealer: byUuid[s.dealer_character_id] || null })),
+    records
   };
 }
 
@@ -149,31 +154,9 @@ export function showBootError(err){
 }
 
 /* =========================================================
-   REALTIME — 공지·내 칩이 새로고침 없이 갱신됨
+   REALTIME — 내 칩이 새로고침 없이 갱신됨
    ========================================================= */
-export let chanNotices = null, chanProfile = null, noticeTimer = 0;
-
-export function subscribeNotices(){
-  if (!USE_DB || chanNotices) return;
-  chanNotices = sb.channel("public:notices")
-    .on("postgres_changes", { event: "*", schema: "public", table: "notices" }, () => {
-      clearTimeout(noticeTimer); noticeTimer = setTimeout(reloadNotices, 400);   // 연속 변경은 한 번에
-    })
-    .subscribe();
-}
-
-export async function reloadNotices(){
-  const { data, error } = await noticeQuery();
-  if (error) return;
-  DATA.notices = data.map(mapNotice);
-  renderHomeNotices();
-  if (nav.current === "notices") renderNoticeList();
-  if (nav.current === "notice"){
-    const id = nav.key.split("/")[1];
-    // 읽는 중인 공지는 포커스를 옮기지 않고 내용만 교체. 삭제됐다면 '없는 페이지'로
-    if (DATA.notices.some(n => n.id === id)) renderNotice(id); else route();
-  }
-}
+export let chanProfile = null;
 
 export function subscribeProfile(){
   if (!USE_DB) return;
@@ -199,6 +182,7 @@ export function subscribeProfile(){
 export async function refreshPublic(){
   try {
     Object.assign(DATA, await loadAll());
-    renderHome(); renderCast(); renderStory(); renderShop(); renderNoticeSeg(); renderAccount();
+    renderHome(); renderCast(); renderStory(); renderShop(); renderAccount();
+    if (nav.current === "game") renderRecords();
   } catch (err){ console.error("[data] refresh failed:", err); }
 }

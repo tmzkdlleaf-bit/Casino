@@ -1,79 +1,15 @@
-import { CONFIG, NOTICE_READ_KEY, SUITS } from "./config.js";
-import { USE_DB } from "./data.js";
+import { CONFIG, SUITS } from "./config.js";
+import { RECORDS, USE_DB } from "./data.js";
 import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js";
-import { initShow } from "./effects.js";
-import { renderMarkdown } from "./markdown.js";
-import { DATA, nav, state } from "./state.js";
+import { initShow, layoutCast } from "./effects.js";
+import { DATA, state } from "./state.js";
 
 /* ---------- render ---------- */
-// 고정글 먼저(pin 순서) → 나머지는 기존 순서(최신순)
-// pinOrder가 null(DB 기본값)이어도 정렬이 깨지지 않도록 ?? 0
-export const sortedNotices = () => [...DATA.notices].sort((a, b) => (b.pinned - a.pinned) || (a.pinned && b.pinned ? (a.pinOrder ?? 0) - (b.pinOrder ?? 0) : 0));
-
 export const timeTag = (label, iso) => `<time${iso ? ` datetime="${esc(iso)}"` : ""}>${esc(label)}</time>`;
-
-/* 새 글: 이 브라우저로 처음 들어온 때(처음이면 그 3일 전)보다 뒤에 올라왔고, 아직 열어 보지 않은 공지.
-   2주가 지나면 열지 않았어도 표시하지 않음. 기록은 이 브라우저(localStorage)에만 남음 */
-const NEW_DAYS = 14, FIRST_GRACE = 3;
-let NR = null;
-const nr = () => {
-  if (NR) return NR;
-  let v = null;
-  try { v = JSON.parse(localStorage.getItem(NOTICE_READ_KEY) || "null"); } catch (_) {}
-  NR = { since: v?.since || Date.now() - FIRST_GRACE * 864e5, ids: new Set(v?.ids || []) };
-  if (!v) saveNr();
-  return NR;
-};
-const saveNr = () => { try { localStorage.setItem(NOTICE_READ_KEY, JSON.stringify({ since: NR.since, ids: [...NR.ids].slice(-300) })); } catch (_) {} };
-export const isNewNotice = n => {
-  const t = Date.parse(n.iso || "");
-  return t > nr().since && Date.now() - t < NEW_DAYS * 864e5 && !nr().ids.has(String(n.id));
-};
-export function markNoticeRead(id){
-  if (nr().ids.has(String(id))) return;
-  NR.ids.add(String(id));
-  saveNr();
-  renderHomeNotices();   // 홈 목록의 표시도 바로 갱신 (메뉴 점 포함)
-}
-/* 하단 메뉴 '공지'에 점 + 스크린리더용 문구 */
-export function updateNoticeBadge(){
-  const has = DATA.notices.some(isNewNotice), a = $('#nav a[href="#notices"]');
-  if (!a) return;
-  a.classList.toggle("has-new", has);
-  $(".new-sr", a).hidden = !has;
-  $$('#mtabs [data-panel="p-notice"]').forEach(b => b.classList.toggle("has-new", has));
-}
-
-// short: 홈 창처럼 좁은 곳 — 날짜는 월.일만, 분류 태그 생략
-export const noticeRow = (n, i, short = false) => {
-  const fresh = isNewNotice(n);
-  return `<li class="${n.pinned ? "pinned" : ""}${fresh ? " fresh" : ""}"><a href="#notices/${n.id}">${timeTag(short && n.date ? n.date.slice(5) : n.date, n.iso)}<span class="t">${n.pinned ? `<span class="tag pin">고정</span>` : ""}${!short && n.category ? `<span class="tag">${esc(n.category)}</span>` : ""}${esc(n.title)}${fresh ? `<span class="new-mk"><span aria-hidden="true">N</span><span class="sr">새 글</span></span>` : ""}</span><span class="suit">${suitIcon(SUITS[i % 4])}</span></a></li>`;
-};
-
-/* 분류 버튼은 한 번만 그림 — 클릭할 때마다 다시 그리면 키보드 포커스가 사라짐 (WCAG 2.4.3) */
-export function renderNoticeSeg(){
-  const cats = ["전체", ...DATA.categories];
-  $("#notice-seg").innerHTML = cats.map(c => `<button type="button" data-cat="${esc(c)}" aria-pressed="${c === state.noticeFilter}">${esc(c)}</button>`).join("") + `<span class="seg-ink" aria-hidden="true"></span>`;
-}
 
 export function placeSegInk(seg){
   const a = $('button[aria-pressed="true"]', seg), ink = $(".seg-ink", seg);
   if (a && ink){ ink.style.left = a.offsetLeft + "px"; ink.style.width = a.offsetWidth + "px"; }
-}
-
-export function renderNoticeList(){
-  $$("#notice-seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.cat === state.noticeFilter));
-  const list = sortedNotices().filter(n => state.noticeFilter === "전체" || n.category === state.noticeFilter);
-  $("#notice-all").innerHTML = list.length ? list.map((n, i) => noticeRow(n, i)).join("") : `<li class="empty-note">해당 분류의 공지가 없습니다.</li>`;
-  requestAnimationFrame(() => placeSegInk($("#notice-seg")));
-  return list.length;
-}
-
-export function renderHomeNotices(){
-  $("#notice-list").innerHTML = DATA.notices.length
-    ? sortedNotices().slice(0, 12).map((n, i) => noticeRow(n, i, true)).join("")
-    : `<li class="slot-note">등록된 공지가 없습니다.</li>`;
-  updateNoticeBadge();
 }
 
 const pad2 = n => String(n).padStart(2, "0");
@@ -140,7 +76,7 @@ export function renderQuickLinks(){
 
 export function renderHome(){
   $("#roster-meta").textContent = `딜러 ${DATA.dealers.length}명 / 참가자 ${DATA.players.length}명`;
-  renderHomeNotices();
+  renderHomeRecords();
   renderNext();
   renderSchedule();
   renderQuickLinks();
@@ -159,42 +95,53 @@ export const imgSlot = (c, alt = "", lazy = true, sizes = "100vw") => {
   return `<img src="${esc(c.thumb || c.img)}"${set} alt="${esc(alt)}"${c.focus ? ` style="object-position:${esc(c.focus)}"` : ""}${lazy ? ` loading="lazy"` : ` fetchpriority="high"`} decoding="async">`;
 };
 
-export const STRIP_SIZES = "(max-width: 760px) 50vw, 30vw";
+export const CC_SIZES = "(max-width: 760px) 55vw, 22vw";
 
+/* 캐릭터: 보이는 쪽(딜러/참가자)의 카드를 한 줄로 깔고, 위치·크기는 effects.js의 layoutCast가 정함 */
 export function renderCast(){
   $("#count-dealer").textContent = DATA.dealers.length;
   $("#count-player").textContent = DATA.players.length;
-  const empty = `<p class="empty-note">등록된 캐릭터가 없습니다.</p>`;
-
-  $("#cast-dealers").innerHTML = DATA.dealers.map((c, i) => `
-    <a class="strip dealer ${isRed(c.suit) ? "red-suit" : ""}" href="#characters/${c.id}" data-id="${c.id}" style="--delay:${i * 80}ms">
-      <span class="img">${imgSlot(c, "", true, STRIP_SIZES)}</span><span class="dim"></span>
-      <span class="pip">${suitIcon(c.suit)}</span>
-      <span class="label"><span class="name">${esc(c.name)}</span><span class="sub">프로필 보기</span></span>
-    </a>`).join("");
-
-  $("#cast-players").innerHTML = DATA.players.map((c, i) => `
-    <a class="strip player" href="#characters/${c.id}" data-id="${c.id}" style="--delay:${i * 80}ms;--band:${c.chip === "red" ? "var(--velvet)" : "var(--felt)"}">
-      <span class="img">${imgSlot(c, "", true, STRIP_SIZES)}</span><span class="dim"></span>
-      <span class="chip ${c.chip} badge" aria-hidden="true"></span>
-      <span class="label"><span class="name">${esc(c.name)}</span><span class="sub">프로필 보기</span></span>
-    </a>`).join("");
-  if (!DATA.dealers.length) $("#cast-dealers").innerHTML = empty;
-  if (!DATA.players.length) $("#cast-players").innerHTML = empty;
+  const list = state.filter === "player" ? DATA.players : DATA.dealers, track = $("#cc-track");
+  $("#cc-go").hidden = !list.length;
+  $(".cc-nav").hidden = list.length < 2;
+  if (!list.length){ track.innerHTML = `<p class="empty-note">등록된 캐릭터가 없습니다.</p>`; $("#cc-count").textContent = ""; return; }
+  track.innerHTML = list.map((c, i) => {
+    const dealer = c.role === "딜러", kw = (c.keywords || []).slice(0, 3);
+    return `<a class="cc ${dealer ? "dealer" : "player"}${dealer && isRed(c.suit) ? " red-suit" : ""}" href="#characters/${c.id}" data-i="${i}" data-id="${c.id}" draggable="false"${dealer ? "" : ` style="--band:${c.chip === "red" ? "var(--velvet)" : "var(--felt)"}"`}>
+      <span class="cc-in">
+        <span class="cc-name">${esc(c.name)}</span>
+        <span class="cc-frame">
+          <span class="img">${imgSlot(c, "", i > 6, CC_SIZES)}</span>
+          ${dealer ? `<span class="pip">${suitIcon(c.suit)}</span>` : `<span class="chip ${c.chip} badge" aria-hidden="true"></span>`}
+        </span>
+        <span class="cc-line">${esc((c.description || "").split("\n")[0])}</span>
+        ${kw.length ? `<span class="cc-kw">${kw.map(k => `<span>${esc(k)}</span>`).join("")}</span>` : ""}
+      </span>
+    </a>`;
+  }).join("");
+  $$("img", track).forEach(im => im.draggable = false);
+  layoutCast(true);
 }
 
 export const ALL = () => [...DATA.dealers, ...DATA.players];
 
+/* 프로필: 이전·다음은 같은 쪽(딜러끼리 / 참가자끼리) 안에서 돎. 일러스트 양옆 화살표 + 방향키 */
 export function renderProfile(id){
-  const list = ALL(), idx = list.findIndex(x => x.id === id);
-  if (idx < 0) return false;
-  const c = list[idx], dealer = c.role === "딜러";
+  const c = ALL().find(x => x.id === id);
+  if (!c) return false;
+  const dealer = c.role === "딜러", list = dealer ? DATA.dealers : DATA.players, idx = list.indexOf(c), n = list.length;
+  const prev = list[(idx - 1 + n) % n], next = list[(idx + 1) % n];
 
   const v = $("#pf-visual");
   v.className = "pf-visual " + (dealer ? "dealer" : "player") + (dealer && isRed(c.suit) ? " red-suit" : "");
   v.style.setProperty("--band", c.chip === "red" ? "var(--velvet)" : "var(--felt)");
   v.innerHTML = `<span class="img">${imgSlot(c, `${c.name} 캐릭터 이미지`, false, "(max-width: 860px) 100vw, 55vw")}</span>` +
-    (dealer ? `<span class="pip">${suitIcon(c.suit)}</span>` : `<span class="chip ${c.chip} badge" aria-hidden="true"></span>`);
+    (dealer ? `<span class="pip">${suitIcon(c.suit)}</span>` : `<span class="chip ${c.chip} badge" aria-hidden="true"></span>`) +
+    (n > 1 ? `<nav class="pf-nav" aria-label="다른 ${c.role}">
+      <a class="pf-arrow arrow prev" href="#characters/${prev.id}"><span class="sr">이전 ${c.role}: </span><span class="nm">${esc(prev.name)}</span></a>
+      <a class="pf-arrow arrow next" href="#characters/${next.id}"><span class="sr">다음 ${c.role}: </span><span class="nm">${esc(next.name)}</span></a>
+    </nav>` : "") +
+    `<span class="pf-count" aria-hidden="true">${c.role} ${String(idx + 1).padStart(2, "0")} / ${String(n).padStart(2, "0")}</span>`;
 
   const role = $("#pf-role");
   role.textContent = c.role;
@@ -207,11 +154,6 @@ export function renderProfile(id){
   $("#pf-kw").innerHTML = c.keywords.map(k => `<li>${esc(k)}</li>`).join("");
   $("#pf-desc").textContent = c.description;
   renderInventory(c.inventory);
-
-  const prev = list[(idx - 1 + list.length) % list.length], next = list[(idx + 1) % list.length];
-  $("#pf-pager").innerHTML = `
-    <a href="#characters/${prev.id}"><small>이전 캐릭터</small><strong>${esc(prev.name)}</strong></a>
-    <a href="#characters/${next.id}"><small>다음 캐릭터</small><strong>${esc(next.name)}</strong></a>`;
   setTitle(c.name);
   return true;
 }
@@ -235,40 +177,6 @@ export function renderInventory(inv, selected = 0){
     ? `<div class="top"><strong>${esc(it.name)}</strong><span class="count">${it.quantity}개</span></div>
        <p>${esc(it.description)}</p>${it.note ? `<p class="note">${esc(it.note)}</p>` : ""}`
     : `<p>소지품이 없습니다.</p>`;
-}
-
-export function renderNotice(id){
-  const list = sortedNotices(), idx = list.findIndex(n => n.id === id);
-  if (idx < 0) return false;
-  const n = list[idx], newer = list[idx - 1], older = list[idx + 1];
-  markNoticeRead(n.id);
-  $("#notice-article").innerHTML = `
-    <a class="link-back" href="#notices">공지 목록으로</a>
-    <div class="meta">${n.pinned ? `<span class="tag pin">고정</span>` : ""}${n.category ? `<span class="tag">${esc(n.category)}</span>` : ""}${timeTag(n.date, n.iso)}</div>
-    <h1>${esc(n.title)}</h1>
-    <div class="body" id="notice-body"><p>${esc(n.body)}</p></div>
-    <nav class="pager" aria-label="다른 공지">
-      ${older ? `<a href="#notices/${older.id}"><small>아래 공지</small><strong>${esc(older.title)}</strong></a>` : "<span></span>"}
-      ${newer ? `<a href="#notices/${newer.id}"><small>위 공지</small><strong>${esc(newer.title)}</strong></a>` : "<span></span>"}
-    </nav>`;
-  setTitle(n.title);
-  // 마크다운은 라이브러리를 처음 필요할 때 불러옴. 그 전까지는 일반 텍스트로 보임
-  renderMarkdown(n.body).then(html => {
-    const el = $("#notice-body");
-    if (el && nav.key === "notice/" + id){ el.innerHTML = html; el.classList.add("md"); }
-  }).catch(() => {});
-  return true;
-}
-
-export function renderWorld(){
-  $("#world-toc").innerHTML = DATA.world.map(w => `<li><a href="#world" data-jump="${w.id}">${esc(w.title)}</a></li>`).join("");
-  $("#world-body").innerHTML = DATA.world.map(w => `
-    <section id="${w.id}" class="reveal" aria-labelledby="${w.id}-h">
-      <h2 class="h" id="${w.id}-h" tabindex="-1">${esc(w.title)}</h2>
-      <p>본문 자리입니다.</p>
-      <div class="figure">${ph("이미지 자리")}</div>
-      <p>본문 자리입니다.</p>
-    </section>`).join("");
 }
 
 /* 지난 이야기: 왼쪽 회차 목록 + 오른쪽 선택한 회차 (좁은 화면은 목록 안에 요약까지) */
@@ -368,4 +276,65 @@ export function renderAccount(){
     $("#me-bal").textContent = main ? `${main.balance.toLocaleString("ko-KR")}칩` : "";
     $("#me-chip").className = `chip ${main?.chip || "green"} me-chip`;
   }
+}
+
+/* =========================================================
+   전적 — 게임 화면(표 + 요약 + 승리 순위)과 홈 '최근 전적'
+   ========================================================= */
+const markOf = c => c.role === "딜러"
+  ? `<span class="mk${isRed(c.suit) ? " red" : ""}">${suitIcon(c.suit)}</span>`
+  : `<span class="chip ${c.chip}" aria-hidden="true"></span>`;
+const winName = c => c ? `<a class="win-name" href="#characters/${c.id}">${markOf(c)}${esc(c.name)}</a>` : `<span class="muted">—</span>`;
+const chipText = n => n ? (n > 0 ? "+" : "") + n.toLocaleString("ko-KR") : "—";
+
+export function winCounts(recs){
+  const m = new Map();
+  recs.forEach(r => { if (r.winner) m.set(r.winner.id, { c: r.winner, w: (m.get(r.winner.id)?.w || 0) + 1 }); });
+  return [...m.values()].sort((a, b) => b.w - a.w);
+}
+
+export function renderHomeRecords(){
+  const recs = DATA.records.slice(0, 12);
+  $("#rec-home").innerHTML = recs.length
+    ? recs.map(r => `<li><span class="g">${esc(r.game)}</span>${winName(r.winner)}${timeTag(r.date ? r.date.slice(5) : "", r.iso)}</li>`).join("")
+    : `<li class="slot-note">${USE_DB && !RECORDS.ok ? "전적 기능이 아직 준비되지 않았습니다." : "아직 기록된 게임이 없습니다."}</li>`;
+}
+
+/* 분류 버튼은 종류가 바뀔 때만 다시 그림 — 누를 때마다 다시 그리면 키보드 포커스가 사라짐 */
+let recGames = "";
+export function renderRecords(){
+  const all = DATA.records, games = [...new Set(all.map(r => r.game).filter(Boolean))];
+  if (state.recFilter !== "전체" && !games.includes(state.recFilter)) state.recFilter = "전체";
+  const seg = $("#rec-seg");
+  if (recGames !== games.join("\n")){
+    recGames = games.join("\n");
+    seg.innerHTML = ["전체", ...games].map(g => `<button type="button" data-game="${esc(g)}">${esc(g)}</button>`).join("") + `<span class="seg-ink" aria-hidden="true"></span>`;
+  }
+  seg.hidden = games.length < 2;
+  $$("button", seg).forEach(b => b.setAttribute("aria-pressed", b.dataset.game === state.recFilter));
+  requestAnimationFrame(() => placeSegInk(seg));
+
+  const recs = state.recFilter === "전체" ? all : all.filter(r => r.game === state.recFilter);
+  const ranks = winCounts(recs), top = ranks[0], last = recs[0];
+  $("#rec-stats").innerHTML = `
+    <div class="stat"><small>진행한 게임</small><strong>${recs.length}판</strong></div>
+    <div class="stat hot"><small>최다 승리</small><strong>${top ? esc(top.c.name) : "—"}</strong><span>${top ? top.w + "승" : ""}</span></div>
+    <div class="stat"><small>최근 게임</small><strong>${last ? esc(last.game) : "—"}</strong><span>${last ? `${esc(last.date)} ${esc(last.time)}` : ""}</span></div>`;
+
+  const empty = USE_DB && !RECORDS.ok ? "전적 기능이 아직 준비되지 않았습니다. (관리자: supabase/update-5.sql 실행 필요)" : "아직 기록된 게임이 없습니다.";
+  $("#rec-body").innerHTML = recs.length ? recs.slice(0, state.recLimit).map(r => `<tr>
+      <td class="when">${timeTag(r.date, r.iso)}<small>${esc(r.time)}</small></td>
+      <td class="game">${esc(r.game)}</td>
+      <td>${winName(r.winner)}</td>
+      <td class="who">${esc(r.players.join(", ")) || "—"}</td>
+      <td class="num${r.chips < 0 ? " minus" : ""}">${chipText(r.chips)}</td>
+      <td class="note">${esc(r.note)}</td>
+    </tr>`).join("") : `<tr><td colspan="6" class="empty-note">${empty}</td></tr>`;
+  $("#rec-more").hidden = recs.length <= state.recLimit;
+
+  const max = top?.w || 1;
+  $("#rec-rank").innerHTML = ranks.length ? ranks.slice(0, 5).map((x, i) => `<li>
+      <span class="no">${String(i + 1).padStart(2, "0")}</span>${winName(x.c)}<span class="w">${x.w}승</span>
+      <span class="bar" aria-hidden="true"><i style="--p:${(x.w / max * 100).toFixed(1)}%"></i></span></li>`).join("")
+    : `<li class="slot-note">기록이 쌓이면 순위가 보입니다.</li>`;
 }
