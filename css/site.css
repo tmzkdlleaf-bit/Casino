@@ -325,11 +325,11 @@ main{position:fixed; inset:0 0 calc(var(--dock) + env(safe-area-inset-bottom)); 
    ========================================================= */
 .home{
   grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.1fr) minmax(0,1.5fr);
-  grid-template-rows:auto minmax(0,1fr) clamp(16rem, 44vh, 34rem);   /* 아래 줄이 화면 가운데쯤까지 */
+  grid-template-rows:auto minmax(0,1fr) clamp(12.5rem, 28vh, 15.5rem);
   gap:var(--gap);
 }
 .home .meta{grid-column:1 / -1; grid-row:1; display:flex; justify-content:space-between; gap:1rem; font-size:var(--s-1); color:var(--smoke)}
-.hero{grid-column:1 / -1; grid-row:2; align-self:end; min-height:0; padding-bottom:.4rem}
+.hero{grid-column:1 / 4; grid-row:2; align-self:end; min-height:0; padding-bottom:.4rem}
 .hero-title{margin:0 0 clamp(.75rem, 2.4vh, 1.5rem); font-family:var(--f-serif); font-weight:900; line-height:.95; letter-spacing:-.045em; font-size:clamp(3.5rem, min(9vw, 16vh), 9rem); text-shadow:0 6px 24px rgba(0,0,0,.5)}
 .hero .intro{max-width:30rem; margin:0 0 clamp(1rem, 2.6vh, 1.75rem); font-size:var(--s1); line-height:1.7}
 .hero .actions{display:flex; gap:.75rem; flex-wrap:wrap}
@@ -347,7 +347,7 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .p-links{grid-column:1; grid-row:3}
 .latest{grid-column:2; grid-row:3}
 .p-next{grid-column:3; grid-row:3}
-.p-cast{grid-column:4; grid-row:3}
+.p-cast{grid-column:4; grid-row:2 / 4; align-self:end; height:clamp(16rem, 46vh, 34rem)}   /* 이 창만 화면 가운데쯤까지 높게 */
 
 /* 창 안 스크롤 + 아래쪽 흐림(더 있다는 표시) */
 .scroll{flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; margin-inline:-1.25rem; padding:0 1.25rem; scrollbar-width:thin; scrollbar-color:rgba(238,243,250,.2) transparent}
@@ -442,6 +442,7 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
   .mtabs button[aria-pressed="true"]{background:var(--pink-fill); color:#fff}
   .board > .g-panel, .board > .table{display:none; flex:1}
   .board > .p-cast.on .show{min-height:14rem}
+  .board > .p-cast{height:auto; align-self:auto}
   .board > .on{display:flex}
   .board > .latest.on{flex:none; margin-top:.6rem}
   .hero-chips .chip{--size:2.2rem !important}

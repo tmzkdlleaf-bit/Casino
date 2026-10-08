@@ -3,10 +3,10 @@
    가볍게: ① 기록은 작게 저장된 JSON 한 개 ② 화면에는 50묶음씩 나눠 붙이고, 첫 두 묶음만 바로 그린 뒤
    나머지는 브라우저가 한가할 때 이어 붙임 ③ 화면 밖 묶음은 content-visibility로 그리기를 건너뜀
    ========================================================= */
-import { publicUrl } from "./data.js?v=20261009d";
-import { $, $$, esc, setTitle } from "./dom.js?v=20261009d";
-import { DATA, nav, state } from "./state.js?v=20261009d";
-import { ALL } from "./views.js?v=20261009d";
+import { publicUrl } from "./data.js?v=20261009e";
+import { $, $$, esc, setTitle } from "./dom.js?v=20261009e";
+import { DATA, nav, state } from "./state.js?v=20261009e";
+import { ALL } from "./views.js?v=20261009e";
 
 const cache = new Map();          // 주소 → 기록 JSON
 const SIZE_KEY = "comu-log-size";
@@ -281,7 +281,7 @@ document.addEventListener("click", e => {
     P.follow ? follow() : stopAudio();
     return;
   }
-  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261009d").then(m => m.toggleEdit()); return; }
+  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261009e").then(m => m.toggleEdit()); return; }
   const sz = e.target.closest(".log-size button");
   if (sz){
     size = Math.max(0, Math.min(SIZES.length - 1, size + +sz.dataset.size));
