@@ -1,14 +1,14 @@
-import { refreshAuth } from "./auth.js";
-import { CALM_KEY, PAGES } from "./config.js";
-import { AUTH_HASH, DB_CONFIGURED, USE_DB, loadAll, sb, showBootError } from "./data.js";
-import { $, $$, announce, toast } from "./dom.js";
-import { initBgm, initWorldBg } from "./ambience.js";
-import { applyCalm, applyFilter, applyShow, castGo, castGoIndex, castStep, filterSummary, layoutCast, renderHeroChips, runIntro, setShowHover, showStep } from "./effects.js";
-import { errMsg } from "./forms.js";
-import { focusHeading, route } from "./router.js";
-import { applyNavOrder } from "./navorder.js";
-import { DATA, motionOK, nav, state } from "./state.js";
-import { placeSegInk, renderAccount, renderCast, renderHome, renderInventory, renderNext, renderQuickLinks, renderRecords, renderSchedule, renderShop, renderStory } from "./views.js";
+import { refreshAuth } from "./auth.js?v=20261009c";
+import { CALM_KEY, PAGES } from "./config.js?v=20261009c";
+import { AUTH_HASH, DB_CONFIGURED, USE_DB, loadAll, sb, showBootError } from "./data.js?v=20261009c";
+import { $, $$, announce, toast } from "./dom.js?v=20261009c";
+import { initBgm, initWorldBg } from "./ambience.js?v=20261009c";
+import { applyCalm, applyFilter, applyShow, castGo, castGoIndex, castStep, filterSummary, layoutCast, renderHeroChips, runIntro, setShowHover, showStep } from "./effects.js?v=20261009c";
+import { errMsg } from "./forms.js?v=20261009c";
+import { focusHeading, route } from "./router.js?v=20261009c";
+import { applyNavOrder } from "./navorder.js?v=20261009c";
+import { DATA, motionOK, nav, state } from "./state.js?v=20261009c";
+import { placeSegInk, renderAccount, renderCast, renderHome, renderInventory, renderNext, renderQuickLinks, renderRecords, renderSchedule, renderShop, renderStory } from "./views.js?v=20261009c";
 
 /* ---------- events ---------- */
 document.addEventListener("click", e => {

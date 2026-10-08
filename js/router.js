@@ -1,11 +1,11 @@
-import { showLoginNotice } from "./auth.js";
-import { PAGES, PAGE_TITLES } from "./config.js";
-import { USE_DB } from "./data.js";
-import { $, $$, setTitle, splitText } from "./dom.js";
-import { applyFilter, castSelect, showStart, showStop } from "./effects.js";
-import { DATA, motionOK, nav, state } from "./state.js";
-import { ALL, renderAccount, renderProfile, renderRecords } from "./views.js";
-import { renderNavOrderList } from "./navorder.js";
+import { showLoginNotice } from "./auth.js?v=20261009c";
+import { PAGES, PAGE_TITLES } from "./config.js?v=20261009c";
+import { USE_DB } from "./data.js?v=20261009c";
+import { $, $$, setTitle, splitText } from "./dom.js?v=20261009c";
+import { applyFilter, castSelect, showStart, showStop } from "./effects.js?v=20261009c";
+import { DATA, motionOK, nav, state } from "./state.js?v=20261009c";
+import { ALL, renderAccount, renderProfile, renderRecords } from "./views.js?v=20261009c";
+import { renderNavOrderList } from "./navorder.js?v=20261009c";
 
 export function resolve(){
   const [page, param] = (location.hash.slice(1) || "home").split("/");
@@ -45,7 +45,7 @@ export function route(){
   if (view === "characters") applyFilter({ instant: from === "profile", enter: from !== "profile" });
   if (view === "game") renderRecords();
   if (view === "settings"){ renderAccount(); renderNavOrderList(); }
-  if (view === "admin") import("./admin.js").then(m => m.admOpen());
+  if (view === "admin") import("./admin.js?v=20261009c").then(m => m.admOpen());
   if (view === "login") showLoginNotice();
   if (view === "password"){
     $("#pw-lede").textContent = { invite: "초대를 수락했습니다. 사용할 비밀번호를 정해 주세요.", recovery: "새 비밀번호를 정해 주세요." }[state.pwMode] || "새 비밀번호를 입력해 주세요.";
@@ -54,7 +54,7 @@ export function route(){
 
   $$(".pane, .scroll", section).forEach(p => p.scrollTop = 0);   // 페이지는 고정, 창 안만 처음으로
 
-  if (view === "log") import("./logview.js").then(m => m.openLog(param));
+  if (view === "log") import("./logview.js?v=20261009c").then(m => m.openLog(param));
   view === "home" ? showStart() : showStop();
 
   // 새 화면만 서서히 떠오름 (전체 화면 캡처 방식의 뷰 전환은 무거워서 쓰지 않음)

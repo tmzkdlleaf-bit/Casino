@@ -1,8 +1,8 @@
-import { CONFIG, SUITS } from "./config.js";
-import { RECORDS, USE_DB } from "./data.js";
-import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js";
-import { initShow, layoutCast } from "./effects.js";
-import { DATA, state } from "./state.js";
+import { CONFIG, SUITS } from "./config.js?v=20261009c";
+import { RECORDS, USE_DB } from "./data.js?v=20261009c";
+import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261009c";
+import { initShow, layoutCast } from "./effects.js?v=20261009c";
+import { DATA, state } from "./state.js?v=20261009c";
 
 /* ---------- render ---------- */
 export const timeTag = (label, iso) => `<time${iso ? ` datetime="${esc(iso)}"` : ""}>${esc(label)}</time>`;

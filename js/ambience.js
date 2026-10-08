@@ -1,5 +1,5 @@
-import { BGM_KEY, CONFIG } from "./config.js";
-import { $ } from "./dom.js";
+import { BGM_KEY, CONFIG } from "./config.js?v=20261009c";
+import { $ } from "./dom.js?v=20261009c";
 
 /* =========================================================
    분위기 — 세계관 배경 + 배경음악

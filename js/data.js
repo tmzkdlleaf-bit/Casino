@@ -1,9 +1,9 @@
-import { loadMine } from "./auth.js";
-import { CONFIG } from "./config.js";
-import { $ } from "./dom.js";
-import { route } from "./router.js";
-import { DATA, nav, state } from "./state.js";
-import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js";
+import { loadMine } from "./auth.js?v=20261009c";
+import { CONFIG } from "./config.js?v=20261009c";
+import { $ } from "./dom.js?v=20261009c";
+import { route } from "./router.js?v=20261009c";
+import { DATA, nav, state } from "./state.js?v=20261009c";
+import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261009c";
 
 /* =========================================================
    DATA LAYER — Supabase 조회 → 화면용 DATA 모양으로 변환
