@@ -1,11 +1,11 @@
-import { CALM_KEY } from "./config.js?v=20261009c";
-import { sb, subscribeProfile } from "./data.js?v=20261009c";
-import { $, toast } from "./dom.js?v=20261009c";
-import { applyCalm } from "./effects.js?v=20261009c";
-import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261009c";
-import { route } from "./router.js?v=20261009c";
-import { state } from "./state.js?v=20261009c";
-import { renderAccount } from "./views.js?v=20261009c";
+import { CALM_KEY } from "./config.js?v=20261009d";
+import { sb, subscribeProfile } from "./data.js?v=20261009d";
+import { $, toast } from "./dom.js?v=20261009d";
+import { applyCalm } from "./effects.js?v=20261009d";
+import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261009d";
+import { route } from "./router.js?v=20261009d";
+import { state } from "./state.js?v=20261009d";
+import { renderAccount } from "./views.js?v=20261009d";
 
 /* =========================================================
    AUTH — 이메일 + 비밀번호, 초대제

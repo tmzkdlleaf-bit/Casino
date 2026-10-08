@@ -3,8 +3,8 @@
    PC: 아이콘을 끌어서 / 휴대폰: 길게 누른 뒤 끌어서 / 설정: 위·아래 버튼 (끌기 대체 수단, WCAG 2.5.7)
    '더보기' 버튼은 항상 맨 끝에 고정
    ========================================================= */
-import { NAV_ORDER_KEY } from "./config.js?v=20261009c";
-import { $, $$, announce, esc, toast } from "./dom.js?v=20261009c";
+import { NAV_ORDER_KEY } from "./config.js?v=20261009d";
+import { $, $$, announce, esc, toast } from "./dom.js?v=20261009d";
 
 const nav = $("#nav");
 const items = () => $$(":scope > a.il", nav);

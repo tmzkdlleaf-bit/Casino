@@ -1,8 +1,8 @@
-import { CONFIG, SUITS } from "./config.js?v=20261009c";
-import { RECORDS, USE_DB } from "./data.js?v=20261009c";
-import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261009c";
-import { initShow, layoutCast } from "./effects.js?v=20261009c";
-import { DATA, state } from "./state.js?v=20261009c";
+import { CONFIG, SUITS } from "./config.js?v=20261009d";
+import { EXTRA, RECORDS, USE_DB } from "./data.js?v=20261009d";
+import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261009d";
+import { initShow, layoutCast } from "./effects.js?v=20261009d";
+import { DATA, nav, state } from "./state.js?v=20261009d";
 
 /* ---------- render ---------- */
 export const timeTag = (label, iso) => `<time${iso ? ` datetime="${esc(iso)}"` : ""}>${esc(label)}</time>`;
@@ -94,18 +94,17 @@ export const imgSlot = (c, alt = "", lazy = true, sizes = "100vw") => {
   return `<img src="${esc(c.thumb || c.img)}"${set} alt="${esc(alt)}"${c.focus ? ` style="object-position:${esc(c.focus)}"` : ""}${lazy ? ` loading="lazy"` : ` fetchpriority="high"`} decoding="async">`;
 };
 
-export const CC_SIZES = "(max-width: 760px) 55vw, 22vw";
+export const CC_SIZES = "(max-width: 760px) 75vw, 32vw";
 
 /* 캐릭터: 보이는 쪽(딜러/참가자)의 카드를 한 줄로 깔고, 위치·크기는 effects.js의 layoutCast가 정함 */
 export function renderCast(){
   $("#count-dealer").textContent = DATA.dealers.length;
   $("#count-player").textContent = DATA.players.length;
   const list = state.filter === "player" ? DATA.players : DATA.dealers, track = $("#cc-track");
-  $("#cc-go").hidden = !list.length;
-  $(".cc-nav").hidden = list.length < 2;
+  $("#cc-prev").hidden = $("#cc-next").hidden = list.length < 2;
   if (!list.length){ track.innerHTML = `<p class="empty-note">등록된 캐릭터가 없습니다.</p>`; $("#cc-count").textContent = ""; return; }
   track.innerHTML = list.map((c, i) => {
-    const dealer = c.role === "딜러", kw = (c.keywords || []).slice(0, 3);
+    const dealer = c.role === "딜러";
     return `<a class="cc ${dealer ? "dealer" : "player"}${dealer && isRed(c.suit) ? " red-suit" : ""}" href="#characters/${c.id}" data-i="${i}" data-id="${c.id}" draggable="false"${dealer ? "" : ` style="--band:${c.chip === "red" ? "var(--velvet)" : "var(--felt)"}"`}>
       <span class="cc-in">
         <span class="cc-name">${esc(c.name)}</span>
@@ -113,8 +112,6 @@ export function renderCast(){
           <span class="img">${imgSlot(c, "", i > 6, CC_SIZES)}</span>
           ${dealer ? `<span class="pip">${suitIcon(c.suit)}</span>` : `<span class="chip ${c.chip} badge" aria-hidden="true"></span>`}
         </span>
-        <span class="cc-line">${esc((c.description || "").split("\n")[0])}</span>
-        ${kw.length ? `<span class="cc-kw">${kw.map(k => `<span>${esc(k)}</span>`).join("")}</span>` : ""}
       </span>
     </a>`;
   }).join("");
@@ -124,8 +121,19 @@ export function renderCast(){
 
 export const ALL = () => [...DATA.dealers, ...DATA.players];
 
-/* 프로필: 이전·다음은 같은 쪽(딜러끼리 / 참가자끼리) 안에서 돎. 일러스트 양옆 화살표 + 방향키 */
-export function renderProfile(id){
+/* 유튜브 주소 → 영상 ID */
+export const ytId = u => (String(u || "").match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/) || [])[1];
+
+/* 이 캐릭터를 고칠 수 있는가: 주인 또는 관리자 (실제 차단은 DB 함수 owner_update_character) */
+export const canEdit = c => !!(USE_DB && EXTRA.ok && c && state.session && (state.isAdmin || state.mine.some(m => m.uuid === c.uuid)));
+export function updateEditBtn(){
+  const c = nav.current === "profile" ? ALL().find(x => x.id === nav.lastProfile) : null;
+  $("#pf-edit").hidden = !canEdit(c);
+}
+
+/* 프로필: 이전·다음은 같은 쪽(딜러끼리 / 참가자끼리) 안에서 돎. 일러스트 양옆 화살표 + 방향키
+   quiet: 프로필끼리 넘길 때 — 글자 등장 효과 없이 내용만 바꿈 */
+export function renderProfile(id, { quiet = false } = {}){
   const c = ALL().find(x => x.id === id);
   if (!c) return false;
   const dealer = c.role === "딜러", list = dealer ? DATA.dealers : DATA.players, idx = list.indexOf(c), n = list.length;
@@ -140,19 +148,27 @@ export function renderProfile(id){
       <a class="pf-arrow arrow prev" href="#characters/${prev.id}"><span class="sr">이전 ${c.role}: </span><span class="nm">${esc(prev.name)}</span></a>
       <a class="pf-arrow arrow next" href="#characters/${next.id}"><span class="sr">다음 ${c.role}: </span><span class="nm">${esc(next.name)}</span></a>
     </nav>` : "") +
-    `<span class="pf-count" aria-hidden="true">${c.role} ${String(idx + 1).padStart(2, "0")} / ${String(n).padStart(2, "0")}</span>`;
+    `<span class="pf-count" aria-hidden="true">${c.role} ${String(idx + 1).padStart(2, "0")} / ${String(n).padStart(2, "0")}</span>` +
+    (ytId(c.bgm) ? `<div class="pf-music"><button class="btn small pf-play" type="button" id="pf-play" aria-pressed="false"><span class="note" aria-hidden="true">♪</span><span class="lb">음악 재생</span></button><div class="pf-yt" id="pf-yt"></div></div>` : "");
 
   const role = $("#pf-role");
   role.textContent = c.role;
   role.className = "role " + (dealer ? "tag-d" : "tag-p");
   const name = $("#pf-name");
   name.dataset.text = c.name;
-  splitText(name);
+  if (quiet) name.textContent = c.name; else splitText(name);
 
   $("#pf-dl").innerHTML = `<dt>나이</dt><dd>${esc(c.age || "—")}</dd><dt>키</dt><dd>${esc(c.height || "—")}</dd>`;
   $("#pf-kw").innerHTML = c.keywords.map(k => `<li>${esc(k)}</li>`).join("");
   $("#pf-desc").textContent = c.description;
   renderInventory(c.inventory);
+  const links = (c.links || []).filter(l => /^https?:\/\//i.test(l.url || ""));
+  $("#pf-links-b").hidden = !links.length;
+  $("#pf-links").innerHTML = links.map(l => {
+    let host = ""; try { host = new URL(l.url).hostname.replace(/^www\./, ""); } catch (_) {}
+    return `<li><a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer"><span class="t">${esc(l.label || host || l.url)}</span><span class="h">${esc(host)}</span><svg class="ico" aria-hidden="true"><use href="#i-external-link"/></svg><span class="sr">(새 창)</span></a></li>`;
+  }).join("");
+  $("#pf-edit").hidden = !canEdit(c);
   setTitle(c.name);
   return true;
 }
@@ -265,6 +281,7 @@ export function renderAccount(){
     if (document.activeElement !== $("#set-name")) $("#set-name").value = p?.display_name || "";
     $("#pw-user").value = state.session.user.email || "";
   }
+  updateEditBtn();
   // 칩은 캐릭터별. 상점에는 대표 캐릭터(참가자 우선)의 잔액을 표시
   const main = myChars().sort((a, b) => (a.role === "참가자" ? 0 : 1) - (b.role === "참가자" ? 0 : 1))[0];
   $("#wallet").textContent = main ? main.balance.toLocaleString("ko-KR") : "—";

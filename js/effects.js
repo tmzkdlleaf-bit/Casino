@@ -1,7 +1,7 @@
-import { HERO_CHIPS, SUITS } from "./config.js?v=20261009c";
-import { $, $$, esc, isRed, splitText, suitIcon } from "./dom.js?v=20261009c";
-import { DATA, motionOK, state } from "./state.js?v=20261009c";
-import { ALL, placeSegInk, renderCast } from "./views.js?v=20261009c";
+import { HERO_CHIPS, SUITS } from "./config.js?v=20261009d";
+import { $, $$, esc, isRed, splitText, suitIcon } from "./dom.js?v=20261009d";
+import { DATA, motionOK, state } from "./state.js?v=20261009d";
+import { ALL, placeSegInk, renderCast } from "./views.js?v=20261009d";
 
 /* ---------- effects ---------- */
 
@@ -55,10 +55,7 @@ export function layoutCast(instant = false){
   });
   requestAnimationFrame(() => requestAnimationFrame(() => cards.forEach(el => el.classList.remove("jump"))));
   const idx = norm(Math.round(pos), n), c = castList()[idx];
-  $("#cc-count").innerHTML = `<b>${String(idx + 1).padStart(2, "0")}</b> / ${String(n).padStart(2, "0")}<span class="sr"> — ${esc(c.name)}</span>`;
-  $("#cc-go").href = "#characters/" + c.id;
-  $("#cc-go").setAttribute("aria-label", `${c.name} 프로필 보기`);
-  $("#cc-chip").style.transform = `rotate(${Math.round(pos) * 60}deg)`;
+  $("#cc-count").textContent = `${n}명 중 ${idx + 1}번째 — ${c.name}`;
 }
 
 export function castGo(d){

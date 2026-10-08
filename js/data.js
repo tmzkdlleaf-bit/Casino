@@ -1,9 +1,9 @@
-import { loadMine } from "./auth.js?v=20261009c";
-import { CONFIG } from "./config.js?v=20261009c";
-import { $ } from "./dom.js?v=20261009c";
-import { route } from "./router.js?v=20261009c";
-import { DATA, nav, state } from "./state.js?v=20261009c";
-import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261009c";
+import { loadMine } from "./auth.js?v=20261009d";
+import { CONFIG } from "./config.js?v=20261009d";
+import { $ } from "./dom.js?v=20261009d";
+import { route } from "./router.js?v=20261009d";
+import { DATA, nav, state } from "./state.js?v=20261009d";
+import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261009d";
 
 /* =========================================================
    DATA LAYER — Supabase 조회 → 화면용 DATA 모양으로 변환
@@ -55,6 +55,8 @@ export function mapCharacter(r){
     age: r.age, height: r.height,
     keywords: r.keywords || [],
     description: r.description || "",
+    links: Array.isArray(r.links) ? r.links.filter(l => /^https?:\/\//i.test(l?.url || "")) : [],
+    bgm: r.bgm_url || "",
     inventory: (r.inventory || [])
       .sort((a, b) => a.sort_order - b.sort_order)
       .map(v => ({
@@ -75,8 +77,9 @@ export function withTimeout(promise, ms = 12000){
    LOGS — chapters.log_path (update-3.sql) / FOCUS — characters.image_focus (update-4.sql) */
 export const LOGS = { ok: true };
 export const FOCUS = { ok: true };
+export const EXTRA = { ok: true };   // characters.links · bgm_url (update-6.sql)
 const charQuery = () => sb.from("characters")
-  .select(`id, slug, name, kind, suit, chip_color, image_path, thumb_path${FOCUS.ok ? ", image_focus" : ""}, age, height, keywords, description, sort_order, inventory(quantity, note, sort_order, items(name, description, image_path))`)
+  .select(`id, slug, name, kind, suit, chip_color, image_path, thumb_path${FOCUS.ok ? ", image_focus" : ""}${EXTRA.ok ? ", links, bgm_url" : ""}, age, height, keywords, description, sort_order, inventory(quantity, note, sort_order, items(name, description, image_path))`)
   .order("sort_order");
 const chapterQuery = () => sb.from("chapters").select(`id, number, title, summary, played_on${LOGS.ok ? ", log_path" : ""}`).order("number");
 const missingCol = (e, col) => e && (e.code === "42703" || e.code === "PGRST204") && new RegExp(col).test(e.message || "");
@@ -119,6 +122,7 @@ export async function loadAll(){
     loadSlots().then(data => ({ data, error: null }))
   ]));
   if (FOCUS.ok && missingCol(q[0].error, "image_focus")){ FOCUS.ok = false; q = [...q]; q[0] = await charQuery(); }
+  if (EXTRA.ok && missingCol(q[0].error, "links|bgm_url")){ EXTRA.ok = false; q = [...q]; q[0] = await charQuery(); }
   if (LOGS.ok && missingCol(q[1].error, "log_path")){ LOGS.ok = false; q = [...q]; q[1] = await chapterQuery(); }
   const failed = q.find(r => r.error);
   if (failed) throw failed.error;

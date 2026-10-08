@@ -1,11 +1,12 @@
-import { showLoginNotice } from "./auth.js?v=20261009c";
-import { PAGES, PAGE_TITLES } from "./config.js?v=20261009c";
-import { USE_DB } from "./data.js?v=20261009c";
-import { $, $$, setTitle, splitText } from "./dom.js?v=20261009c";
-import { applyFilter, castSelect, showStart, showStop } from "./effects.js?v=20261009c";
-import { DATA, motionOK, nav, state } from "./state.js?v=20261009c";
-import { ALL, renderAccount, renderProfile, renderRecords } from "./views.js?v=20261009c";
-import { renderNavOrderList } from "./navorder.js?v=20261009c";
+import { showLoginNotice } from "./auth.js?v=20261009d";
+import { PAGES, PAGE_TITLES } from "./config.js?v=20261009d";
+import { USE_DB } from "./data.js?v=20261009d";
+import { $, $$, setTitle, splitText } from "./dom.js?v=20261009d";
+import { applyFilter, castSelect, showStart, showStop } from "./effects.js?v=20261009d";
+import { DATA, motionOK, nav, state } from "./state.js?v=20261009d";
+import { ALL, renderAccount, renderProfile, renderRecords } from "./views.js?v=20261009d";
+import { stopCharMusic } from "./charedit.js?v=20261009d";
+import { renderNavOrderList } from "./navorder.js?v=20261009d";
 
 export function resolve(){
   const [page, param] = (location.hash.slice(1) || "home").split("/");
@@ -35,7 +36,9 @@ export function route(){
   $("#dock-more").classList.toggle("on", ["settings", "admin"].includes(navKey));
   setTitle(PAGE_TITLES[view] ?? "");
 
-  if (view === "profile"){ renderProfile(param); nav.lastProfile = param; }
+  const pfToPf = from === "profile" && view === "profile";   // 프로필끼리 넘김: 효과 없이 내용만
+  if (from === "profile" && !pfToPf) stopCharMusic();
+  if (view === "profile"){ nav.lastProfile = param; renderProfile(param, { quiet: pfToPf }); }
 
   // DOM 쓰기를 먼저 모두 끝내고(렌더·글자 쪼개기), 레이아웃은 한 번만 계산
   const section = $(`[data-page="${view}"]`);
@@ -45,7 +48,7 @@ export function route(){
   if (view === "characters") applyFilter({ instant: from === "profile", enter: from !== "profile" });
   if (view === "game") renderRecords();
   if (view === "settings"){ renderAccount(); renderNavOrderList(); }
-  if (view === "admin") import("./admin.js?v=20261009c").then(m => m.admOpen());
+  if (view === "admin") import("./admin.js?v=20261009d").then(m => m.admOpen());
   if (view === "login") showLoginNotice();
   if (view === "password"){
     $("#pw-lede").textContent = { invite: "초대를 수락했습니다. 사용할 비밀번호를 정해 주세요.", recovery: "새 비밀번호를 정해 주세요." }[state.pwMode] || "새 비밀번호를 입력해 주세요.";
@@ -54,11 +57,11 @@ export function route(){
 
   $$(".pane, .scroll", section).forEach(p => p.scrollTop = 0);   // 페이지는 고정, 창 안만 처음으로
 
-  if (view === "log") import("./logview.js?v=20261009c").then(m => m.openLog(param));
+  if (view === "log") import("./logview.js?v=20261009d").then(m => m.openLog(param));
   view === "home" ? showStart() : showStop();
 
   // 새 화면만 서서히 떠오름 (전체 화면 캡처 방식의 뷰 전환은 무거워서 쓰지 않음)
-  if (from !== null && motionOK()){
+  if (from !== null && motionOK() && !pfToPf){
     section.classList.remove("enter");
     void section.offsetWidth;
     section.classList.add("enter");
