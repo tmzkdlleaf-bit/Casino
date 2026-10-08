@@ -171,7 +171,7 @@ export async function admLoad(table){
 function ensureAdminCss(){
   if (document.getElementById("admin-css")) return;
   const l = document.createElement("link");
-  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css";
+  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261009b";
   document.head.append(l);
 }
 

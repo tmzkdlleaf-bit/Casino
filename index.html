@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://fuyfqejfqoflygvymbhp.supabase.co" crossorigin>
 <!-- 제목: Noto Serif KR / 본문: IBM Plex Sans KR — 실제 쓰는 굵기만 -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700;900&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/site.css?v=20261009b">
 <!-- 모듈 미리 받기: import 사슬을 따라 차례로 받는 대기 시간 제거 (관리 모듈은 제외 — 관리자만 필요할 때 받음) -->
 <link rel="modulepreload" href="js/main.js">
 <link rel="modulepreload" href="js/config.js">
@@ -129,18 +129,12 @@
 
     <div class="board">
       <div class="mtabs" role="group" aria-label="홈 정보 보기" id="mtabs">
-        <button type="button" data-panel="p-rec" aria-controls="p-rec" aria-pressed="true">최근 전적</button>
-        <button type="button" data-panel="p-next" aria-controls="p-next" aria-pressed="false">다음 게임</button>
+        <button type="button" data-panel="p-next" aria-controls="p-next" aria-pressed="true">다음 게임</button>
         <button type="button" data-panel="p-links" aria-controls="p-links" aria-pressed="false">바로가기</button>
         <button type="button" data-panel="p-cast" aria-controls="p-cast" aria-pressed="false">캐릭터</button>
       </div>
 
-      <section class="g-panel p-rec on" id="p-rec" aria-labelledby="h-rec">
-        <div class="g-head"><h2 id="h-rec">최근 전적</h2><a class="more" href="#game">전적 전체</a></div>
-        <div class="scroll"><ul class="rec-mini" id="rec-home"></ul></div>
-      </section>
-
-      <section class="g-panel p-next" id="p-next" aria-labelledby="h-next">
+      <section class="g-panel p-next on" id="p-next" aria-labelledby="h-next">
         <div class="g-head"><h2 id="h-next">다음 게임</h2><a class="more" href="#game">일정 전체</a></div>
         <div class="scroll" id="next-body" tabindex="0" role="group" aria-label="다음 게임 목록"></div>
       </section>
@@ -150,7 +144,7 @@
         <ul class="links" id="quick-links"></ul>
       </section>
 
-      <a class="g-panel latest" id="latest-card" href="#story"></a>
+      <a class="g-panel latest on" id="latest-card" href="#story"></a>
 
       <section class="table p-cast" id="p-cast" aria-labelledby="h-cast">
         <div class="g-head">

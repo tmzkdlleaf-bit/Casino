@@ -76,7 +76,6 @@ export function renderQuickLinks(){
 
 export function renderHome(){
   $("#roster-meta").textContent = `딜러 ${DATA.dealers.length}명 / 참가자 ${DATA.players.length}명`;
-  renderHomeRecords();
   renderNext();
   renderSchedule();
   renderQuickLinks();
@@ -291,13 +290,6 @@ export function winCounts(recs){
   const m = new Map();
   recs.forEach(r => { if (r.winner) m.set(r.winner.id, { c: r.winner, w: (m.get(r.winner.id)?.w || 0) + 1 }); });
   return [...m.values()].sort((a, b) => b.w - a.w);
-}
-
-export function renderHomeRecords(){
-  const recs = DATA.records.slice(0, 12);
-  $("#rec-home").innerHTML = recs.length
-    ? recs.map(r => `<li><span class="g">${esc(r.game)}</span>${winName(r.winner)}${timeTag(r.date ? r.date.slice(5) : "", r.iso)}</li>`).join("")
-    : `<li class="slot-note">${USE_DB && !RECORDS.ok ? "전적 기능이 아직 준비되지 않았습니다." : "아직 기록된 게임이 없습니다."}</li>`;
 }
 
 /* 분류 버튼은 종류가 바뀔 때만 다시 그림 — 누를 때마다 다시 그리면 키보드 포커스가 사라짐 */

@@ -19,8 +19,9 @@
 /
   Cache-Control: no-cache
 
-# 스타일·스크립트: 1시간 캐시 + 이후 하루 동안은 캐시본을 먼저 보여 주고 뒤에서 갱신
+# 스타일·스크립트: 매번 바뀌었는지 확인 (바뀌지 않았으면 브라우저 저장본을 그대로 씀)
+#  - 예전에는 1시간~하루 동안 옛 파일을 보여 줘서, 올린 뒤 화면이 깨져 보이는 문제가 있었음
 /css/*
-  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+  Cache-Control: no-cache
 /js/*
-  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+  Cache-Control: no-cache
