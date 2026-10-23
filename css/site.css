@@ -1314,3 +1314,29 @@ button.rl-seat:not([aria-disabled="true"]):hover .av{border-color:var(--gold)}
 .hero-title{text-shadow:.06em .06em 0 #8F0D45, -.05em 0 0 rgba(239,26,114,.5), .05em 0 0 rgba(93,151,217,.6)}
 /* 글꼴 크기: 도트 글꼴은 같은 크기에서 더 커 보여 조금 줄임 */
 .page-title{font-size:clamp(2.25rem, min(5.8vw, 9vh), 5rem)}
+
+/* =========================================================
+   23. 휴대폰 보정 — 상점(로그인 상태)·룰렛 방
+   ========================================================= */
+@media (max-width:860px){
+  /* 상점: 위 상품 설명 + 구매 칸, 아래 상품 목록을 한 줄로 이어서 통째로 스크롤 */
+  .shop-wrap{display:flex; flex-direction:column; overflow:auto; overscroll-behavior:contain; margin-inline:-.25rem; padding-inline:.25rem}
+  .shop-pane{overflow:visible; margin:0; padding:0; flex:none}
+  .shop-detail{flex:none}
+  .shop-detail{margin-bottom:var(--gap); grid-template-columns:6.5rem minmax(0,1fr); align-items:start}
+  .shop-detail .sd-img{grid-row:1 / span 4}
+  .shop-detail .sd-body{display:contents}
+  .shop-detail .sd-body > *{grid-column:2}
+  .shop-detail .sd-body > .buy, .shop-detail .sd-body > .hint, .shop-detail > .my-reqs{grid-column:1 / -1}
+  .sd-desc{-webkit-line-clamp:4}
+
+  /* 룰렛: 테이블 → 버튼 → 채팅이 위아래로 이어지고, 화면 전체를 스크롤 */
+  .rl-page{grid-template-rows:auto minmax(0,1fr); gap:.75rem}
+  .rl-wrap{display:flex; flex-direction:column; gap:var(--gap); overflow:auto; overscroll-behavior:contain}
+  .rl-main{display:flex; flex-direction:column; gap:.6rem; min-height:0; flex:none}
+  .rl-table{flex:none; height:min(108vw, 30rem); min-height:0; border-radius:42% / 36%}
+  .rl-side{flex:none; height:min(70vh, 26rem)}
+  .rl-head .rl-title{font-size:clamp(1.8rem, 9vw, 2.6rem)}
+  .rl-head .page-lede{font-size:var(--s-1)}
+  .rl-head{padding-bottom:.6rem}
+}

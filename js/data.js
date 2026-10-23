@@ -1,9 +1,9 @@
-import { loadMine } from "./auth.js?v=20261024b";
-import { CONFIG } from "./config.js?v=20261024b";
-import { $, toast } from "./dom.js?v=20261024b";
-import { route } from "./router.js?v=20261024b";
-import { DATA, nav, state } from "./state.js?v=20261024b";
-import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261024b";
+import { loadMine } from "./auth.js?v=20261024c";
+import { CONFIG } from "./config.js?v=20261024c";
+import { $, toast } from "./dom.js?v=20261024c";
+import { route } from "./router.js?v=20261024c";
+import { DATA, nav, state } from "./state.js?v=20261024c";
+import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261024c";
 
 /* =========================================================
    DATA LAYER — Supabase 조회 → 화면용 DATA 모양으로 변환
@@ -185,7 +185,7 @@ export function subscribeProfile(){
     })
     // 구매 요청: 멤버는 자기 것만, 관리자는 전부 도착 (update-7.sql)
     .on("postgres_changes", { event: "*", schema: "public", table: "shop_requests" }, ({ eventType, new: row }) => {
-      import("./shop.js?v=20261024b").then(m => m.onRequestChange(row));
+      import("./shop.js?v=20261024c").then(m => m.onRequestChange(row));
       if (!state.isAdmin) return;
       if (eventType === "INSERT" && !state.mine.some(m => m.uuid === row.character_id)) toast(`새 구매 요청: ${row.item_name} ×${row.quantity}`);
       document.dispatchEvent(new CustomEvent("comu:shop-req", { detail: row }));

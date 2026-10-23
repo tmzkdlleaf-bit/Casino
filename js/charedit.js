@@ -3,11 +3,11 @@
    수정 범위: 나이 · 키 · 성격 키워드 · 설명 · 링크 · 음악(유튜브)
    실제 권한 확인은 DB 함수 owner_update_character (supabase/update-6.sql)
    ========================================================= */
-import { sb } from "./data.js?v=20261024b";
-import { $, $$, esc, toast } from "./dom.js?v=20261024b";
-import { errMsg, showMsg } from "./forms.js?v=20261024b";
-import { nav } from "./state.js?v=20261024b";
-import { ALL, canEdit, renderProfile, ytId } from "./views.js?v=20261024b";
+import { sb } from "./data.js?v=20261024c";
+import { $, $$, esc, toast } from "./dom.js?v=20261024c";
+import { errMsg, showMsg } from "./forms.js?v=20261024c";
+import { nav } from "./state.js?v=20261024c";
+import { ALL, canEdit, renderProfile, ytId } from "./views.js?v=20261024c";
 
 const MAX_LINKS = 10;
 const current = () => ALL().find(c => c.id === nav.lastProfile);
