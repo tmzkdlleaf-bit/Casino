@@ -1,9 +1,9 @@
-import { loadMine } from "./auth.js?v=20261024d";
-import { CONFIG } from "./config.js?v=20261024d";
-import { $, toast } from "./dom.js?v=20261024d";
-import { route } from "./router.js?v=20261024d";
-import { DATA, nav, state } from "./state.js?v=20261024d";
-import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261024d";
+import { loadMine } from "./auth.js?v=20261024e";
+import { CONFIG } from "./config.js?v=20261024e";
+import { $, toast } from "./dom.js?v=20261024e";
+import { route } from "./router.js?v=20261024e";
+import { DATA, nav, state } from "./state.js?v=20261024e";
+import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261024e";
 
 /* =========================================================
    DATA LAYER — Supabase 조회 → 화면용 DATA 모양으로 변환
@@ -188,14 +188,14 @@ export function subscribeProfile(){
     })
     // 구매 요청: 멤버는 자기 것만, 관리자는 전부 도착 (update-7.sql)
     .on("postgres_changes", { event: "*", schema: "public", table: "shop_requests" }, ({ eventType, new: row }) => {
-      import("./shop.js?v=20261024d").then(m => m.onRequestChange(row));
+      import("./shop.js?v=20261024e").then(m => m.onRequestChange(row));
       if (!state.isAdmin) return;
       if (eventType === "INSERT" && !state.mine.some(m => m.uuid === row.character_id)) toast(`새 구매 요청: ${row.item_name} ×${row.quantity}`);
       document.dispatchEvent(new CustomEvent("comu:shop-req", { detail: row }));
     })
     // 칩 정산 요청 (update-9.sql)
     .on("postgres_changes", { event: "*", schema: "public", table: "chip_requests" }, ({ eventType, new: row }) => {
-      import("./chipreq.js?v=20261024d").then(m => m.onChipRequestChange(row));
+      import("./chipreq.js?v=20261024e").then(m => m.onChipRequestChange(row));
       if (!state.isAdmin) return;
       if (eventType === "INSERT" && !state.mine.some(m => m.uuid === row.character_id)) toast(`새 칩 정산 요청: ${row.amount > 0 ? "+" : ""}${row.amount}칩`);
       document.dispatchEvent(new CustomEvent("comu:chip-req", { detail: row }));

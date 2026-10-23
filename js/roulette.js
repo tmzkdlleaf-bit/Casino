@@ -5,11 +5,23 @@
    - 탄 위치는 서버만 앎. 화면은 서버가 돌려준 결과(채팅의 'shot' 기록)를 보고 효과만 그림
    - 실시간 연결이 끊겨도 5초마다 다시 불러와 따라감
    ========================================================= */
-import { USE_DB, publicUrl, sb } from "./data.js?v=20261024d";
-import { $, $$, announce, esc, setTitle, toast } from "./dom.js?v=20261024d";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261024d";
-import { motionOK, nav, state } from "./state.js?v=20261024d";
-import { ALL, myChars } from "./views.js?v=20261024d";
+import { USE_DB, publicUrl, sb } from "./data.js?v=20261024e";
+import { $, $$, announce, esc, setTitle, toast } from "./dom.js?v=20261024e";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261024e";
+import { motionOK, nav, state } from "./state.js?v=20261024e";
+import { ALL, myChars } from "./views.js?v=20261024e";
+import { sfx, sfxOn, setSfx } from "./sfx.js?v=20261024e";
+
+/* ---------- 전기 충격기 (도트 그림) — 오른쪽을 향함, 한 칸 = 1 ---------- */
+const GUN = ["........................................", "....KKKKKKKKKKKKKKKKKKKKKKKKK...........", "...KSSSSSSSSSSSSSSSSSSSSSSSSSK..........", "..KLLLLLLLLLLLLLLLLLLLLLLLLLLLKKKKKKKK..", "..KLBBYYBYYBYYBBBBBBBBBBBBBBBKPPPPPPPK..", "..KLBBBBBBBBBBBBBBBBBBBBBBBBBKPQQQQQPKWW", "..KDBBBBBBBBBBBBBBBBBBBBBBBBBKPPPPPPPK..", "..KDDDDDDDDDDDDDDDDDDDDDDDDDDKPQQQQQPKWW", "..KKKKKKDDDDDDDKKKKKKKKKKKKKKKPPPPPPPK..", ".......KGGGGGKDK....K.......KKKKKKKKK...", "......KGgGGGKKDK...K....................", "......KGGGGGK.KMK..K....................", ".....KGgGGGK...KMKK.....................", ".....KGGGGGK....KK......................", "....KGgGGGK.............................", "....KGGGGGK.............................", "....KKKKKKK............................."];
+const GUN_COL = { K: "#05081A", S: "#ADCFEA", L: "#3B63C4", B: "#1D367B", D: "#0E1B45", P: "#EF1A72", Q: "#8F0D45", Y: "#7FD4FF", W: "#EEF3FA", G: "#0B1233", g: "#1A2550", M: "#5A6788" };
+(function drawGun(){
+  let rects = "";
+  GUN.forEach((row, y) => { let x = 0; while (x < row.length){ const c = row[x]; let w = 1; while (row[x + w] === c) w++; if (c !== "."){ rects += `<rect x="${x}" y="${y}" width="${w}" height="1" fill="${GUN_COL[c]}"${c === "Y" ? ` class="g-led"` : c === "W" ? ` class="g-prong"` : ""}/>`; } x += w; } });
+  $("#rl-gun").innerHTML = `<svg class="rl-gun-svg" viewBox="-2 -4 46 26" shape-rendering="crispEdges">${rects}
+    <polyline class="g-arc" points="40,5.5 41.2,6.2 40.4,6.6 41.4,7.4" shape-rendering="auto"/>
+    <polyline class="g-arc g-arc2" points="40,5.5 40.6,6.4 41.6,6.8 40.2,7.5" shape-rendering="auto"/></svg>`;
+})();
 
 const RL = {
   id: null, room: null, seats: [], bets: [], chat: [], avatars: new Map(),
@@ -207,7 +219,7 @@ function render(){
   aimGun(RL.target ?? r.turn_seat);
 
   const my = isMyTurn();
-  if (my && !RL.wasMyTurn){ toast("내 차례입니다"); announce("내 차례입니다. 쏠 사람을 고르세요."); }
+  if (my && !RL.wasMyTurn){ toast("내 차례입니다"); announce("내 차례입니다. 쏠 사람을 고르세요."); sfx("turn"); }
   RL.wasMyTurn = my;
   autoDummy();
 }
@@ -233,12 +245,12 @@ function renderStatus(){
   const r = RL.room, el = $("#rl-status");
   const turn = r.turn_seat != null ? seatAt(r.turn_seat) : null;
   let html = "";
-  if (r.status === "waiting") html = `<b>대기 중</b> — ${RL.seats.length < 2 ? "두 명 이상 앉으면" : "관리자가 시작하면"} 게임이 열립니다`;
+  if (r.status === "waiting") html = `<b>대기 중</b> · 첫 차례는 무작위 · 시계 방향 ↻`;
   else if (r.status === "playing") html = canAct() && !ctlSeat().character_id
-    ? `<b class="mine">${esc(seatChar(turn).name)} 차례</b> — 더미라 관리자가 대신 진행 · ${r.round}번째 탄창`
+    ? `<b class="mine">${esc(seatChar(turn).name)} 차례</b> · 시계 방향 ↻`
     : isMyTurn()
-    ? `<b class="mine">내 차례</b> — 쏠 사람을 고르세요 · ${r.round}번째 탄창`
-    : `<b>${esc(turn ? seatChar(turn).name : "—")}</b>의 차례 · ${r.round}번째 탄창`;
+    ? `<b class="mine">내 차례</b> · 쏠 사람을 고르세요`
+    : `<b>${esc(turn ? seatChar(turn).name : "—")}</b> 차례 · 시계 방향 ↻`;
   else if (r.status === "finished"){ const w = seatAt(r.winner_seat); html = `<b class="win">${esc(w ? seatChar(w).name : "—")} 우승</b>${r.pot ? ` · 판돈 ${n(r.pot)}칩` : ""}`; }
   else html = `<b>취소된 게임</b> — 참가비와 베팅은 돌려드렸습니다`;
   el.innerHTML = html;
@@ -250,7 +262,13 @@ function renderRing(){
   const my = canAct(), ctl = ctlSeat(), admin = state.isAdmin && r.status === "waiting";
   const betBy = {}; RL.bets.forEach(b => { betBy[b.seat] = (betBy[b.seat] || 0) + b.amount; });
   $("#rl-ring").style.setProperty("--n", N);
-  $("#rl-ring").innerHTML = Array.from({ length: N }, (_, i) => {
+  // 자리와 자리 사이의 작은 화살표: 차례가 도는 방향(시계 방향)을 늘 보여 줌
+  const nextSeat = r.status === "playing" && r.turn_seat != null ? nextAlive(r.turn_seat) : null;
+  const arrows = RL.seats.length > 1 ? Array.from({ length: N }, (_, i) => {
+    const ang = 90 + (i + .5 - base) * 360 / N, rad = ang * Math.PI / 180;
+    return `<span class="rl-dir" style="left:${(50 + 37 * Math.cos(rad)).toFixed(2)}%;top:${(48 + 30 * Math.sin(rad)).toFixed(2)}%;--r:${(ang + 90).toFixed(1)}deg" aria-hidden="true"></span>`;
+  }).join("") : "";
+  $("#rl-ring").innerHTML = arrows + Array.from({ length: N }, (_, i) => {
     const ang = 90 + (i - base) * 360 / N, rad = ang * Math.PI / 180;
     const x = 50 + 40 * Math.cos(rad), y = 48 + 33 * Math.sin(rad);
     const s = seatAt(i), pos = `left:${x.toFixed(2)}%;top:${y.toFixed(2)}%`;
@@ -264,16 +282,26 @@ function renderRing(){
       <span class="av">${src ? `<img src="${esc(src)}" alt="" decoding="async" draggable="false">` : `<span class="ph">${esc(c.name.slice(0, 1))}</span>`}<span class="x" aria-hidden="true"></span></span>
       <span class="nm">${c.role === "직원" ? "" : `<span class="chip ${c.chip}" aria-hidden="true"></span>`}${esc(c.name)}${isMe ? `<small>나</small>` : ""}${c.dummy ? `<small class="dm">더미</small>` : ""}</span>
       ${betBy[i] ? `<span class="bet" aria-hidden="true">${n(betBy[i])}</span>` : ""}
+      ${nextSeat === i && nextSeat !== r.turn_seat ? `<span class="nx" aria-hidden="true">다음</span>` : ""}
     </button>`;
   }).join("");
 }
 
+/* 다음 차례가 될 자리 (서버 rl_next_seat 와 같은 규칙: 자리 번호가 커지는 쪽 = 시계 방향) */
+function nextAlive(from){
+  const alive = RL.seats.filter(s => s.alive).map(s => s.seat).sort((a, b) => a - b);
+  return alive.find(x => x > from) ?? alive[0] ?? null;
+}
+
 /* 탄창 6칸: 쏜 칸은 비어 보임. 남은 칸 중 어디에 있는지는 아무도 모름 */
 function renderCyl(){
-  const r = RL.room, el = $("#rl-cyl");
-  if (r.status !== "playing"){ el.innerHTML = ""; return; }
-  el.innerHTML = Array.from({ length: 6 }, (_, i) => `<li class="${i < r.shots ? "used" : ""}" style="--i:${i}"></li>`).join("");
-  el.setAttribute("aria-label", `탄창 6칸 중 ${r.shots}칸 쏨, 남은 칸 ${6 - r.shots}`);
+  const r = RL.room, el = $("#rl-cyl"), n = $("#rl-cyl-n");
+  $("#rl-mag").hidden = r.status !== "playing";
+  if (r.status !== "playing"){ el.innerHTML = ""; n.textContent = ""; return; }
+  // 6칸 원형 탄창: 쏜 칸은 빈 구멍, 다음에 쏠 칸은 테두리 강조
+  el.innerHTML = Array.from({ length: 6 }, (_, i) => `<li class="${i < r.shots ? "used" : ""}${i === r.shots ? " next" : ""}" style="--i:${i}"></li>`).join("");
+  n.innerHTML = `<b>${r.shots}</b>/6`;
+  n.setAttribute("aria-label", `6발 중 ${r.shots}발 쏨`);
 }
 
 function renderPool(){
@@ -318,6 +346,7 @@ function renderTools(){
   const r = RL.room, a = state.isAdmin;
   const canAva = state.session && (myChars().length || (a && RL.seats.length));
   $("#rl-tools").innerHTML = [
+    `<button class="btn small rl-snd" type="button" data-act="sound" aria-pressed="${sfxOn()}" title="효과음">${sfxOn() ? "소리 켬" : "소리 끔"}</button>`,
     canAva ? `<button class="btn small" type="button" data-act="avatar">자리 이미지</button>` : "",
     a && DUMMY.ok && r.status === "waiting" ? `<button class="btn small" type="button" data-act="dummy"${RL.seats.length >= r.max_seats ? " disabled" : ""}>더미 추가</button>` : "",
     a && r.status === "playing" && RL.seats.some(s => !s.character_id) ? `<button class="btn small" type="button" data-act="auto" aria-pressed="${RL.autoDummy}">더미 자동 ${RL.autoDummy ? "켬" : "끔"}</button>` : "",
@@ -331,7 +360,7 @@ function renderTools(){
 /* ---------- 채팅 ---------- */
 const hhmm = iso => { const d = new Date(iso); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
 function chatLi(m){
-  if (m.kind === "chat") return `<li class="c"><b>${esc(m.name)}</b><span>${esc(m.body)}</span><time datetime="${esc(m.created_at)}">${hhmm(m.created_at)}</time></li>`;
+  if (m.kind === "chat") return `<li class="c"><b>${esc(m.name)}<time datetime="${esc(m.created_at)}">${hhmm(m.created_at)}</time></b><span>${esc(m.body)}</span></li>`;
   if (m.kind === "shot") return `<li class="sh ${m.data?.live ? "live" : "blank"}">${m.data?.live ? `<span class="k" aria-hidden="true">⚡</span>` : ""}${esc(m.body)}</li>`;
   return `<li class="s">${esc(m.body)}</li>`;
 }
@@ -347,6 +376,14 @@ function ingestChat(rows, animate){
   while (ul.children.length > 200) ul.firstElementChild.remove();
   if (atEnd || animate === false) box.scrollTop = box.scrollHeight;
   for (const m of fresh){
+    const recent = animate && Date.now() - Date.parse(m.created_at) < 10000;
+    if (recent && m.kind === "system" && m.data){
+      const ev = m.data.event;
+      if (ev === "reload") setTimeout(() => { sfx("spin"); const c = $("#rl-mag"); c.classList.remove("spin"); void c.offsetWidth; c.classList.add("spin"); }, 1400);
+      else if (ev === "finish") setTimeout(() => sfx("win"), 1500);
+      else if (ev === "bet") sfx("bet");
+      else if (ev === "start") sfx("spin");
+    }
     if (m.kind !== "shot" || !m.data) continue;
     const key = `${m.data.round}:${m.data.shot_no}`;
     if (RL.fxSeen.has(key)) continue;
@@ -374,8 +411,11 @@ function center(el, box){ const r = el.getBoundingClientRect(); return [r.left +
 function aimGun(seat){
   const el = seat != null && $(`#rl-ring [data-seat="${seat}"]`);
   const gun = $("#rl-gun");
-  if (!el){ gun.style.setProperty("--aim", "-90deg"); return; }
-  gun.style.setProperty("--aim", el.dataset.ang + "deg");
+  if (!el){ gun.style.setProperty("--aim", "-90deg"); gun.style.setProperty("--flip", 1); return; }
+  const ang = +el.dataset.ang;
+  gun.style.setProperty("--aim", ang + "deg");
+  // 왼쪽을 겨눌 때 손잡이가 위로 뒤집히지 않게 상하 반전
+  gun.style.setProperty("--flip", Math.cos(ang * Math.PI / 180) < -0.01 ? -1 : 1);
 }
 
 function bolt(x1, y1, x2, y2, jag){
@@ -391,47 +431,69 @@ function bolt(x1, y1, x2, y2, jag){
 }
 const ptsAttr = p => p.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
 
+/* 총구 끝(화면 좌표): 총 그림의 오른쪽 끝을 지금 겨눈 방향으로 */
+function muzzle(box){
+  const gun = $("#rl-gun"), r = gun.getBoundingClientRect(), cx = r.left + r.width / 2 - box.left, cy = r.top + r.height / 2 - box.top;
+  const deg = parseFloat(gun.style.getPropertyValue("--aim")) || -90, a = deg * Math.PI / 180, len = r.width * .44;
+  return [cx + Math.cos(a) * len, cy + Math.sin(a) * len, a];
+}
+function sparks(x, y, n, spread){
+  const box = $("#rl-sparks");
+  box.insertAdjacentHTML("beforeend", Array.from({ length: n }, () => {
+    const a = Math.random() * Math.PI * 2, d = spread * (.4 + Math.random() * .8);
+    return `<i style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;--dx:${(Math.cos(a) * d).toFixed(1)}px;--dy:${(Math.sin(a) * d).toFixed(1)}px;--c:${Math.random() < .5 ? "#EF1A72" : Math.random() < .5 ? "#5D97D9" : "#EEF3FA"};--t:${(380 + Math.random() * 380) | 0}ms"></i>`;
+  }).join(""));
+  setTimeout(() => { box.innerHTML = ""; }, 900);
+}
+
 function fx(d){
   const table = $("#rl-table"), svg = $("#rl-fx"), seat = $(`#rl-ring [data-seat="${d.target}"]`), gun = $("#rl-gun");
   if (!seat || nav.current !== "roulette") return;
-  RL.fxUntil = Date.now() + (d.live ? 1100 : 900);
+  const anim = motionOK(), CH = anim ? 320 : 0;   // 충전 시간
+  RL.fxUntil = Date.now() + (d.live ? 1350 + CH : 950);
   aimGun(d.target);
-  gun.classList.remove("kick"); void gun.offsetWidth; gun.classList.add("kick");
-  const anim = motionOK();
+  const box = table.getBoundingClientRect();
   if (!d.live){
+    // 빈 칸: 철컥 + 총구에서 작은 불티
+    sfx("click");
+    gun.classList.remove("kick"); void gun.offsetWidth; gun.classList.add("kick");
     seat.classList.remove("clack"); void seat.offsetWidth; seat.classList.add("clack");
     seat.dataset.say = "철컥";
+    setTimeout(() => { const [mx, my] = muzzle(box); if (anim) sparks(mx, my, 5, 16); }, 120);
     setTimeout(() => seat.classList.remove("clack"), 880);
     return;
   }
-  const box = table.getBoundingClientRect();
-  const [sx, sy] = center($(".rl-gun-svg", gun), box), [tx, ty] = center($(".av", seat), box);
-  // 총구 끝에서 시작
-  const ang = Math.atan2(ty - sy, tx - sx), tip = Math.min(48, box.width * .06);
-  const ax = sx + Math.cos(ang) * tip, ay = sy + Math.sin(ang) * tip;
-  svg.setAttribute("viewBox", `0 0 ${box.width} ${box.height}`);
-  const jag = Math.max(14, Math.hypot(tx - ax, ty - ay) * .1);
-  const draw = () => {
-    const main = bolt(ax, ay, tx, ty, jag);
-    const k = 2 + Math.floor(Math.random() * 3), from = main[k], br = bolt(from[0], from[1], tx + (Math.random() - .5) * 120, ty + (Math.random() - .5) * 120, jag * .6);
-    const k2 = main.length - 3, from2 = main[Math.max(1, k2)], br2 = bolt(from2[0], from2[1], tx + (Math.random() - .5) * 90, ty + (Math.random() - .5) * 90, jag * .5);
-    svg.innerHTML = `
-      <polyline class="b-glow-m" points="${ptsAttr(main)}"/><polyline class="b-glow-b" points="${ptsAttr(main)}"/>
-      <polyline class="b-mag" points="${ptsAttr(br)}"/><polyline class="b-blue" points="${ptsAttr(br2)}"/>
-      <polyline class="b-blue" points="${ptsAttr(main)}"/><polyline class="b-core" points="${ptsAttr(main)}"/>
-      <circle class="b-hit" cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${(28 + Math.random() * 14).toFixed(1)}"/>`;
-  };
-  table.classList.remove("rl-flash"); void table.offsetWidth; table.classList.add("rl-flash");
-  seat.classList.add("zap");
-  if (anim){
+  // 1) 충전: 전극 사이 불꽃이 커지며 웅 — 2) 발사: 번개 + 섬광 + 흔들림 + 불티 — 3) 탈락
+  gun.classList.add("charging"); sfx("charge");
+  setTimeout(() => {
+    gun.classList.remove("charging");
+    gun.classList.remove("kick"); void gun.offsetWidth; gun.classList.add("kick");
+    sfx("zap");
+    const [ax, ay] = muzzle(box), av = $(".av", seat).getBoundingClientRect();
+    const tx = av.left + av.width / 2 - box.left, ty = av.top + av.height / 2 - box.top;
+    svg.setAttribute("viewBox", `0 0 ${box.width} ${box.height}`);
+    const dist = Math.hypot(tx - ax, ty - ay), jag = Math.max(12, dist * .09);
+    const fork = (pts, k, s2) => { const p = pts[Math.min(pts.length - 2, k)]; return bolt(p[0], p[1], p[0] + (tx - p[0]) * .6 + (Math.random() - .5) * s2, p[1] + (ty - p[1]) * .6 + (Math.random() - .5) * s2, jag * .5); };
+    const draw = () => {
+      const m = bolt(ax, ay, tx, ty, jag), m2 = bolt(ax, ay, tx, ty, jag * .7);
+      const f1 = fork(m, 2 + (Math.random() * 3 | 0), 140), f2 = fork(m2, m2.length - 4, 110), f3 = fork(m, 1, 90);
+      const halo = Array.from({ length: 6 }, (_, i) => { const a = i / 6 * Math.PI * 2 + Math.random(); const r = 26 + Math.random() * 20; return `<polyline class="b-mag" points="${ptsAttr(bolt(tx, ty, tx + Math.cos(a) * r, ty + Math.sin(a) * r, 5))}"/>`; }).join("");
+      svg.innerHTML = `<defs><radialGradient id="rl-hitg"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".95"/><stop offset=".35" stop-color="#ADCFEA" stop-opacity=".6"/><stop offset=".7" stop-color="#EF1A72" stop-opacity=".25"/><stop offset="1" stop-color="#EF1A72" stop-opacity="0"/></radialGradient></defs>
+        <circle cx="${tx.toFixed(1)}" cy="${ty.toFixed(1)}" r="${(54 + Math.random() * 16).toFixed(1)}" fill="url(#rl-hitg)"/>
+        <polyline class="b-glow-m" points="${ptsAttr(m)}"/><polyline class="b-glow-b" points="${ptsAttr(m2)}"/>
+        <polyline class="b-mag" points="${ptsAttr(f1)}"/><polyline class="b-blue" points="${ptsAttr(f2)}"/><polyline class="b-mag thin" points="${ptsAttr(f3)}"/>
+        <polyline class="b-mag" points="${ptsAttr(m2)}"/><polyline class="b-blue" points="${ptsAttr(m)}"/><polyline class="b-core" points="${ptsAttr(m)}"/>
+        ${halo}
+        <circle cx="${ax.toFixed(1)}" cy="${ay.toFixed(1)}" r="${(8 + Math.random() * 6).toFixed(1)}" fill="url(#rl-hitg)"/>`;
+    };
+    table.classList.remove("rl-flash", "rl-shake"); void table.offsetWidth; table.classList.add("rl-flash");
+    if (anim) table.classList.add("rl-shake");
+    seat.classList.add("zap");
     draw();
-    const iv = setInterval(draw, 55);
-    setTimeout(() => { clearInterval(iv); svg.classList.add("fade"); }, 720);
-    setTimeout(() => { svg.innerHTML = ""; svg.classList.remove("fade"); seat.classList.remove("zap"); table.classList.remove("rl-flash"); }, 1050);
-  } else {
-    draw();
-    setTimeout(() => { svg.innerHTML = ""; seat.classList.remove("zap"); table.classList.remove("rl-flash"); }, 900);
-  }
+    if (anim){ sparks(tx, ty, 22, 90); const iv = setInterval(draw, 50); setTimeout(() => { clearInterval(iv); svg.classList.add("fade"); }, 700); }
+    setTimeout(() => sfx("out"), 520);
+    setTimeout(() => { svg.innerHTML = ""; svg.classList.remove("fade"); seat.classList.remove("zap"); table.classList.remove("rl-flash", "rl-shake"); }, anim ? 1020 : 900);
+  }, CH);
 }
 
 /* =========================================================
@@ -464,6 +526,7 @@ async function act(btn){
   const a = btn.dataset.act, r = RL.room, id = RL.id;
   if (!r || btn.disabled) return;
   if (a === "bet") return openBet();
+  if (a === "sound"){ setSfx(!sfxOn()); renderTools(); if (sfxOn()) setTimeout(() => sfx("turn"), 60); return; }
   if (a === "auto"){ RL.autoDummy = !RL.autoDummy; try { sessionStorage.setItem("rl-auto:" + RL.id, RL.autoDummy ? "1" : ""); } catch (_) {} renderTools(); renderBar(); autoDummy(); toast(RL.autoDummy ? "더미 차례를 자동으로 진행합니다" : "더미 자동 진행을 껐습니다"); return; }
   if (a === "avatar") return openAvatar();
   if (a === "cancel" && !confirm("게임을 취소할까요? 참가비와 베팅은 모두 돌려줍니다.")) return;
@@ -570,7 +633,7 @@ $("#rl-ava-form").addEventListener("submit", async e => {
   const cid = $("#rl-ava-char").value, old = RL.avatars.get(cid)?.path;
   await withBusy($('button[type="submit"]', e.target), async () => {
     try {
-      const { toWebP, extOf } = await import("./img.js?v=20261024d");
+      const { toWebP, extOf } = await import("./img.js?v=20261024e");
       const blob = await toWebP(avaFile, 512), path = `${cid}/${Date.now()}.${extOf(blob)}`;
       const up = await sb.storage.from("roulette").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
       if (up.error) throw up.error;

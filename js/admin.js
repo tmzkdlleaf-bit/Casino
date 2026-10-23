@@ -1,19 +1,27 @@
-import { loadMine } from "./auth.js?v=20261024d";
-import { CONFIG } from "./config.js?v=20261024d";
-import { FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261024d";
-import { $, $$, announce, esc, toast } from "./dom.js?v=20261024d";
-import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261024d";
-import { renderMarkdown } from "./markdown.js?v=20261024d";
-import { extOf, toWebP } from "./img.js?v=20261024d";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
-import { state } from "./state.js?v=20261024d";
-import { ALL, renderAccount } from "./views.js?v=20261024d";
+import { loadMine } from "./auth.js?v=20261024e";
+import { CONFIG } from "./config.js?v=20261024e";
+import { FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261024e";
+import { $, $$, announce, esc, toast } from "./dom.js?v=20261024e";
+import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261024e";
+import { renderMarkdown } from "./markdown.js?v=20261024e";
+import { extOf, toWebP } from "./img.js?v=20261024e";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
+import { state } from "./state.js?v=20261024e";
+import { ALL, renderAccount } from "./views.js?v=20261024e";
 
 /* =========================================================
    ADMIN — 관리 페이지. 화면만 관리자에게 보이고, 실제 차단은 RLS + RPC가 담당
    ========================================================= */
 export const ADM = { tab: "characters", rows: {}, sel: null, dirty: false, tabsDrawn: false };
 
-export const ADMIN_TABS = [["characters", "캐릭터"], ["items", "아이템"], ["shop", "구매 요청"], ["chipreq", "칩 정산"], ["chapters", "지난 이야기"], ["game_slots", "게임 일정"], ["game_records", "전적"], ["members", "멤버"]];
+/* 탭은 묶음별로: 승인 대기 · 내용 · 게임 · 멤버 (묶음 사이는 간격으로만 나눔) */
+export const ADMIN_GROUPS = [
+  [["shop", "구매 요청"], ["chipreq", "칩 정산"]],
+  [["characters", "캐릭터"], ["items", "아이템"], ["chapters", "지난 이야기"]],
+  [["game_slots", "게임 일정"], ["game_records", "전적"]],
+  [["members", "멤버"]]
+];
+export const ADMIN_TABS = ADMIN_GROUPS.flat();
+ADM.badge = { shop: 0, chipreq: 0 };
 
 export const OPT = {
   kind: [["dealer", "직원"], ["player", "참가자"]],
@@ -25,11 +33,11 @@ export const OPT = {
 const CHAR_FIELDS = [
   { row: [
     { k: "name", label: "이름", type: "text", required: true, max: 40 },
-    { k: "slug", label: "주소 이름(slug)", type: "text", required: true, max: 40, pattern: "[a-z0-9\\-]+", patternMsg: "영문 소문자, 숫자, 하이픈(-)만 쓸 수 있습니다.", hint: "프로필 주소에 쓰임 — #characters/이 값" }
+    { k: "slug", label: "주소", type: "text", required: true, max: 40, pattern: "[a-z0-9\\-]+", patternMsg: "영문 소문자, 숫자, 하이픈(-)만 쓸 수 있습니다.", prefix: "#characters/", ph: "lune" }
   ] },
   { row: [
     { k: "kind", label: "구분", type: "select", required: true, options: () => OPT.kind },
-    { k: "role_title", label: "역할", type: "text", max: 20, hint: "예: 딜러, 바텐더, 벨 걸, 상점 주인, 총관리인 — 비우면 구분만 표시" }
+    { k: "role_title", label: "역할", type: "text", max: 20, ph: "바텐더" }
   ] },
   { row: [
     { k: "sort_order", label: "표시 순서", type: "number", min: 0 }
@@ -42,12 +50,10 @@ const CHAR_FIELDS = [
     { k: "age", label: "나이", type: "text", max: 20 },
     { k: "height", label: "키", type: "text", max: 20 }
   ] },
-  { k: "keywords", label: "성격 키워드", type: "tags", hint: "쉼표로 구분 — 예: 침착, 계산적" },
+  { k: "keywords", label: "성격", type: "tags", ph: "침착, 계산적" },
   { k: "description", label: "설명", type: "textarea" },
-  { k: "image_path", thumbKey: "thumb_path", label: "캐릭터 이미지", type: "image", bucket: "characters", max: CONFIG.IMG.character, thumb: CONFIG.IMG.characterThumb,
-    hint: `세로형 권장. 올리면 WebP로 자동 변환 (긴 변 ${CONFIG.IMG.character}px + 목록용 ${CONFIG.IMG.characterThumb}px)` },
-  { k: "image_focus", label: "이미지 초점", type: "focus", img: "image_path", thumbKey: "thumb_path", bucket: "characters",
-    hint: "잘려서 보이는 곳(홈·캐릭터 목록·프로필)에서 이미지의 어느 부분을 보여 줄지 정합니다. 비워 두면 기본 위치를 씁니다." }
+  { k: "image_path", thumbKey: "thumb_path", label: "캐릭터 이미지", type: "image", bucket: "characters", max: CONFIG.IMG.character, thumb: CONFIG.IMG.characterThumb, tall: true },
+  { k: "image_focus", label: "보이는 위치", type: "focus", img: "image_path", thumbKey: "thumb_path", bucket: "characters" }
 ];
 
 export const SCHEMAS = {
@@ -60,24 +66,12 @@ export const SCHEMAS = {
     after: row => `
       <section class="card sub-editor" aria-labelledby="inv-h">
         <h3 id="inv-h">소지품</h3>
-        <p class="hint">아이템은 ‘아이템’ 탭에서 먼저 만들어 두세요. 위에서부터 순서대로 표시됩니다.</p>
         <div class="inv-rows" id="inv-rows"><p class="adm-status">불러오는 중…</p></div>
         <div class="form-actions">
-          <button class="btn" type="button" data-inv-add>칸 추가</button>
+          <button class="btn small" type="button" data-inv-add>+ 칸</button>
           <button class="btn primary" type="button" data-inv-save data-char="${esc(row.id)}">소지품 저장</button>
         </div>
         <p class="adm-status" id="inv-status" role="status"></p>
-      </section>
-      <section class="card sub-editor" aria-labelledby="gimg-h" id="gimg-sec">
-        <h3 id="gimg-h">게임용 이미지 (룰렛 자리)</h3>
-        <p class="hint">룰렛 테이블 자리에 보이는 이미지입니다. 위의 캐릭터 이미지(목록·프로필)와 따로입니다. 정사각형으로 잘려 보이고, 비워 두면 캐릭터 이미지를 씁니다.</p>
-        <div class="img-field"><div class="img-prev rl-ava-prev" id="gimg-prev"><span aria-hidden="true">…</span></div>
-          <div><label class="sr" for="gimg-file">게임용 이미지 파일</label><input type="file" id="gimg-file" accept="image/*"></div></div>
-        <div class="form-actions">
-          <button class="btn primary" type="button" data-gimg-save data-char="${esc(row.id)}">게임용 이미지 저장</button>
-          <button class="btn danger" type="button" data-gimg-del data-char="${esc(row.id)}" disabled>지우기</button>
-        </div>
-        <p class="adm-status" id="gimg-status" role="status"></p>
       </section>`
   },
   items: {
@@ -87,14 +81,14 @@ export const SCHEMAS = {
       { k: "name", label: "이름", type: "text", required: true, max: 40 },
       { k: "description", label: "설명", type: "textarea" },
       { row: [
-        { k: "price", label: "가격 (칩)", type: "number", min: 0, nullable: true, hint: "비우면 가격 없음" },
-        { k: "stock", label: "재고", type: "number", min: 0, nullable: true, hint: "비우면 무제한" }
+        { k: "price", label: "가격", type: "number", min: 0, nullable: true, ph: "칩", suffix: "칩" },
+        { k: "stock", label: "재고", type: "number", min: 0, nullable: true, ph: "무제한" }
       ] },
       { row: [
         { k: "is_for_sale", label: "상점에 표시", type: "check" },
         { k: "sort_order", label: "표시 순서", type: "number", min: 0 }
       ] },
-      { k: "image_path", label: "아이템 이미지", type: "image", bucket: "items", max: CONFIG.IMG.item, hint: `정사각형 권장. WebP로 자동 변환 (긴 변 ${CONFIG.IMG.item}px), 투명 배경 유지` }
+      { k: "image_path", label: "아이템 이미지", type: "image", bucket: "items", max: CONFIG.IMG.item }
     ]
   },
   game_slots: {
@@ -111,7 +105,7 @@ export const SCHEMAS = {
         { k: "starts_at", label: "시작", type: "datetime", required: true },
         { k: "ends_at", label: "끝", type: "datetime" }
       ] },
-      { k: "memo", label: "메모", type: "textarea", hint: "화면에는 표시되지 않지만 누구나 조회할 수 있는 칸입니다. 비밀 내용은 적지 마세요." }
+      { k: "memo", label: "메모", type: "textarea", ph: "공개 칸 — 비밀 내용은 적지 마세요" }
     ]
   },
   game_records: {
@@ -121,15 +115,15 @@ export const SCHEMAS = {
     meta: r => r.played_at ? `${fmtDate(r.played_at)} ${fmtTime(r.played_at)}` : "",
     fields: [
       { row: [
-        { k: "game_name", label: "게임", type: "text", required: true, max: 40, hint: "같은 이름끼리 묶여서 전적 화면에서 걸러 볼 수 있습니다 — 예: 블랙잭" },
-        { k: "played_at", label: "일시", type: "datetime", hint: "비우면 저장하는 시각" }
+        { k: "game_name", label: "게임", type: "text", required: true, max: 40, ph: "블랙잭" },
+        { k: "played_at", label: "일시", type: "datetime" }
       ] },
       { row: [
         { k: "winner_id", label: "승자", type: "select", options: () => [["", "없음 (무승부 등)"], ...(ADM.rows.characters || []).map(c => [c.id, `${c.name} (${c.kind === "dealer" ? "직원" : "참가자"})`])] },
-        { k: "chips", label: "칩 변동", type: "number", hint: "표시용 숫자 — 실제 칩 지급·차감은 ‘멤버’ 탭에서" }
+        { k: "chips", label: "칩 (표시용)", type: "number" }
       ] },
       { k: "participant_ids", label: "참가한 캐릭터", type: "multi", options: () => (ADM.rows.characters || []).map(c => [c.id, c.name]) },
-      { k: "note", label: "메모", type: "text", max: 120, hint: "전적 표에 그대로 보입니다" }
+      { k: "note", label: "메모", type: "text", max: 120 }
     ]
   },
   chapters: {
@@ -142,15 +136,14 @@ export const SCHEMAS = {
         { k: "played_on", label: "진행일", type: "date" }
       ] },
       { k: "title", label: "제목", type: "text", required: true, max: 80 },
-      { k: "summary", label: "요약", type: "textarea", hint: "지난 이야기 목록과 홈에 표시" },
-      { k: "body", label: "본문", type: "textarea", hint: "상세 기록 (현재 공개 화면에는 표시되지 않음)" }
+      { k: "summary", label: "요약", type: "textarea" },
+      { k: "body", label: "본문 (화면 미표시)", type: "textarea" }
     ],
     after: row => LOGS.ok ? `
       <section class="card sub-editor" aria-labelledby="log-h">
-        <h3 id="log-h">진행 기록 (코코포리아 로그)</h3>
-        <p class="hint">코코포리아에서 내보낸 로그 파일(.html 또는 .txt)을 올리면 사이트 모양으로 바꿔 저장합니다. 원본 파일은 올라가지 않습니다. 대사 수정과 구간 BGM은 저장한 뒤 기록 화면의 ‘편집’에서 합니다.</p>
+        <h3 id="log-h">진행 기록</h3>
         <p class="adm-status" id="log-now">${row.log_path ? `저장된 기록이 있습니다 — <a href="#story/${esc(String(row.number))}">보기</a>` : "아직 저장된 기록이 없습니다."}</p>
-        <div class="field"><label for="log-file">로그 파일</label><input type="file" id="log-file" accept=".html,.htm,.txt" aria-describedby="log-file-err"><span class="field-error" id="log-file-err" hidden></span></div>
+        <div class="field"><label class="file-btn btn" for="log-file">코코포리아 로그 파일 고르기 (.html · .txt)</label><input class="sr" type="file" id="log-file" accept=".html,.htm,.txt" aria-describedby="log-file-err"><span class="field-error" id="log-file-err" hidden></span></div>
         <div id="log-opts"></div>
         <div class="form-actions">
           <button class="btn primary" type="button" data-log-save data-id="${esc(row.id)}" disabled>기록 저장</button>
@@ -168,8 +161,10 @@ export const admPanel = () => $("#admin-panel");
 export const admStatus = msg => { const el = $("#adm-status"); if (el) el.textContent = msg; };
 
 export function admDrawTabs(){
-  $("#admin-tabs").innerHTML = ADMIN_TABS.map(([id, label]) =>
-    `<button type="button" role="tab" id="tab-${id}" data-tab="${id}" aria-controls="admin-panel" aria-selected="${id === ADM.tab}" tabindex="${id === ADM.tab ? 0 : -1}">${label}</button>`).join("");
+  $("#admin-tabs").innerHTML = ADMIN_GROUPS.map(g => g.map(([id, label]) => {
+    const n = ADM.badge[id] || 0;
+    return `<button type="button" role="tab" id="tab-${id}" data-tab="${id}" aria-controls="admin-panel" aria-selected="${id === ADM.tab}" tabindex="${id === ADM.tab ? 0 : -1}">${label}${n ? `<span class="badge-n"><span class="sr"> 대기 </span>${n}</span>` : ""}</button>`;
+  }).join("")).join(`<span class="tab-gap" aria-hidden="true"></span>`);
   admPanel().setAttribute("aria-labelledby", "tab-" + ADM.tab);
 }
 
@@ -186,13 +181,24 @@ export async function admLoad(table){
 function ensureAdminCss(){
   if (document.getElementById("admin-css")) return;
   const l = document.createElement("link");
-  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261024d";
+  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261024e";
   document.head.append(l);
+}
+
+/* 승인 대기 개수 (탭의 숫자) */
+async function admCounts(){
+  const [a, b] = await Promise.all([
+    sb.from("shop_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    sb.from("chip_requests").select("id", { count: "exact", head: true }).eq("status", "pending")
+  ]);
+  ADM.badge = { shop: a.error ? 0 : a.count || 0, chipreq: b.error ? 0 : b.count || 0 };
 }
 
 export async function admOpen(){
   if (!USE_DB || !state.isAdmin) return;
   ensureAdminCss();
+  await admCounts();
+  if (ADM.first !== false){ ADM.first = false; if (ADM.badge.shop) ADM.tab = "shop"; else if (ADM.badge.chipreq) ADM.tab = "chipreq"; }   // 처음 열 때 대기 중인 요청이 있으면 그쪽부터
   admDrawTabs();
   await admShow(ADM.tab);
 }
@@ -245,6 +251,7 @@ export const toLocalInput = iso => {
 export function admField(table, f, v){
   const id = `f-${table}-${f.k}`, val = v[f.k];
   const hint = f.hint ? `<span class="hint" id="${id}-hint">${esc(f.hint)}</span>` : "";
+  const ph = f.ph ? ` placeholder="${esc(f.ph)}"` : "";
   const err = `<span class="field-error" id="${id}-err" hidden></span>`;
   const desc = `aria-describedby="${f.hint ? id + "-hint " : ""}${id}-err"`;
   const req = f.required ? " required" : "";
@@ -256,14 +263,14 @@ export function admField(table, f, v){
       return `<div class="field">${label}<select class="input" name="${f.k}" id="${id}"${req} ${desc}>${f.options().map(([ov, ol]) =>
         `<option value="${esc(ov)}"${String(val ?? "") === String(ov) ? " selected" : ""}>${esc(ol)}</option>`).join("")}</select>${hint}${err}</div>`;
     case "textarea":
-      return `<div class="field">${label}<textarea class="input" name="${f.k}" id="${id}" rows="5"${req} ${desc}>${esc(val ?? "")}</textarea>${hint}${err}</div>`;
+      return `<div class="field">${label}<textarea class="input" name="${f.k}" id="${id}" rows="5"${ph}${req} ${desc}>${esc(val ?? "")}</textarea>${hint}${err}</div>`;
     case "markdown":
       return `<div class="field">${label}
         <div class="md-tools"><button class="btn small" type="button" data-md-preview="${id}" aria-pressed="false" aria-controls="${id} ${id}-prev">미리보기</button></div>
         <textarea class="input" name="${f.k}" id="${id}" rows="12"${req} ${desc}>${esc(val ?? "")}</textarea>
         <div class="md-preview md" id="${id}-prev" hidden tabindex="0" aria-label="미리보기"></div>${hint}${err}</div>`;
     case "number":
-      return `<div class="field">${label}<input class="input" type="number" inputmode="numeric" step="1" name="${f.k}" id="${id}" value="${val ?? ""}"${f.min != null ? ` min="${f.min}"` : ""}${req} ${desc}>${hint}${err}</div>`;
+      return `<div class="field">${label}<input class="input" type="number" inputmode="numeric" step="1" name="${f.k}" id="${id}" value="${val ?? ""}"${f.min != null ? ` min="${f.min}"` : ""}${ph}${req} ${desc}>${hint}${err}</div>`;
     case "datetime":
       return `<div class="field">${label}<input class="input" type="datetime-local" name="${f.k}" id="${id}" value="${toLocalInput(val)}"${req} ${desc}>${hint}${err}</div>`;
     case "date":
@@ -272,35 +279,36 @@ export function admField(table, f, v){
       return `<fieldset class="field multi-f" aria-describedby="${f.hint ? id + "-hint" : ""}"><legend>${esc(f.label)}</legend>
         <div class="multi">${f.options().map(([ov, ol]) => `<label class="check"><input type="checkbox" name="${f.k}" value="${esc(ov)}"${(val || []).includes(ov) ? " checked" : ""}>${esc(ol)}</label>`).join("") || `<span class="hint">캐릭터가 없습니다.</span>`}</div>${hint}</fieldset>`;
     case "tags":
-      return `<div class="field">${label}<input class="input" type="text" name="${f.k}" id="${id}" value="${esc((val || []).join(", "))}"${req} ${desc}>${hint}${err}</div>`;
+      return `<div class="field">${label}<input class="input" type="text" name="${f.k}" id="${id}" value="${esc((val || []).join(", "))}"${ph}${req} ${desc}>${hint}${err}</div>`;
     case "image": {
+      // 미리보기 칸 자체가 '올리기' 버튼 — 누르면 파일 고르기
       const url = val ? publicUrl(f.bucket, (f.thumbKey && v[f.thumbKey]) || val) : "";
-      return `<div class="field"><label class="label-like" id="${id}-lbl" for="${id}">${esc(f.label)}</label>
-        <div class="img-field">
-          <div class="img-prev" id="${id}-prev">${url ? `<img src="${esc(url)}" alt="현재 이미지">` : `<span aria-hidden="true">없음</span>`}</div>
-          <div>
-            <input type="file" accept="image/*" name="${f.k}" id="${id}" ${desc}>
-            ${val ? `<label class="check"><input type="checkbox" name="${f.k}__remove">이미지 삭제</label>` : ""}
-          </div>
-        </div>${hint}${err}</div>`;
+      return `<div class="field img-f">
+        <label class="img-drop${f.tall ? " tall" : ""}" for="${id}">
+          <span class="img-prev" id="${id}-prev">${url ? `<img src="${esc(url)}" alt="">` : `<span class="img-plus" aria-hidden="true">+</span>`}</span>
+          <span class="img-cap">${esc(f.label)}</span>
+          <input class="sr" type="file" accept="image/*" name="${f.k}" id="${id}" ${desc}>
+        </label>
+        ${val ? `<label class="check img-del"><input type="checkbox" name="${f.k}__remove">삭제</label>` : ""}${err}</div>`;
     }
     case "focus": {
       const [x, y] = parseFocus(val) || [50, 15];
       const src = v[f.img] ? publicUrl(f.bucket, v[f.thumbKey] || v[f.img]) : "";
+      if (!src) return `<input type="hidden" name="${f.k}" id="${id}" value="${esc(val ?? "")}">`;
       const pos = `object-position:${x}% ${y}%`;
-      return `<fieldset class="field focus-f" data-focus aria-describedby="${id}-hint"><legend>${esc(f.label)}</legend>
-        ${src ? `<div class="focus-prev" aria-hidden="true">${[["wide", "홈"], ["tall", "목록"], ["sq", "프로필"]].map(([k, t]) =>
-          `<span class="fp ${k}"><img src="${esc(src)}" alt="" style="${pos}"><small>${t}</small></span>`).join("")}</div>` : `<p class="hint">이미지를 올려 저장한 뒤에 정할 수 있습니다.</p>`}
-        <div class="row2">
-          <label class="rng">가로 <input type="range" min="0" max="100" step="1" value="${x}" data-axis="x"${src ? "" : " disabled"}><output>${x}</output></label>
-          <label class="rng">세로 <input type="range" min="0" max="100" step="1" value="${y}" data-axis="y"${src ? "" : " disabled"}><output>${y}</output></label>
-        </div>
+      return `<details class="focus-d"${val ? " open" : ""}><summary>${esc(f.label)}</summary>
+        <fieldset class="focus-f" data-focus><legend class="sr">${esc(f.label)}</legend>
+        <div class="focus-prev" aria-hidden="true">${[["wide", "홈"], ["tall", "목록"], ["sq", "프로필"]].map(([k, t]) =>
+          `<span class="fp ${k}"><img src="${esc(src)}" alt="" style="${pos}"><small>${t}</small></span>`).join("")}</div>
+        <label class="rng"><span>가로</span><input type="range" min="0" max="100" step="1" value="${x}" data-axis="x"><output>${x}</output></label>
+        <label class="rng"><span>세로</span><input type="range" min="0" max="100" step="1" value="${y}" data-axis="y"><output>${y}</output></label>
         <input type="hidden" name="${f.k}" id="${id}" value="${esc(val ?? "")}">
-        <div class="form-actions"><button class="btn small" type="button" data-focus-reset${src ? "" : " disabled"}>기본 위치로</button><span class="hint focus-state">${val ? "직접 정함" : "기본 위치 사용 중"}</span></div>
-        ${hint}</fieldset>`;
+        <button class="btn small" type="button" data-focus-reset>기본 위치로</button><span class="sr focus-state"></span>
+        </fieldset></details>`;
     }
     default:
-      return `<div class="field">${label}<input class="input" type="text" name="${f.k}" id="${id}" value="${esc(val ?? "")}"${f.max ? ` maxlength="${f.max}"` : ""}${f.pattern ? ` pattern="${esc(f.pattern)}" data-pattern-msg="${esc(f.patternMsg || "")}"` : ""}${req} ${desc}>${hint}${err}</div>`;
+      if (f.prefix) return `<div class="field">${label}<div class="input-pre"><span aria-hidden="true">${esc(f.prefix)}</span><input class="input" type="text" name="${f.k}" id="${id}" value="${esc(val ?? "")}"${f.max ? ` maxlength="${f.max}"` : ""}${f.pattern ? ` pattern="${esc(f.pattern)}" data-pattern-msg="${esc(f.patternMsg || "")}"` : ""}${ph}${req} ${desc}></div>${hint}${err}</div>`;
+      return `<div class="field">${label}<input class="input" type="text" name="${f.k}" id="${id}" value="${esc(val ?? "")}"${ph}${f.max ? ` maxlength="${f.max}"` : ""}${f.pattern ? ` pattern="${esc(f.pattern)}" data-pattern-msg="${esc(f.patternMsg || "")}"` : ""}${req} ${desc}>${hint}${err}</div>`;
   }
 }
 
@@ -311,17 +319,31 @@ export function admCurrentRow(table){
 
 export function admRenderEditor(table){
   const s = SCHEMAS[table], row = admCurrentRow(table), v = row || (table === "items" ? { is_for_sale: true } : {});
+  const media = f => f.type === "image" || f.type === "focus";
+  const draw = list => list.map(f => f.row ? `<div class="row2">${f.row.map(x => admField(table, x, v)).join("")}</div>` : admField(table, f, v)).join("");
+  const main = s.fields.filter(f => !media(f)), side = s.fields.filter(media);
+  const gameImg = table === "characters" && row ? `
+        <div class="field img-f" id="gimg-f">
+          <label class="img-drop sq" for="gimg-file">
+            <span class="img-prev" id="gimg-prev"><span class="img-plus" aria-hidden="true">…</span></span>
+            <span class="img-cap">게임용 이미지</span>
+            <input class="sr" type="file" id="gimg-file" accept="image/*">
+          </label>
+          <label class="check img-del" id="gimg-del-l" hidden><input type="checkbox" id="gimg-del">삭제</label>
+        </div>` : "";
   $("#adm-editor").innerHTML = `
-    <form class="form card" id="adm-form" data-table="${table}" novalidate aria-labelledby="adm-form-h">
+    <form class="form card adm-form${side.length ? " has-media" : ""}" id="adm-form" data-table="${table}" novalidate aria-labelledby="adm-form-h">
       <h2 class="card-h" id="adm-form-h" tabindex="-1">${row ? esc(s.title(row) || "(제목 없음)") : `새 ${s.label}`}</h2>
-      <p class="hint">* 표시는 필수 항목입니다.</p>
       <p class="form-error" id="adm-error" role="alert" hidden></p>
-      ${s.fields.map(f => f.row ? `<div class="row2">${f.row.map(x => admField(table, x, v)).join("")}</div>` : admField(table, f, v)).join("")}
-      <div class="form-actions">
-        <button class="btn primary" type="submit">${row ? "저장" : "추가"}</button>
-        ${row ? `<button class="btn danger" type="button" data-adm-del>삭제</button>` : ""}
+      <div class="adm-cols">
+        <div class="adm-main">${draw(main)}</div>
+        ${side.length ? `<aside class="adm-media" aria-label="이미지">${draw(side)}${gameImg}</aside>` : ""}
       </div>
-      <p class="adm-status" id="adm-status" role="status"></p>
+      <div class="adm-actions">
+        <button class="btn primary" type="submit">${row ? "저장" : "추가"}</button>
+        <span class="adm-status" id="adm-status" role="status"></span>
+        ${row ? `<button class="btn small danger adm-del" type="button" data-adm-del>삭제</button>` : ""}
+      </div>
     </form>
     ${row && s.after ? s.after(row) : ""}`;
   state.admDirty = false;
@@ -379,6 +401,7 @@ export async function admSave(form){
     const { data, error } = await q.select(s.select).single();
     if (error) throw error;
     if (oldPaths.length) sb.storage.from(imgF.bucket).remove(oldPaths);   // 이전 파일 정리 (실패해도 무시)
+    if (table === "characters" && row) await saveGameImgWith(row.id).catch(err => toast("게임용 이미지는 저장하지 못했습니다: " + errMsg(err)));
     ADM.sel = data[s.key];
     await admLoad(table);
     admRenderCrud(table);
@@ -469,9 +492,9 @@ export async function admMembers(){
   const nameOf = m => m.display_name || (m.email || "").split("@")[0] || "이름 없음";
   admPanel().innerHTML = `
     <div class="card">
-      <h2 class="card-h">멤버</h2>
-      <p class="form-note">새 멤버 초대: Supabase 대시보드 → Authentication → Users → <strong>Invite user</strong>. 초대받은 사람은 메일의 링크로 들어와 비밀번호를 정합니다.</p>
-      <div class="table-scroll" style="margin-top:1.25rem">
+      <div class="g-head"><h2 class="card-h" style="margin:0">멤버</h2>
+        <a class="btn small" style="margin-left:auto" href="https://supabase.com/dashboard/project/${esc(new URL(CONFIG.SUPABASE_URL).hostname.split(".")[0])}/auth/users" target="_blank" rel="noopener" title="Supabase → Invite user">멤버 초대<span class="sr"> (Supabase 대시보드, 새 창)</span> ↗</a></div>
+      <div class="table-scroll">
         <table class="members" style="min-width:36rem">
           <caption class="sr">멤버 목록 — 이름, 권한, 소유 캐릭터</caption>
           <thead><tr><th scope="col">멤버</th><th scope="col">권한</th><th scope="col">소유 캐릭터</th></tr></thead>
@@ -486,11 +509,11 @@ export async function admMembers(){
       </div>
     </div>
     <div class="card" style="margin-top:1.5rem">
-      <h2 class="card-h">캐릭터별 소유자 · 칩</h2>
+      <h2 class="card-h">캐릭터 · 칩</h2>
       <div class="table-scroll">
         <table class="members">
           <caption class="sr">캐릭터별 소유 멤버, 보유 칩, 칩 지급·차감</caption>
-          <thead><tr><th scope="col">캐릭터</th><th scope="col">소유 멤버</th><th scope="col">칩</th><th scope="col">칩 지급·차감</th></tr></thead>
+          <thead><tr><th scope="col">캐릭터</th><th scope="col">주인</th><th scope="col">칩</th><th scope="col"><span class="sr">칩 지급·차감</span></th></tr></thead>
           <tbody>${chars.map(c => {
             const nm = esc(c.name), cur = owner.get(c.uuid) || "";
             return `<tr>
@@ -534,16 +557,15 @@ export async function admShop(){
   const bal = new Map((bl.data || []).map(b => [b.character_id, b.balance ?? 0]));
   const who = new Map((pr.data || []).map(p => [p.id, p.display_name || (p.email || "").split("@")[0] || "?"]));
   const chars = new Map(ALL().map(c => [c.uuid, c]));
-  const tab = $("#tab-shop"); if (tab) tab.textContent = pend ? `구매 요청 (${pend})` : "구매 요청";
+  ADM.badge.shop = pend; admDrawTabs();
   const when = iso => iso ? `${fmtDate(iso)} ${fmtTime(iso)}` : "";
   admPanel().innerHTML = `
     <div class="card adm-shop">
       <div class="g-head"><h2 class="card-h" style="margin:0">구매 요청</h2>
         <div class="seg" role="group" aria-label="보기" id="shop-filter" style="margin-left:auto">
-          <button type="button" data-shop-filter="pending" aria-pressed="${ADM.shopFilter === "pending"}">승인 대기 ${pend}</button>
-          <button type="button" data-shop-filter="all" aria-pressed="${ADM.shopFilter === "all"}">전체 기록</button>
+          <button type="button" data-shop-filter="pending" aria-pressed="${ADM.shopFilter === "pending"}">대기 ${pend}</button>
+          <button type="button" data-shop-filter="all" aria-pressed="${ADM.shopFilter === "all"}">기록</button>
         </div></div>
-      <p class="hint">승인하면 그 순간 칩 차감 · 재고 감소 · 소지품 지급이 한 번에 처리됩니다. 칩이나 재고가 모자라면 승인되지 않습니다. 모든 요청과 처리 결과는 이 목록에 기록으로 남습니다.</p>
       ${rows.length ? `<div class="table-scroll"><table class="members shop-log">
         <caption class="sr">구매 요청 — 요청 시각, 캐릭터, 상품, 합계, 남긴 말, 처리</caption>
         <thead><tr><th scope="col">요청</th><th scope="col">캐릭터</th><th scope="col">상품</th><th scope="col">합계</th><th scope="col">남긴 말</th><th scope="col">처리</th></tr></thead>
@@ -556,11 +578,11 @@ export async function admShop(){
             <td class="num">${r.total.toLocaleString("ko-KR")}</td>
             <td class="memo">${esc(r.memo || "")}</td>
             <td class="act">${r.status === "pending" ? `<div class="shop-act" data-shop-row="${esc(r.id)}">
-                <label class="sr" for="sn-${esc(r.id)}">관리자 메모</label><input class="input" id="sn-${esc(r.id)}" placeholder="메모 (선택)" maxlength="200">
+                <label class="sr" for="sn-${esc(r.id)}">관리자 메모</label><input class="input" id="sn-${esc(r.id)}" placeholder="메모" maxlength="200">
                 <button class="btn small primary" type="button" data-shop-ok>승인</button><button class="btn small danger" type="button" data-shop-no>거절</button></div>`
               : `<span class="st">${SHOP_ST[r.status] || r.status}</span><small>${esc(when(r.decided_at))}${r.decided_by && r.status !== "cancelled" ? ` · ${esc(who.get(r.decided_by) || "")}` : ""}</small>${r.admin_note ? `<small>${esc(r.admin_note)}</small>` : ""}`}</td>
           </tr>`; }).join("")}</tbody></table></div>`
-      : `<p class="empty-note">${ADM.shopFilter === "pending" ? "승인을 기다리는 요청이 없습니다." : "아직 구매 기록이 없습니다."}</p>`}
+      : `<p class="empty-note">${ADM.shopFilter === "pending" ? "대기 중인 요청 없음" : "기록 없음"}</p>`}
       <p class="adm-status" id="adm-status" role="status"></p>
     </div>`;
   requestAnimationFrame(() => { const seg = $("#shop-filter"); if (seg && !$(".seg-ink", seg)){ seg.insertAdjacentHTML("beforeend", `<span class="seg-ink" aria-hidden="true"></span>`); } placeInk(seg); });
@@ -579,6 +601,9 @@ async function admShopDecide(btn, approve){
   });
 }
 
+/* 다른 탭을 보고 있어도 승인 대기 숫자는 바로 갱신 */
+document.addEventListener("comu:shop-req", () => { if (!$('[data-page="admin"]').hidden) admCounts().then(admDrawTabs); });
+document.addEventListener("comu:chip-req", () => { if (!$('[data-page="admin"]').hidden) admCounts().then(admDrawTabs); });
 let shopT = 0;
 document.addEventListener("comu:shop-req", () => {
   if (ADM.tab !== "shop" || !$("#admin-panel")?.isConnected || $('[data-page="admin"]').hidden) return;
@@ -603,18 +628,17 @@ export async function admChipReq(){
   const bal = new Map((bl.data || []).map(b => [b.character_id, b.balance ?? 0]));
   const who = new Map((pr.data || []).map(p => [p.id, p.display_name || (p.email || "").split("@")[0] || "?"]));
   const chars = new Map(ALL().map(c => [c.uuid, c]));
-  const tab = $("#tab-chipreq"); if (tab) tab.textContent = pend ? `칩 정산 (${pend})` : "칩 정산";
+  ADM.badge.chipreq = pend; admDrawTabs();
   const when = iso => iso ? `${fmtDate(iso)} ${fmtTime(iso)}` : "";
   const sign = v => (v > 0 ? "+" : "") + v.toLocaleString("ko-KR");
   admPanel().innerHTML = `
     <div class="card adm-shop">
       <div class="g-head"><h2 class="card-h" style="margin:0">칩 정산 요청</h2>
         <div class="seg" role="group" aria-label="보기" id="creq-filter" style="margin-left:auto">
-          <button type="button" data-creq-filter="pending" aria-pressed="${ADM.creqFilter === "pending"}">승인 대기 ${pend}</button>
-          <button type="button" data-creq-filter="all" aria-pressed="${ADM.creqFilter === "all"}">전체 기록</button>
+          <button type="button" data-creq-filter="pending" aria-pressed="${ADM.creqFilter === "pending"}">대기 ${pend}</button>
+          <button type="button" data-creq-filter="all" aria-pressed="${ADM.creqFilter === "all"}">기록</button>
           <span class="seg-ink" aria-hidden="true"></span>
         </div></div>
-      <p class="hint">멤버가 설정 화면에서 올린 요청입니다. 승인하면 그 칩이 바로 더해지거나 빠집니다. 빼는 요청은 잔액이 모자라면 승인되지 않습니다.</p>
       ${rows.length ? `<div class="table-scroll"><table class="members shop-log">
         <caption class="sr">칩 정산 요청 — 요청 시각, 캐릭터, 칩, 사유, 처리</caption>
         <thead><tr><th scope="col">요청</th><th scope="col">캐릭터</th><th scope="col">칩</th><th scope="col">사유</th><th scope="col">처리</th></tr></thead>
@@ -626,11 +650,11 @@ export async function admChipReq(){
             <td class="num${r.amount < 0 ? " minus" : ""}">${sign(r.amount)}</td>
             <td class="memo">${esc(r.reason)}</td>
             <td class="act">${r.status === "pending" ? `<div class="shop-act" data-creq-row="${esc(r.id)}">
-                <label class="sr" for="cn-${esc(r.id)}">관리자 메모</label><input class="input" id="cn-${esc(r.id)}" placeholder="메모 (선택)" maxlength="200">
+                <label class="sr" for="cn-${esc(r.id)}">관리자 메모</label><input class="input" id="cn-${esc(r.id)}" placeholder="메모" maxlength="200">
                 <button class="btn small primary" type="button" data-creq-ok>승인</button><button class="btn small danger" type="button" data-creq-no>거절</button></div>`
               : `<span class="st">${{ approved: "승인", rejected: "거절", cancelled: "본인 취소" }[r.status]}</span><small>${esc(when(r.decided_at))}${r.decided_by && r.status !== "cancelled" ? ` · ${esc(who.get(r.decided_by) || "")}` : ""}</small>${r.admin_note ? `<small>${esc(r.admin_note)}</small>` : ""}`}</td>
           </tr>`; }).join("")}</tbody></table></div>`
-      : `<p class="empty-note">${ADM.creqFilter === "pending" ? "승인을 기다리는 요청이 없습니다." : "아직 정산 요청이 없습니다."}</p>`}
+      : `<p class="empty-note">${ADM.creqFilter === "pending" ? "대기 중인 요청 없음" : "기록 없음"}</p>`}
     </div>`;
   requestAnimationFrame(() => placeInk($("#creq-filter")));
 }
@@ -666,37 +690,27 @@ export async function admLoadGameImg(charId){
   const box = $("#gimg-prev"); if (!box) return;
   const { data, error } = await sb.from("roulette_avatars").select("path").eq("character_id", charId).maybeSingle();
   if (!box.isConnected) return;
-  if (error){ $("#gimg-sec").innerHTML = `<p class="hint">게임용 이미지를 쓰려면 supabase/update-8.sql을 먼저 실행해 주세요.</p>`; return; }
+  if (error){ $("#gimg-f").hidden = true; return; }   // update-8.sql 전
   box.dataset.path = data?.path || "";
-  box.innerHTML = data ? `<img src="${esc(publicUrl("roulette", data.path))}" alt="현재 게임용 이미지">` : `<span aria-hidden="true">없음</span>`;
-  $("[data-gimg-del]").disabled = !data;
+  box.innerHTML = data ? `<img src="${esc(publicUrl("roulette", data.path))}" alt="">` : `<span class="img-plus" aria-hidden="true">+</span>`;
+  $("#gimg-del-l").hidden = !data;
 }
-async function admSaveGameImg(btn){
-  const charId = btn.dataset.char, file = $("#gimg-file").files[0], old = $("#gimg-prev").dataset.path;
-  if (!file){ $("#gimg-status").textContent = "이미지 파일을 골라 주세요."; return; }
-  await withBusy(btn, async () => {
-    try {
-      const blob = await toWebP(file, 512), path = `${charId}/${Date.now()}.${extOf(blob)}`;
-      const up = await sb.storage.from("roulette").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
-      if (up.error) throw up.error;
-      const { error } = await sb.rpc("roulette_set_avatar", { p_character: charId, p_path: path });
-      if (error){ sb.storage.from("roulette").remove([path]); throw error; }
-      if (old) sb.storage.from("roulette").remove([old]);
-      $("#gimg-file").value = ""; $("#gimg-status").textContent = "저장했습니다."; toast("게임용 이미지를 저장했습니다");
-      admLoadGameImg(charId);
-    } catch (err){ $("#gimg-status").textContent = errMsg(err); }
-  });
-}
-async function admDelGameImg(btn){
-  const charId = btn.dataset.char, old = $("#gimg-prev").dataset.path;
-  if (!old || !confirm("게임용 이미지를 지울까요? (룰렛에서는 캐릭터 기본 이미지가 보입니다)")) return;
-  await withBusy(btn, async () => {
+/* 저장 버튼을 누를 때 함께: 새 파일이 있으면 올리고, '삭제'에 체크했으면 지움 */
+async function saveGameImgWith(charId){
+  const file = $("#gimg-file")?.files[0], del = $("#gimg-del")?.checked, old = $("#gimg-prev")?.dataset.path;
+  if (file){
+    const blob = await toWebP(file, 512), path = `${charId}/${Date.now()}.${extOf(blob)}`;
+    const up = await sb.storage.from("roulette").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
+    if (up.error) throw up.error;
+    const { error } = await sb.rpc("roulette_set_avatar", { p_character: charId, p_path: path });
+    if (error){ sb.storage.from("roulette").remove([path]); throw error; }
+    if (old) sb.storage.from("roulette").remove([old]);
+  } else if (del && old){
     const { error } = await sb.rpc("roulette_set_avatar", { p_character: charId, p_path: null });
-    if (error){ $("#gimg-status").textContent = errMsg(error); return; }
-    sb.storage.from("roulette").remove([old]); $("#gimg-status").textContent = "지웠습니다."; admLoadGameImg(charId);
-  });
+    if (error) throw error;
+    sb.storage.from("roulette").remove([old]);
+  }
 }
-
 /* ----- 관리 페이지 이벤트 ----- */
 $("#admin-tabs").addEventListener("click", e => {
   const t = e.target.closest('[role="tab"]');
@@ -737,8 +751,7 @@ admPanel().addEventListener("click", async e => {
   if (cf){ ADM.creqFilter = cf.dataset.creqFilter; await admChipReq(); $(`[data-creq-filter="${ADM.creqFilter}"]`)?.focus(); return; }
   if (t.closest("[data-creq-ok]")) return admChipDecide(t.closest("[data-creq-ok]"), true);
   if (t.closest("[data-creq-no]")) return admChipDecide(t.closest("[data-creq-no]"), false);
-  if (t.closest("[data-gimg-save]")) return admSaveGameImg(t.closest("[data-gimg-save]"));
-  if (t.closest("[data-gimg-del]")) return admDelGameImg(t.closest("[data-gimg-del]"));
+
   if (t.closest("[data-shop-no]")) return admShopDecide(t.closest("[data-shop-no]"), false);
   const pv = t.closest("[data-md-preview]");
   if (pv){
@@ -772,7 +785,7 @@ admPanel().addEventListener("click", async e => {
   if (t.closest(".bm-link")){ e.preventDefault(); toast("이 버튼은 누르지 말고 즐겨찾기 막대로 끌어다 놓으세요"); return; }
   if (t.closest("[data-log-room]")) return withBusy(t.closest("[data-log-room]"), logRoom);
   if (t.closest("[data-log-lib]")) return logLibPaste();
-  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261024d"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
+  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261024e"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
   const logSave = t.closest("[data-log-save]");
   if (logSave) return withBusy(logSave, () => logSaveNow(logSave.dataset.id));
   const logDel = t.closest("[data-log-del]");
@@ -839,19 +852,19 @@ admPanel().addEventListener("change", e => { if (e.target.id === "log-file") log
 admPanel().addEventListener("change", e => {
   if (e.target.id !== "gimg-file") return;
   const f = e.target.files[0];
-  if (f && /^image\//.test(f.type)){ $("#gimg-prev").innerHTML = `<img src="${URL.createObjectURL(f)}" alt="새로 올릴 게임용 이미지">`; $("#gimg-status").textContent = "‘게임용 이미지 저장’을 눌러야 반영됩니다."; }
+  if (f && /^image\//.test(f.type)){ $("#gimg-prev").innerHTML = `<img src="${URL.createObjectURL(f)}" alt="">`; state.admDirty = true; }
 });
 
 admPanel().addEventListener("change", e => {
   const file = e.target.closest('#adm-form input[type="file"]');
-  if (!file) return;
+  if (!file || file.id === "gimg-file") return;
   state.admDirty = true;
   const f = file.files[0], prev = document.getElementById(file.id + "-prev");
   if (!f) return;
   if (!/^image\//.test(f.type)){ fieldError(file, "이미지 파일만 올릴 수 있습니다."); file.value = ""; return; }
   fieldError(file, "");
   const url = URL.createObjectURL(f);
-  prev.innerHTML = `<img src="${url}" alt="새로 올릴 이미지 미리보기">`;
+  prev.innerHTML = `<img src="${url}" alt="">`;
 });
 
 /* =========================================================
@@ -865,7 +878,7 @@ async function logRead(input){
   if (!f) return;
   if (f.size > 60 * 1024 * 1024){ fieldError(input, "60MB 이하 파일만 올릴 수 있습니다."); return; }
   $("#log-status").textContent = "읽는 중…";
-  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261024d");
+  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261024e");
   const messages = parseLog(await f.text());
   $("#log-status").textContent = "";
   if (!messages.length){ fieldError(input, "대사를 찾지 못했습니다. 코코포리아에서 내보낸 로그 파일이 맞는지 확인해 주세요."); return; }
@@ -911,7 +924,7 @@ function libSummary(extra = ""){
 }
 
 async function logRoom(){
-  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261024d");
+  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261024e");
   const id = roomIdFrom($("#log-room").value);
   if (!id){ $("#log-lib-status").textContent = "코코포리아 룸 링크 형식이 아닙니다. (https://ccfolia.com/rooms/…)"; $("#log-room").focus(); return; }
   try {
@@ -927,7 +940,7 @@ async function logRoom(){
 }
 
 async function logLibPaste(){
-  const { parseLibrary } = await import("./logparse.js?v=20261024d");
+  const { parseLibrary } = await import("./logparse.js?v=20261024e");
   try {
     const lib = parseLibrary($("#log-lib-text").value);
     if (!lib.length){ $("#log-lib-status").textContent = "캐릭터를 찾지 못했습니다."; return; }
@@ -971,7 +984,7 @@ export async function backupFaces(urls, onProgress = () => {}){
 
 async function logSaveNow(id){
   if (!LOG.messages) return;
-  const { pack } = await import("./logparse.js?v=20261024d");
+  const { pack } = await import("./logparse.js?v=20261024e");
   const include = new Set($$('input[name="log-tab"]:checked').map(i => LOG.info.tabs[+i.value].name));
   const narrators = new Set($$('input[name="log-narr"]:checked').map(i => LOG.info.speakers[+i.value].name));
   if (!include.size){ $("#log-status").textContent = "저장할 탭을 하나 이상 골라 주세요."; return; }

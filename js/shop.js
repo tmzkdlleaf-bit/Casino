@@ -2,11 +2,11 @@
    상점 구매 — 요청 → 관리자 승인 → 칩 차감·소지품 지급 (supabase/update-7.sql)
    요청할 때는 칩이 빠지지 않고, 승인되는 순간 서버에서 한 번에 처리됨
    ========================================================= */
-import { USE_DB, publicUrl, sb, fmtDate, fmtTime } from "./data.js?v=20261024d";
-import { $, esc, toast, announce } from "./dom.js?v=20261024d";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261024d";
-import { DATA, state } from "./state.js?v=20261024d";
-import { myChars, renderShop } from "./views.js?v=20261024d";
+import { USE_DB, publicUrl, sb, fmtDate, fmtTime } from "./data.js?v=20261024e";
+import { $, esc, toast, announce } from "./dom.js?v=20261024e";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261024e";
+import { DATA, state } from "./state.js?v=20261024e";
+import { myChars, renderShop } from "./views.js?v=20261024e";
 
 export const SHOP = { reqs: [], ok: true, loaded: false };
 export const STATUS = { pending: "승인 대기", approved: "승인됨", rejected: "거절됨", cancelled: "취소함" };
@@ -55,7 +55,6 @@ export function buyHtml(it){
     <p class="hint" id="buy-bal">${buyBalText(c, it.price)}</p>
     <p class="form-error" id="buy-err" role="alert" hidden></p>
     <button class="btn primary" type="submit" data-item-id="${esc(it.id)}">구매 요청</button>
-    <p class="hint">관리자가 승인하면 칩이 빠지고 소지품에 들어갑니다.</p>
   </form>`;
 }
 

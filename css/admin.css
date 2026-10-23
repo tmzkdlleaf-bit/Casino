@@ -99,3 +99,65 @@ table.shop-log .st-rejected .st{color:var(--red-text)}
 table.shop-log .st-cancelled{opacity:.6}
 .shop-act{display:grid; grid-template-columns:minmax(8rem, 1fr) auto auto; gap:.4rem; align-items:center; min-width:20rem}
 .shop-act .input{min-height:2.25rem; padding:.35rem .7rem}
+
+/* =========================================================
+   정돈 (2026-10-24): 묶음 탭 · 글 칸 | 이미지 칸 · 아래 고정 저장 줄 · 미리보기를 누르면 올리기
+   ========================================================= */
+.admin-tabs{gap:.15rem; margin-bottom:1.25rem; align-items:center}
+.admin-tabs .tab-gap{flex:none; width:1px; height:1.4rem; margin:0 .45rem; background:var(--line)}
+.admin-tabs [role="tab"]{display:inline-flex; align-items:center; gap:.45rem; padding:.45rem .95rem; font-family:var(--f-pixel)}
+.badge-n{display:inline-grid; place-items:center; min-width:1.35rem; height:1.35rem; padding:0 .3rem; background:var(--velvet); color:#fff; font-size:.75rem; line-height:1}
+.admin-tabs [aria-selected="true"] .badge-n{background:#fff; color:var(--pink-fill)}
+
+.adm{gap:1.25rem}
+.adm-list .btn.primary{min-height:2.5rem}
+.adm-form{gap:1rem; padding-bottom:0}
+.adm-form .card-h{margin:0}
+.adm-form .field label, .adm-form .label-like{margin-bottom:.3rem; font-size:var(--s-1); color:var(--text-2); font-weight:400}
+.adm-form .input{min-height:2.6rem; padding:.55rem .85rem}
+.adm-form textarea.input{min-height:6rem}
+.adm-cols{display:grid; gap:1rem 1.5rem}
+.adm-form.has-media .adm-cols{grid-template-columns:minmax(0, 1fr) 13.5rem; align-items:start}
+.adm-main{display:grid; gap:1rem; min-width:0}
+.adm-media{position:sticky; top:1rem; display:grid; gap:1rem; align-content:start}
+@media (max-width:1100px){ .adm-form.has-media .adm-cols{grid-template-columns:1fr} .adm-media{position:static; grid-template-columns:repeat(auto-fill, minmax(10rem, 1fr))} }
+
+/* 미리보기 = 올리기 버튼 */
+.img-f{display:grid; gap:.35rem; margin:0}
+.img-drop{position:relative; display:block; cursor:pointer; border:1px dashed var(--line-strong); background:var(--black); overflow:hidden; transition:border-color .25s}
+.img-drop:hover, .img-drop:focus-within{border-color:var(--gold)}
+.img-drop:focus-within{outline:2px solid var(--focus); outline-offset:2px}
+.img-drop .img-prev{display:grid; place-items:center; width:100%; aspect-ratio:1; border:0; border-radius:0; background:none}
+.img-drop.tall .img-prev{aspect-ratio:3 / 4}
+.img-drop .img-prev img{width:100%; height:100%; object-fit:cover}
+.img-plus{font-family:var(--f-pixel); font-size:2rem; color:var(--smoke)}
+.img-cap{position:absolute; left:0; right:0; bottom:0; padding:.35rem .6rem; background:linear-gradient(transparent, rgba(0,0,0,.85)); font-family:var(--f-pixel); font-size:.8125rem; color:var(--ivory)}
+.img-del{min-height:auto; font-size:var(--s-1); color:var(--smoke)}
+.img-del input{width:1rem; height:1rem}
+
+/* 보이는 위치(초점): 접어 두고 필요할 때 */
+.focus-d{border:1px solid var(--line-2)}
+.focus-d > summary{padding:.45rem .7rem; cursor:pointer; font-family:var(--f-pixel); font-size:.8125rem; color:var(--text-2); list-style-position:inside}
+.focus-d[open] > summary{border-bottom:1px solid var(--line-2)}
+.focus-d .focus-f{border:0; padding:.7rem; gap:.5rem}
+.focus-d .focus-prev{gap:.4rem; flex-wrap:nowrap}
+.focus-d .fp.wide img{width:5.6rem; height:3.8rem}
+.focus-d .fp.tall img{width:2.4rem; height:5.4rem}
+.focus-d .fp.sq img{width:3.8rem; height:4.6rem}
+.focus-d .rng{font-size:var(--s-1)}
+.focus-d .rng span{width:2rem}
+
+/* 앞에 붙는 글자 (#characters/) */
+.input-pre{display:flex; align-items:stretch; border:1px solid var(--line-strong); background:var(--black)}
+.input-pre > span{display:flex; align-items:center; padding:0 .2rem 0 .75rem; color:var(--smoke); font-size:.875rem; white-space:nowrap}
+.input-pre .input{border:0; padding-left:.1rem}
+
+/* 아래 고정 저장 줄 */
+.adm-actions{position:sticky; bottom:0; z-index:2; display:flex; align-items:center; gap:.75rem; margin:0 calc(clamp(1.25rem, 3vw, 1.75rem) * -1); padding:.8rem clamp(1.25rem, 3vw, 1.75rem); background:var(--glass); border-top:1px solid var(--line)}
+.adm-actions .adm-status{font-size:var(--s-1); color:var(--smoke)}
+.adm-actions .adm-del{margin-left:auto; border-color:transparent}
+.adm-actions .adm-del:hover{border-color:var(--red-text)}
+
+.sub-editor{margin-top:1rem}
+.sub-editor h3{margin:0 0 .75rem; font-family:var(--f-pixel); font-size:1rem}
+.file-btn{cursor:pointer}
