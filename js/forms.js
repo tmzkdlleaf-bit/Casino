@@ -1,4 +1,4 @@
-import { $$ } from "./dom.js?v=20261009e";
+import { $$ } from "./dom.js?v=20261024a";
 
 /* =========================================================
    FORM — 검증·오류 표시·처리 중 상태 (접근성: aria-invalid + 오류 문구 연결)
@@ -63,11 +63,12 @@ document.addEventListener("input", e => { if (e.target.getAttribute?.("aria-inva
 /* 처리 중 버튼: disabled 대신 aria-disabled — disabled로 바꾸면 포커스가 사라짐 */
 export async function withBusy(btn, fn){
   if (btn.getAttribute("aria-busy") === "true") return;
-  const label = btn.textContent;
+  // 아이콘이 든 버튼도 있으므로 글자만이 아니라 안쪽 전체를 보관했다가 되돌림
+  const html = btn.innerHTML;
   btn.setAttribute("aria-busy", "true"); btn.setAttribute("aria-disabled", "true");
   btn.textContent = "처리 중…";
   try { return await fn(); }
-  finally { btn.textContent = label; btn.removeAttribute("aria-busy"); btn.removeAttribute("aria-disabled"); }
+  finally { btn.innerHTML = html; btn.removeAttribute("aria-busy"); btn.removeAttribute("aria-disabled"); }
 }
 
 export function showMsg(el, msg){ el.textContent = msg || ""; el.hidden = !msg; }

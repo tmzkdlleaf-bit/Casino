@@ -1,7 +1,7 @@
-import { HERO_CHIPS, SUITS } from "./config.js?v=20261009e";
-import { $, $$, esc, isRed, splitText, suitIcon } from "./dom.js?v=20261009e";
-import { DATA, motionOK, state } from "./state.js?v=20261009e";
-import { ALL, placeSegInk, renderCast } from "./views.js?v=20261009e";
+import { HERO_CHIPS, SUITS } from "./config.js?v=20261024a";
+import { $, $$, esc, isRed, splitText, suitIcon } from "./dom.js?v=20261024a";
+import { DATA, motionOK, state } from "./state.js?v=20261024a";
+import { ALL, placeSegInk, renderCast } from "./views.js?v=20261024a";
 
 /* ---------- effects ---------- */
 

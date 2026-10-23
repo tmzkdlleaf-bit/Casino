@@ -1,14 +1,14 @@
-import { refreshAuth } from "./auth.js?v=20261009e";
-import { CALM_KEY, PAGES } from "./config.js?v=20261009e";
-import { AUTH_HASH, DB_CONFIGURED, USE_DB, loadAll, sb, showBootError } from "./data.js?v=20261009e";
-import { $, $$, announce, toast } from "./dom.js?v=20261009e";
-import { initBgm, initWorldBg } from "./ambience.js?v=20261009e";
-import { applyCalm, applyFilter, applyShow, castGo, castGoIndex, castStep, filterSummary, layoutCast, renderHeroChips, runIntro, setShowHover, showStep } from "./effects.js?v=20261009e";
-import { errMsg } from "./forms.js?v=20261009e";
-import { focusHeading, route } from "./router.js?v=20261009e";
-import { applyNavOrder } from "./navorder.js?v=20261009e";
-import { DATA, motionOK, nav, state } from "./state.js?v=20261009e";
-import { placeSegInk, renderAccount, renderCast, renderHome, renderInventory, renderNext, renderQuickLinks, renderRecords, renderSchedule, renderShop, renderStory } from "./views.js?v=20261009e";
+import { refreshAuth } from "./auth.js?v=20261024a";
+import { CALM_KEY, PAGES } from "./config.js?v=20261024a";
+import { AUTH_HASH, DB_CONFIGURED, USE_DB, loadAll, sb, showBootError } from "./data.js?v=20261024a";
+import { $, $$, announce, toast } from "./dom.js?v=20261024a";
+import { initBgm, initWorldBg } from "./ambience.js?v=20261024a";
+import { applyCalm, applyFilter, applyShow, castGo, castGoIndex, castStep, filterSummary, layoutCast, renderHeroChips, runIntro, setShowHover, showStep } from "./effects.js?v=20261024a";
+import { errMsg } from "./forms.js?v=20261024a";
+import { focusHeading, route } from "./router.js?v=20261024a";
+import { applyNavOrder } from "./navorder.js?v=20261024a";
+import { DATA, motionOK, nav, state } from "./state.js?v=20261024a";
+import { placeSegInk, renderAccount, renderCast, renderHome, renderInventory, renderNext, renderQuickLinks, renderRecords, renderSchedule, renderShop, renderStory } from "./views.js?v=20261024a";
 
 /* ---------- events ---------- */
 document.addEventListener("click", e => {
@@ -101,12 +101,6 @@ function setMore(open){
   if (open) $("a:not([hidden]), button:not([hidden])", m)?.focus();
 }
 
-export let spun = 0;
-
-$("#spin").addEventListener("click", () => {
-  spun += 1440 + Math.floor(Math.random() * 360);
-  $("#wheel").style.transform = `rotate(${spun}deg)`;
-});
 
 /* 스위치는 누르는 즉시 적용 (role="switch"의 기대 동작) */
 $("#set-calm").addEventListener("change", e => {
@@ -284,6 +278,9 @@ runIntro();
     sb.auth.onAuthStateChange((event, session) => {
       if (event === "INITIAL_SESSION") return;
       if (event === "PASSWORD_RECOVERY") state.pwMode = "recovery";
+      // 토큰 갱신(1시간마다)·탭으로 돌아올 때의 SIGNED_IN은 같은 사람 — 세션만 바꾸고 다시 조회하지 않음
+      const same = session && state.session && session.user.id === state.session.user.id && state.profile;
+      if (same && (event === "TOKEN_REFRESHED" || event === "SIGNED_IN" || event === "USER_UPDATED")){ state.session = session; return; }
       setTimeout(() => refreshAuth(session), 0);   // 콜백 안에서 바로 DB를 부르면 교착될 수 있어 한 박자 뒤에
     });
   }

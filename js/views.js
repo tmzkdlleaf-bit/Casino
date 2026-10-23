@@ -1,8 +1,9 @@
-import { CONFIG, SUITS } from "./config.js?v=20261009e";
-import { EXTRA, RECORDS, USE_DB } from "./data.js?v=20261009e";
-import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261009e";
-import { initShow, layoutCast } from "./effects.js?v=20261009e";
-import { DATA, nav, state } from "./state.js?v=20261009e";
+import { CONFIG, SUITS } from "./config.js?v=20261024a";
+import { EXTRA, RECORDS, USE_DB } from "./data.js?v=20261024a";
+import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261024a";
+import { initShow, layoutCast } from "./effects.js?v=20261024a";
+import { buyHtml, myReqHtml } from "./shop.js?v=20261024a";
+import { DATA, nav, state } from "./state.js?v=20261024a";
 
 /* ---------- render ---------- */
 export const timeTag = (label, iso) => `<time${iso ? ` datetime="${esc(iso)}"` : ""}>${esc(label)}</time>`;
@@ -236,7 +237,7 @@ export function renderShop(sel){
   const detail = $("#shop-detail");
   if (!DATA.items.length){
     $("#shop").innerHTML = `<p class="empty-note" style="grid-column:1 / -1">판매 중인 아이템이 없습니다.</p>`;
-    detail.innerHTML = `<div class="sd-empty"><span class="chip red" aria-hidden="true"></span><p>진열된 상품이 없습니다.</p></div>`;
+    detail.innerHTML = `<div class="sd-empty"><span class="chip red" aria-hidden="true"></span><p>진열된 상품이 없습니다.</p></div>${myReqHtml()}`;
     return;
   }
   if (sel == null) sel = state.shopSel ?? 0;
@@ -257,9 +258,9 @@ export function renderShop(sel){
       <p class="sd-price"><span class="chip red" aria-hidden="true"></span><strong>${esc(it.price)}</strong><span>칩</span></p>
       ${st ? `<p class="sd-stock${it.stock === 0 ? " out" : ""}">${st}</p>` : ""}
       <p class="sd-desc">${esc(it.description || "설명이 없습니다.")}</p>
-      <button class="btn primary" type="button" disabled aria-describedby="buy-note">구매하기</button>
-      <p class="hint" id="buy-note">구매 기능은 준비 중입니다.</p>
-    </div>`;
+      ${buyHtml(it)}
+    </div>
+    ${myReqHtml()}`;
 }
 
 /* 내 소유 캐릭터 + 잔액 (공개 캐릭터 데이터와 합침) */

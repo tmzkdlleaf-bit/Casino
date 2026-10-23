@@ -81,3 +81,21 @@ table.members .input{min-height:2.25rem; padding:.35rem .6rem}
 .multi-f legend{padding:0 .3rem; font-size:.9375rem; font-weight:500}
 .multi{display:grid; grid-template-columns:repeat(auto-fill, minmax(9rem, 1fr)); gap:0 .75rem}
 .multi .check{min-height:2.25rem; font-size:.9375rem}
+
+/* 구매 요청 (관리 → 구매 요청) */
+.adm-shop .g-head{flex-wrap:wrap; row-gap:.5rem; margin-bottom:.6rem}
+.adm-shop .hint{margin-bottom:1rem}
+table.shop-log{min-width:52rem}
+table.shop-log td, table.shop-log th{padding:.65rem .5rem .65rem 0; vertical-align:top}
+table.shop-log td:last-child, table.shop-log th:last-child{text-align:left}
+table.shop-log small{display:block; font-size:.75rem; color:var(--smoke)}
+table.shop-log small.warn{color:var(--red-text)}
+table.shop-log .when{white-space:nowrap; font-size:.875rem}
+table.shop-log .num{white-space:nowrap; text-align:right; color:var(--gold); font-weight:600}
+table.shop-log .memo{max-width:14rem; color:var(--text-2); font-size:.875rem}
+table.shop-log .st{font-family:var(--f-pixel, inherit)}
+table.shop-log .st-approved .st{color:var(--green-hi)}
+table.shop-log .st-rejected .st{color:var(--red-text)}
+table.shop-log .st-cancelled{opacity:.6}
+.shop-act{display:grid; grid-template-columns:minmax(8rem, 1fr) auto auto; gap:.4rem; align-items:center; min-width:20rem}
+.shop-act .input{min-height:2.25rem; padding:.35rem .7rem}

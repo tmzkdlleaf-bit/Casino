@@ -1,18 +1,19 @@
-import { loadMine } from "./auth.js?v=20261009e";
-import { CONFIG } from "./config.js?v=20261009e";
-import { FOCUS, LOGS, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261009e";
-import { $, $$, announce, esc, toast } from "./dom.js?v=20261009e";
-import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261009e";
-import { renderMarkdown } from "./markdown.js?v=20261009e";
-import { state } from "./state.js?v=20261009e";
-import { ALL, renderAccount } from "./views.js?v=20261009e";
+import { loadMine } from "./auth.js?v=20261024a";
+import { CONFIG } from "./config.js?v=20261024a";
+import { FOCUS, LOGS, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261024a";
+import { $, $$, announce, esc, toast } from "./dom.js?v=20261024a";
+import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261024a";
+import { renderMarkdown } from "./markdown.js?v=20261024a";
+import { extOf, toWebP } from "./img.js?v=20261024a";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
+import { state } from "./state.js?v=20261024a";
+import { ALL, renderAccount } from "./views.js?v=20261024a";
 
 /* =========================================================
    ADMIN — 관리 페이지. 화면만 관리자에게 보이고, 실제 차단은 RLS + RPC가 담당
    ========================================================= */
 export const ADM = { tab: "characters", rows: {}, sel: null, dirty: false, tabsDrawn: false };
 
-export const ADMIN_TABS = [["characters", "캐릭터"], ["items", "아이템"], ["chapters", "지난 이야기"], ["game_slots", "게임 일정"], ["game_records", "전적"], ["members", "멤버"]];
+export const ADMIN_TABS = [["characters", "캐릭터"], ["items", "아이템"], ["shop", "구매 요청"], ["chapters", "지난 이야기"], ["game_slots", "게임 일정"], ["game_records", "전적"], ["members", "멤버"]];
 
 export const OPT = {
   kind: [["dealer", "딜러"], ["player", "참가자"]],
@@ -171,7 +172,7 @@ export async function admLoad(table){
 function ensureAdminCss(){
   if (document.getElementById("admin-css")) return;
   const l = document.createElement("link");
-  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261009e";
+  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261024a";
   document.head.append(l);
 }
 
@@ -189,13 +190,15 @@ export async function admShow(tab){
   panel.innerHTML = `<p class="adm-status" role="status">불러오는 중…</p>`;
   try {
     if (tab === "members"){ await admMembers(); return; }
+    if (tab === "shop"){ await admShop(); return; }
     const s = SCHEMAS[tab];
     await Promise.all([admLoad(tab), ...(s.needs || []).map(admLoad)]);
     admRenderCrud(tab);
   } catch (err){
-    const missing = tab === "game_records" && /42P01|PGRST205|game_records/.test(`${err?.code} ${err?.message}`);
+    const sqlFor = { game_records: "update-5.sql", shop: "update-7.sql" }[tab];
+    const missing = sqlFor && /42P01|PGRST205|game_records|shop_requests/.test(`${err?.code} ${err?.message}`);
     panel.innerHTML = missing
-      ? `<p class="form-note">전적 표가 아직 없습니다. Supabase → SQL Editor에서 <strong>supabase/update-5.sql</strong>을 한 번 실행한 뒤 이 화면을 새로 고침해 주세요.</p>`
+      ? `<p class="form-note">이 기능의 표가 아직 없습니다. Supabase → SQL Editor에서 <strong>supabase/${sqlFor}</strong>을 한 번 실행한 뒤 이 화면을 새로 고침해 주세요.</p>`
       : `<p class="form-error" role="alert">${esc(errMsg(err))}</p>`;
   }
 }
@@ -329,24 +332,6 @@ export function admCollect(form, s){
   if (s.touch) out.updated_at = new Date().toISOString();
   return out;
 }
-
-/* 이미지 → WebP (지원하지 않는 브라우저는 PNG/JPEG). 긴 변을 max px로 축소 */
-export async function toWebP(file, max){
-  if (!/^image\//.test(file.type)) throw new Error("이미지 파일만 올릴 수 있습니다.");
-  if (file.size > 25 * 1024 * 1024) throw new Error("25MB 이하 이미지만 올릴 수 있습니다.");
-  const bmp = await createImageBitmap(file);
-  const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
-  const w = Math.max(1, Math.round(bmp.width * k)), h = Math.max(1, Math.round(bmp.height * k));
-  const c = document.createElement("canvas"); c.width = w; c.height = h;
-  const ctx = c.getContext("2d"); ctx.imageSmoothingQuality = "high"; ctx.drawImage(bmp, 0, 0, w, h);
-  bmp.close?.();
-  const enc = (type, q) => new Promise(r => c.toBlob(r, type, q));
-  const webp = await enc("image/webp", .86);
-  if (webp && webp.type === "image/webp") return webp;
-  return file.type === "image/png" ? enc("image/png") : enc("image/jpeg", .88);
-}
-
-export const extOf = blob => ({ "image/webp": "webp", "image/png": "png", "image/jpeg": "jpg" })[blob.type] || "bin";
 
 export async function admSave(form){
   const table = form.dataset.table, s = SCHEMAS[table], row = admCurrentRow(table);
@@ -514,6 +499,76 @@ export async function admMembers(){
     </div>`;
 }
 
+/* ----- 구매 요청 (update-7.sql) — 승인하면 서버가 칩 차감 + 재고 감소 + 소지품 지급을 한 번에 ----- */
+const SHOP_ST = { pending: "승인 대기", approved: "승인", rejected: "거절", cancelled: "본인 취소" };
+ADM.shopFilter = "pending";
+export async function admShop(){
+  let q = sb.from("shop_requests").select("id, character_id, item_name, unit_price, quantity, total, status, memo, admin_note, requested_by, decided_by, created_at, decided_at")
+    .order("created_at", { ascending: ADM.shopFilter === "pending" }).limit(300);
+  if (ADM.shopFilter === "pending") q = q.eq("status", "pending");
+  const [rq, pc] = await Promise.all([q, sb.from("shop_requests").select("id", { count: "exact", head: true }).eq("status", "pending")]);
+  if (rq.error) throw rq.error;
+  const rows = rq.data || [], pend = pc.count ?? 0;
+  const charIds = [...new Set(rows.map(r => r.character_id))], userIds = [...new Set(rows.flatMap(r => [r.requested_by, r.decided_by]).filter(Boolean))];
+  const [bl, pr] = await Promise.all([
+    charIds.length ? sb.from("chip_balances").select("character_id, balance").in("character_id", charIds) : { data: [] },
+    userIds.length ? sb.from("profiles").select("id, display_name, email").in("id", userIds) : { data: [] }
+  ]);
+  const bal = new Map((bl.data || []).map(b => [b.character_id, b.balance ?? 0]));
+  const who = new Map((pr.data || []).map(p => [p.id, p.display_name || (p.email || "").split("@")[0] || "?"]));
+  const chars = new Map(ALL().map(c => [c.uuid, c]));
+  const tab = $("#tab-shop"); if (tab) tab.textContent = pend ? `구매 요청 (${pend})` : "구매 요청";
+  const when = iso => iso ? `${fmtDate(iso)} ${fmtTime(iso)}` : "";
+  admPanel().innerHTML = `
+    <div class="card adm-shop">
+      <div class="g-head"><h2 class="card-h" style="margin:0">구매 요청</h2>
+        <div class="seg" role="group" aria-label="보기" id="shop-filter" style="margin-left:auto">
+          <button type="button" data-shop-filter="pending" aria-pressed="${ADM.shopFilter === "pending"}">승인 대기 ${pend}</button>
+          <button type="button" data-shop-filter="all" aria-pressed="${ADM.shopFilter === "all"}">전체 기록</button>
+        </div></div>
+      <p class="hint">승인하면 그 순간 칩 차감 · 재고 감소 · 소지품 지급이 한 번에 처리됩니다. 칩이나 재고가 모자라면 승인되지 않습니다. 모든 요청과 처리 결과는 이 목록에 기록으로 남습니다.</p>
+      ${rows.length ? `<div class="table-scroll"><table class="members shop-log">
+        <caption class="sr">구매 요청 — 요청 시각, 캐릭터, 상품, 합계, 남긴 말, 처리</caption>
+        <thead><tr><th scope="col">요청</th><th scope="col">캐릭터</th><th scope="col">상품</th><th scope="col">합계</th><th scope="col">남긴 말</th><th scope="col">처리</th></tr></thead>
+        <tbody>${rows.map(r => {
+          const c = chars.get(r.character_id), b = bal.get(r.character_id) ?? 0, short = r.status === "pending" && b < r.total;
+          return `<tr class="st-${r.status}">
+            <td class="when">${esc(when(r.created_at))}<small>${esc(who.get(r.requested_by) || "")}</small></td>
+            <th scope="row" class="who" style="font-weight:400">${esc(c?.name || "(삭제된 캐릭터)")}<small${short ? ` class="warn"` : ""}>보유 ${b.toLocaleString("ko-KR")}칩${short ? " · 부족" : ""}</small></th>
+            <td>${esc(r.item_name)} ×${r.quantity}<small>${r.unit_price.toLocaleString("ko-KR")}칩씩</small></td>
+            <td class="num">${r.total.toLocaleString("ko-KR")}</td>
+            <td class="memo">${esc(r.memo || "")}</td>
+            <td class="act">${r.status === "pending" ? `<div class="shop-act" data-shop-row="${esc(r.id)}">
+                <label class="sr" for="sn-${esc(r.id)}">관리자 메모</label><input class="input" id="sn-${esc(r.id)}" placeholder="메모 (선택)" maxlength="200">
+                <button class="btn small primary" type="button" data-shop-ok>승인</button><button class="btn small danger" type="button" data-shop-no>거절</button></div>`
+              : `<span class="st">${SHOP_ST[r.status] || r.status}</span><small>${esc(when(r.decided_at))}${r.decided_by && r.status !== "cancelled" ? ` · ${esc(who.get(r.decided_by) || "")}` : ""}</small>${r.admin_note ? `<small>${esc(r.admin_note)}</small>` : ""}`}</td>
+          </tr>`; }).join("")}</tbody></table></div>`
+      : `<p class="empty-note">${ADM.shopFilter === "pending" ? "승인을 기다리는 요청이 없습니다." : "아직 구매 기록이 없습니다."}</p>`}
+      <p class="adm-status" id="adm-status" role="status"></p>
+    </div>`;
+  requestAnimationFrame(() => { const seg = $("#shop-filter"); if (seg && !$(".seg-ink", seg)){ seg.insertAdjacentHTML("beforeend", `<span class="seg-ink" aria-hidden="true"></span>`); } placeInk(seg); });
+}
+const placeInk = seg => { const a = seg && $('button[aria-pressed="true"]', seg), ink = seg && $(".seg-ink", seg); if (a && ink){ ink.style.left = a.offsetLeft + "px"; ink.style.width = a.offsetWidth + "px"; } };
+
+async function admShopDecide(btn, approve){
+  const box = btn.closest("[data-shop-row]"), id = box.dataset.shopRow, note = $("input", box).value.trim();
+  if (!approve && !confirm("이 요청을 거절할까요?")) return;
+  await withBusy(btn, async () => {
+    const { error } = await sb.rpc("admin_shop_decide", { p_request: id, p_approve: approve, p_note: note });
+    if (error){ toast(errMsg(error)); admStatus(errMsg(error)); return; }
+    toast(approve ? "승인했습니다 — 칩 차감·지급 완료" : "거절했습니다");
+    await admShop();
+    if (approve) refreshPublic();   // 재고·소지품이 바뀜
+  });
+}
+
+let shopT = 0;
+document.addEventListener("comu:shop-req", () => {
+  if (ADM.tab !== "shop" || !$("#admin-panel")?.isConnected || $('[data-page="admin"]').hidden) return;
+  if (document.activeElement?.closest?.("[data-shop-row]")) return;   // 메모를 쓰는 중이면 그대로 둠
+  clearTimeout(shopT); shopT = setTimeout(() => admShop().catch(() => {}), 300);
+});
+
 /* ----- 관리 페이지 이벤트 ----- */
 $("#admin-tabs").addEventListener("click", e => {
   const t = e.target.closest('[role="tab"]');
@@ -547,6 +602,10 @@ admPanel().addEventListener("click", async e => {
     admRenderEditor(ADM.tab); $("#adm-form-h").focus(); return;
   }
   if (t.closest("[data-adm-del]")) return admDelete();
+  const sf = t.closest("[data-shop-filter]");
+  if (sf){ ADM.shopFilter = sf.dataset.shopFilter; await admShop(); $(`[data-shop-filter="${ADM.shopFilter}"]`)?.focus(); return; }
+  if (t.closest("[data-shop-ok]")) return admShopDecide(t.closest("[data-shop-ok]"), true);
+  if (t.closest("[data-shop-no]")) return admShopDecide(t.closest("[data-shop-no]"), false);
   const pv = t.closest("[data-md-preview]");
   if (pv){
     const ta = document.getElementById(pv.dataset.mdPreview), box = document.getElementById(pv.dataset.mdPreview + "-prev");
@@ -579,7 +638,7 @@ admPanel().addEventListener("click", async e => {
   if (t.closest(".bm-link")){ e.preventDefault(); toast("이 버튼은 누르지 말고 즐겨찾기 막대로 끌어다 놓으세요"); return; }
   if (t.closest("[data-log-room]")) return withBusy(t.closest("[data-log-room]"), logRoom);
   if (t.closest("[data-log-lib]")) return logLibPaste();
-  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261009e"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
+  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261024a"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
   const logSave = t.closest("[data-log-save]");
   if (logSave) return withBusy(logSave, () => logSaveNow(logSave.dataset.id));
   const logDel = t.closest("[data-log-del]");
@@ -665,7 +724,7 @@ async function logRead(input){
   if (!f) return;
   if (f.size > 60 * 1024 * 1024){ fieldError(input, "60MB 이하 파일만 올릴 수 있습니다."); return; }
   $("#log-status").textContent = "읽는 중…";
-  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261009e");
+  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261024a");
   const messages = parseLog(await f.text());
   $("#log-status").textContent = "";
   if (!messages.length){ fieldError(input, "대사를 찾지 못했습니다. 코코포리아에서 내보낸 로그 파일이 맞는지 확인해 주세요."); return; }
@@ -711,7 +770,7 @@ function libSummary(extra = ""){
 }
 
 async function logRoom(){
-  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261009e");
+  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261024a");
   const id = roomIdFrom($("#log-room").value);
   if (!id){ $("#log-lib-status").textContent = "코코포리아 룸 링크 형식이 아닙니다. (https://ccfolia.com/rooms/…)"; $("#log-room").focus(); return; }
   try {
@@ -727,7 +786,7 @@ async function logRoom(){
 }
 
 async function logLibPaste(){
-  const { parseLibrary } = await import("./logparse.js?v=20261009e");
+  const { parseLibrary } = await import("./logparse.js?v=20261024a");
   try {
     const lib = parseLibrary($("#log-lib-text").value);
     if (!lib.length){ $("#log-lib-status").textContent = "캐릭터를 찾지 못했습니다."; return; }
@@ -771,7 +830,7 @@ export async function backupFaces(urls, onProgress = () => {}){
 
 async function logSaveNow(id){
   if (!LOG.messages) return;
-  const { pack } = await import("./logparse.js?v=20261009e");
+  const { pack } = await import("./logparse.js?v=20261024a");
   const include = new Set($$('input[name="log-tab"]:checked').map(i => LOG.info.tabs[+i.value].name));
   const narrators = new Set($$('input[name="log-narr"]:checked').map(i => LOG.info.speakers[+i.value].name));
   if (!include.size){ $("#log-status").textContent = "저장할 탭을 하나 이상 골라 주세요."; return; }

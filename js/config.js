@@ -46,7 +46,7 @@ export const HERO_CHIPS = [   // 아래 줄 창(화면 가운데부터)과 겹�
 export const SITE_NAME = "Titfortat777";
 
 // 문서 제목(탭 이름)에 쓰임
-export const PAGE_TITLES = { home: "", characters: "캐릭터", story: "지난 이야기", log: "지난 이야기", shop: "상점", game: "게임", settings: "설정", admin: "관리", login: "로그인", password: "비밀번호", notfound: "없는 페이지" };
+export const PAGE_TITLES = { home: "", characters: "캐릭터", story: "지난 이야기", log: "지난 이야기", shop: "상점", game: "게임", roulette: "러시안 룰렛", settings: "설정", admin: "관리", login: "로그인", password: "비밀번호", notfound: "없는 페이지" };
 
 export const CALM_KEY = "comu-calm";
 export const BGM_KEY = "comu-bgm";
@@ -61,4 +61,4 @@ export const SUITS = ["♠", "♥", "♣", "♦"];
 /* ---------- router ----------
    #home  #characters  #characters/d3  #story  #story/3  #game ...
    ------------------------------------------------------------------ */
-export const PAGES = ["home","characters","story","shop","game","settings","admin","login","password"];
+export const PAGES = ["home","characters","story","shop","game","roulette","settings","admin","login","password"];

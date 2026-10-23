@@ -1,9 +1,9 @@
-import { loadMine } from "./auth.js?v=20261009e";
-import { CONFIG } from "./config.js?v=20261009e";
-import { $ } from "./dom.js?v=20261009e";
-import { route } from "./router.js?v=20261009e";
-import { DATA, nav, state } from "./state.js?v=20261009e";
-import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261009e";
+import { loadMine } from "./auth.js?v=20261024a";
+import { CONFIG } from "./config.js?v=20261024a";
+import { $, toast } from "./dom.js?v=20261024a";
+import { route } from "./router.js?v=20261024a";
+import { DATA, nav, state } from "./state.js?v=20261024a";
+import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261024a";
 
 /* =========================================================
    DATA LAYER — Supabase 조회 → 화면용 DATA 모양으로 변환
@@ -161,6 +161,7 @@ export function showBootError(err){
    REALTIME — 내 칩이 새로고침 없이 갱신됨
    ========================================================= */
 export let chanProfile = null;
+let ledgerT = 0;
 
 export function subscribeProfile(){
   if (!USE_DB) return;
@@ -177,7 +178,18 @@ export function subscribeProfile(){
       if (wasAdmin !== state.isAdmin) route();
     })
     // 칩 기록은 RLS 때문에 내 캐릭터 것(관리자는 전부)만 도착함 → 잔액 다시 조회
-    .on("postgres_changes", { event: "INSERT", schema: "public", table: "chip_ledger" }, () => loadMine().then(renderAccount))
+    //   룰렛 정산처럼 한 번에 여러 줄이 들어오면 묶어서 한 번만 (0.4초)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "chip_ledger" }, () => {
+      clearTimeout(ledgerT);
+      ledgerT = setTimeout(() => loadMine().then(() => { renderAccount(); if (nav.current === "shop") renderShop(); }), 400);
+    })
+    // 구매 요청: 멤버는 자기 것만, 관리자는 전부 도착 (update-7.sql)
+    .on("postgres_changes", { event: "*", schema: "public", table: "shop_requests" }, ({ eventType, new: row }) => {
+      import("./shop.js?v=20261024a").then(m => m.onRequestChange(row));
+      if (!state.isAdmin) return;
+      if (eventType === "INSERT" && !state.mine.some(m => m.uuid === row.character_id)) toast(`새 구매 요청: ${row.item_name} ×${row.quantity}`);
+      document.dispatchEvent(new CustomEvent("comu:shop-req", { detail: row }));
+    })
     .subscribe();
   chanProfile.uid = uid;
 }

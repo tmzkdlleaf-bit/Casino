@@ -1,11 +1,12 @@
-import { CALM_KEY } from "./config.js?v=20261009e";
-import { sb, subscribeProfile } from "./data.js?v=20261009e";
-import { $, toast } from "./dom.js?v=20261009e";
-import { applyCalm } from "./effects.js?v=20261009e";
-import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261009e";
-import { route } from "./router.js?v=20261009e";
-import { state } from "./state.js?v=20261009e";
-import { renderAccount } from "./views.js?v=20261009e";
+import { CALM_KEY } from "./config.js?v=20261024a";
+import { sb, subscribeProfile } from "./data.js?v=20261024a";
+import { $, toast } from "./dom.js?v=20261024a";
+import { applyCalm } from "./effects.js?v=20261024a";
+import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261024a";
+import { route } from "./router.js?v=20261024a";
+import { state } from "./state.js?v=20261024a";
+import { renderAccount, renderShop } from "./views.js?v=20261024a";
+import { loadMyRequests } from "./shop.js?v=20261024a";
 
 /* =========================================================
    AUTH — 이메일 + 비밀번호, 초대제
@@ -25,8 +26,11 @@ export async function refreshAuth(session){
     }
   } else { state.profile = null; state.mine = []; }
   state.isAdmin = state.profile?.role === "admin";
+  await loadMyRequests();
   subscribeProfile();
   renderAccount();
+  if (state.ready) renderShop();
+  document.dispatchEvent(new Event("comu:auth"));   // 룰렛 화면 등이 버튼을 다시 그림
   // 로그인 상태나 권한이 바뀌었을 때만 현재 화면을 다시 판정 (토큰 갱신 때는 그대로)
   if (state.ready && before !== `${state.session?.user.id}|${state.isAdmin}`) route();
 }

@@ -853,6 +853,7 @@ table.rec .empty-note{padding:2rem .5rem}
 .rank h3{margin:0 0 .8rem; font-family:var(--f-serif); font-weight:900; font-size:1.0625rem}
 .rank ol{list-style:none; margin:0; padding:0; display:grid; gap:.7rem}
 .rank li{display:grid; grid-template-columns:1.6rem minmax(0, 1fr) auto; gap:.2rem .5rem; align-items:center}
+.rank li.slot-note{display:block}   /* 기록이 없을 때 안내 문구가 좁은 첫 칸에 갇혀 세로로 늘어서던 문제 */
 .rank .no{font-size:.8125rem; color:var(--smoke); font-variant-numeric:tabular-nums}
 .rank li:first-child .no{color:var(--red-text)}
 .rank .win-name{overflow:hidden; white-space:nowrap}
@@ -1094,3 +1095,223 @@ body.loading #cc-track:empty, body.loading #show, body.loading #shop:empty{anima
 .hero-title, .page-title, .pf-name{text-shadow:-.07em 0 0 rgba(239,26,114,.6), .07em 0 0 rgba(93,151,217,.7)}
 .g-panel, .card{box-shadow:inset 0 0 0 1px rgba(173,207,234,.1), 0 0 30px rgba(93,151,217,.12)}
 .latest, .wallet-pill, .table{background:radial-gradient(ellipse at 30% 0%, #2A4C9F, #0E1B45 80%)}
+
+/* =========================================================
+   20. 상점 — 구매 요청 · 내 요청 목록 (update-7.sql)
+   ========================================================= */
+.shop-detail:has(.buy) .sd-img{max-height:min(15rem, 30vh)}   /* 구매 칸이 있으면 이미지를 줄여 한 화면에 */
+.buy{display:grid; gap:.7rem; margin-top:.25rem; padding-top:.9rem; border-top:1px solid var(--line)}
+.buy .field label{margin-bottom:.3rem; font-size:var(--s-1)}
+.buy .input{min-height:2.5rem; padding:.5rem .8rem}
+.buy-row{display:grid; grid-template-columns:6.5rem minmax(0,1fr); gap:.9rem; align-items:end}
+.buy-total{display:flex; align-items:baseline; gap:.4rem; margin:0 0 .45rem; color:var(--text-2); font-size:var(--s-1)}
+.buy-total strong{font-family:var(--f-serif); font-size:1.375rem; color:var(--gold); line-height:1}
+.buy .hint{margin:0}
+.buy .warn, .warn{color:var(--red-text)}
+.buy .btn{justify-self:stretch}
+.my-reqs{margin-top:.5rem; padding:.9rem .25rem 0; border-top:1px dashed var(--line)}
+.my-reqs h3{margin:0 0 .6rem; font-family:var(--f-serif); font-size:1rem}
+.my-reqs ul{list-style:none; margin:0; padding:0; display:grid; gap:.4rem}
+.my-reqs li{display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:.5rem; align-items:center; padding:.5rem .6rem; border:1px solid var(--line-2); background:rgba(0,0,0,.25)}
+.my-reqs .t{min-width:0; font-size:.875rem}
+.my-reqs .m{display:block; font-size:.75rem; color:var(--smoke)}
+.my-reqs .m.note{color:var(--gold)}
+.my-reqs .st{font-family:var(--f-serif); font-size:.75rem; padding:.1rem .45rem; border:1px solid var(--line-strong); white-space:nowrap}
+.my-reqs .st-pending .st{border-color:var(--gold); color:var(--gold)}
+.my-reqs .st-approved .st{border-color:var(--green-hi); color:var(--green-hi)}
+.my-reqs .st-rejected .st{border-color:var(--red-text); color:var(--red-text)}
+.my-reqs .st-cancelled{opacity:.6}
+@media (max-width:860px){ .my-reqs{grid-column:1 / -1} .buy{grid-column:1 / -1} }
+
+/* =========================================================
+   21. 러시안 룰렛
+   ========================================================= */
+/* 로비 (게임 화면 왼쪽 위 칸) */
+.game-stage.rl-lobby{display:flex; flex-direction:column; align-items:stretch; gap:.75rem; min-height:0; max-height:clamp(14rem, 34vh, 22rem)}
+.rl-lobby-head{display:flex; align-items:center; gap:.9rem}
+.rl-lobby-head .h{margin:0; font-size:var(--s2)}
+.rl-lobby-head .btn{margin-left:auto}
+.rl-lobby-chip{--size:2.6rem}
+.rl-lobby-sub{margin:0; font-size:var(--s-1); color:var(--text-2)}
+.rl-rooms{list-style:none; margin:0; padding:0 .25rem 0 0; display:grid; gap:.45rem; overflow:auto; min-height:0; scrollbar-width:thin}
+.rl-room{display:grid; grid-template-columns:auto minmax(0,1fr) auto; grid-template-rows:auto auto; column-gap:.75rem; align-items:center; padding:.55rem .85rem; border:1px solid rgba(173,207,234,.3); background:rgba(0,0,0,.35); text-decoration:none; transition:border-color .3s, background .3s}
+.rl-room:hover{border-color:var(--gold); background:rgba(0,0,0,.5)}
+.rl-room .rl-dot{grid-row:1 / 3; width:.7rem; height:.7rem; background:var(--smoke)}
+.rl-room.st-playing .rl-dot{background:var(--velvet); box-shadow:0 0 10px var(--velvet); animation:blink 1.2s steps(2) infinite}
+.rl-room.st-waiting .rl-dot{background:var(--gold)}
+.rl-room .t{font-family:var(--f-serif); font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.rl-room .m{grid-column:2; font-size:.75rem; color:var(--text-2)}
+.rl-room .go{grid-column:3; grid-row:1 / 3; font-family:var(--f-serif); font-size:.8125rem; color:var(--gold)}
+.rl-room.st-finished, .rl-room.st-cancelled{opacity:.62}
+@keyframes blink{50%{opacity:.35}}
+
+/* 방 */
+.rl-page{grid-template-rows:auto minmax(0,1fr)}
+.rl-head .rl-id{display:grid; gap:.2rem}
+.rl-title{font-size:clamp(2rem, min(4.6vw, 7vh), 3.6rem); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.rl-tools{display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.45rem}
+.rl-wrap{display:grid; grid-template-columns:minmax(0,1fr) clamp(17rem, 24vw, 22rem); gap:var(--gap); min-height:0}
+.rl-main{display:grid; grid-template-rows:minmax(0,1fr) auto; gap:.75rem; min-height:0; min-width:0}
+.rl-table{position:relative; min-height:18rem; border-radius:50% / 42%; overflow:visible; isolation:isolate}
+.rl-table::before{content:""; position:absolute; inset:14% 18%; border-radius:50%; border:1px dashed rgba(173,207,234,.25); pointer-events:none}
+.rl-status{position:absolute; top:.6rem; left:50%; translate:-50% 0; z-index:3; margin:0; padding:.3rem .9rem; background:rgba(0,0,0,.6); border:1px solid var(--line); font-family:var(--f-serif); font-size:.875rem; white-space:nowrap; max-width:92%; overflow:hidden; text-overflow:ellipsis}
+.rl-status b{color:var(--gold); font-weight:700}
+.rl-status b.mine{color:var(--red-text)}
+.rl-status b.win{color:var(--ivory); text-shadow:0 0 12px var(--velvet)}
+.rl-ring{position:absolute; inset:0; z-index:2}
+.rl-error{position:absolute; inset:0; display:grid; place-content:center; gap:1rem; padding:2rem}
+
+.rl-seat{
+  --s:clamp(3.6rem, min(9vw, 12vh), 6.4rem);
+  position:absolute; translate:-50% -50%; display:grid; justify-items:center; gap:.3rem; width:calc(var(--s) + 3rem);
+  padding:0; border:0; background:none; color:var(--ivory); cursor:default; font:inherit;
+}
+button.rl-seat:not([aria-disabled="true"]){cursor:crosshair}
+.rl-seat .av{position:relative; display:grid; place-items:center; width:var(--s); height:var(--s); border-radius:50%; background:var(--black-2); border:2px solid rgba(238,243,250,.55); box-shadow:0 10px 24px rgba(0,0,0,.55); transition:filter .5s .35s, opacity .5s .35s, border-color .3s, box-shadow .3s}
+.rl-seat .av img{position:absolute; inset:0; width:100%; height:100%; border-radius:50%; object-fit:cover; object-position:50% 20%; pointer-events:none}
+.rl-seat .av .ph{font-family:var(--f-serif); font-size:calc(var(--s) * .38); color:var(--smoke)}
+.rl-seat .nm{display:inline-flex; align-items:center; gap:.3rem; max-width:100%; padding:.1rem .5rem; background:rgba(0,0,0,.65); font-family:var(--f-serif); font-size:.8125rem; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.rl-seat .nm .chip{--size:.8rem; box-shadow:none}
+.rl-seat .nm .chip::before{display:none}
+.rl-seat .nm small{font-size:.6875rem; color:var(--red-text)}
+.rl-seat .bet{position:absolute; top:0; right:.4rem; padding:0 .35rem; background:var(--gold); color:var(--black); font-family:var(--f-serif); font-size:.6875rem; line-height:1.5}
+.rl-seat.empty .av{border:2px dashed var(--line-strong); background:transparent; box-shadow:none}
+.rl-seat.empty .nm{color:var(--smoke); background:none}
+.rl-seat.turn .av{border-color:var(--velvet); box-shadow:0 0 0 4px rgba(239,26,114,.35), 0 0 26px rgba(239,26,114,.6); animation:turn 1.4s var(--ease-io) infinite}
+@keyframes turn{50%{box-shadow:0 0 0 7px rgba(239,26,114,.15), 0 0 34px rgba(239,26,114,.75)}}
+.rl-seat.me .nm{border-bottom:2px solid var(--red-text)}
+.rl-seat.aimed .av::after{content:""; position:absolute; inset:-9px; border-radius:50%; border:2px dashed var(--gold); animation:aim 6s linear infinite}
+@keyframes aim{to{rotate:360deg}}
+button.rl-seat:not([aria-disabled="true"]):hover .av{border-color:var(--gold)}
+.rl-seat.dead .av{filter:grayscale(1) brightness(.45); opacity:.75}
+.rl-seat .x{position:absolute; inset:18%; opacity:0; transition:opacity .4s .5s;
+  background:linear-gradient(45deg, transparent 44%, var(--red-text) 44% 56%, transparent 56%), linear-gradient(-45deg, transparent 44%, var(--red-text) 44% 56%, transparent 56%)}
+.rl-seat.dead .x{opacity:1}
+.rl-seat.dead .nm{text-decoration:line-through; color:var(--smoke)}
+.rl-seat.win .av{border-color:var(--gold); box-shadow:0 0 0 4px rgba(173,207,234,.35), 0 0 40px rgba(173,207,234,.7)}
+.rl-seat:focus-visible{outline:none}
+.rl-seat:focus-visible .av{outline:2px solid var(--focus); outline-offset:4px}
+/* 맞음: 별 모양 섬광 + 흔들림 (스케치의 터지는 선) */
+.rl-seat.zap .av{animation:shake .5s steps(6) 1; border-color:var(--ivory)}
+.rl-seat.zap .av::before{content:""; position:absolute; inset:-55%; z-index:-1;
+  background:conic-gradient(from 10deg, var(--velvet), #5D97D9, var(--velvet), #ADCFEA, var(--velvet), #5D97D9, var(--velvet));
+  clip-path:polygon(50% 0, 58% 32%, 88% 10%, 68% 40%, 100% 50%, 68% 60%, 90% 90%, 58% 68%, 50% 100%, 42% 68%, 10% 90%, 32% 60%, 0 50%, 32% 40%, 12% 10%, 42% 32%);
+  animation:burst .9s var(--ease) both}
+@keyframes burst{from{scale:.2; opacity:1} 60%{opacity:1} to{scale:1.15; opacity:0; rotate:30deg}}
+@keyframes shake{0%,100%{translate:0} 20%{translate:-6px 2px} 40%{translate:5px -3px} 60%{translate:-4px -2px} 80%{translate:3px 3px}}
+/* 빈 칸: 철컥 */
+.rl-seat.clack::after{content:attr(data-say); position:absolute; top:-1.6rem; left:50%; translate:-50% 0; padding:.15rem .55rem; background:var(--ivory); color:var(--black); font-family:var(--f-serif); font-size:.8125rem; white-space:nowrap; animation:pop .85s var(--ease) both}
+@keyframes pop{from{opacity:0; translate:-50% .5rem} 20%{opacity:1; translate:-50% 0} 80%{opacity:1} to{opacity:0}}
+
+/* 가운데: 전기 충격기 + 탄창 */
+.rl-center{position:absolute; left:50%; top:48%; translate:-50% -50%; z-index:1; display:grid; justify-items:center; gap:.1rem; pointer-events:none}
+/* 정사각형 칸 안에서 돌아서 아래 탄창과 겹치지 않음 */
+.rl-gun{display:grid; place-items:center; width:clamp(6rem, 13vw, 9rem); aspect-ratio:1; transform:rotate(var(--aim, -90deg)); transition:transform .6s var(--ease)}
+.rl-gun-svg{display:block; width:100%; overflow:visible; filter:drop-shadow(0 6px 10px rgba(0,0,0,.6))}
+.rl-gun .g-body{fill:#1A2550; stroke:#ADCFEA; stroke-width:2}
+.rl-gun .g-grip{fill:#0B1233; stroke:#ADCFEA; stroke-width:2}
+.rl-gun .g-head{fill:#EF1A72; stroke:#ADCFEA; stroke-width:2}
+.rl-gun .g-prong{fill:#ADCFEA}
+.rl-gun .g-led{fill:#5D97D9; animation:led 1.6s steps(2) infinite}
+.rl-gun .g-dot{fill:#EEF3FA}
+@keyframes led{50%{fill:#EF1A72}}
+.rl-gun.kick .rl-gun-svg{animation:kick .35s var(--ease) 1}
+@keyframes kick{30%{translate:-10px 0}}
+.rl-cyl{list-style:none; margin:0; padding:.3rem .5rem; display:flex; gap:.35rem; background:rgba(0,0,0,.5); border:1px solid var(--line)}
+.rl-cyl:empty{display:none}
+.rl-cyl li{width:.8rem; height:.8rem; border-radius:50%; border:1.5px solid var(--gold); background:radial-gradient(circle, #ADCFEA 0 30%, #1D367B 35%)}
+.rl-cyl li.used{background:transparent; border-color:var(--line-strong); opacity:.6}
+
+/* 번개 */
+.rl-fx{position:absolute; inset:0; width:100%; height:100%; z-index:4; pointer-events:none; overflow:visible; transition:opacity .3s}
+.rl-fx.fade{opacity:0}
+.rl-fx polyline{fill:none; stroke-linejoin:round; stroke-linecap:round}
+.rl-fx .b-glow-m{stroke:#EF1A72; stroke-width:12; opacity:.45; filter:blur(5px)}
+.rl-fx .b-glow-b{stroke:#5D97D9; stroke-width:7; opacity:.75; filter:blur(2px)}
+.rl-fx .b-blue{stroke:#5D97D9; stroke-width:2.6}
+.rl-fx .b-mag{stroke:#EF1A72; stroke-width:2.2}
+.rl-fx .b-core{stroke:#EEF3FA; stroke-width:1.4}
+.rl-fx .b-hit{fill:rgba(239,26,114,.28); stroke:#ADCFEA; stroke-width:2; filter:blur(1px)}
+.rl-table.rl-flash::after{content:""; position:absolute; inset:0; z-index:5; border-radius:inherit; pointer-events:none; background:radial-gradient(circle, rgba(173,207,234,.35), rgba(239,26,114,.25) 45%, transparent 75%); animation:rl-flash .5s steps(4) 1 both}
+@keyframes rl-flash{from{opacity:1} to{opacity:0}}
+
+/* 아래 버튼 */
+.rl-bar{display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:.6rem; min-height:3.5rem}
+.rl-act{min-width:8.5rem; min-height:3rem; font-size:1rem}
+.rl-act.shoot:not([disabled]){background:var(--pink-fill); border-color:var(--pink-fill); color:#fff; box-shadow:0 0 22px rgba(239,26,114,.35)}
+.rl-act.shoot:not([disabled]):hover{background:#E0136A}
+.rl-act .k{color:var(--gold)}
+.rl-note{flex-basis:100%; margin:0; text-align:center; font-size:var(--s-1); color:var(--text-2)}
+.rl-note a{color:var(--gold)}
+.rl-sel{width:auto; min-width:12rem}
+
+/* 오른쪽: 채팅 */
+.rl-side{min-height:0; padding-bottom:.9rem}
+.rl-side .g-head .more{color:var(--gold)}
+.rl-chat{flex:1; min-height:0; margin-inline:-1.25rem; padding:0 1.25rem}
+.rl-log{list-style:none; margin:0; padding:.25rem 0; display:grid; gap:.35rem; font-size:.875rem}
+.rl-log li{position:relative; padding-left:1rem; overflow-wrap:anywhere}
+.rl-log li::before{content:""; position:absolute; left:0; top:.55em; width:.45rem; height:.55rem; background:var(--line-strong); clip-path:polygon(0 0, 100% 50%, 0 100%)}
+.rl-log .c b{margin-right:.4rem; font-family:var(--f-serif); color:var(--gold)}
+.rl-log .c time{margin-left:.4rem; font-size:.6875rem; color:var(--smoke)}
+.rl-log .s{color:var(--smoke); font-size:.8125rem}
+.rl-log .sh{font-family:var(--f-serif); font-size:.8125rem}
+.rl-log .sh.live{color:var(--red-text)}
+.rl-log .sh.live::before{background:var(--velvet)}
+.rl-log .sh .k{margin-right:.3rem}
+.rl-say{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.45rem; margin-top:.6rem; flex:none}
+.rl-say .input{min-height:2.5rem; padding:.45rem .8rem}
+.rl-say .btn{min-width:2.75rem; padding-inline:.8rem}
+.rl-pick > div{display:grid; gap:.1rem}
+.rl-ava-prev{width:7rem; height:7rem; border-radius:50%; overflow:hidden}
+.rl-ava-prev img{width:100%; height:100%; object-fit:cover}
+
+@media (max-width:980px){
+  .rl-wrap{grid-template-columns:1fr; grid-template-rows:minmax(22rem, 1fr) minmax(14rem, 18rem); overflow:auto}
+  .rl-main{min-height:24rem}
+}
+@media (max-width:600px){
+  .rl-seat{--s:3.3rem; width:5.2rem}
+  .rl-seat .nm{font-size:.75rem}
+  .rl-act{min-width:0; flex:1 1 30%}
+  .rl-tools .btn{min-height:2rem; padding:.3rem .7rem; font-size:.8125rem}
+}
+
+/* =========================================================
+   22. 도트 디자인 — 갈무리 글꼴 · 깎은 모서리 · 꺾쇠 테두리 (첫 시안)
+   ========================================================= */
+:root{
+  --f-pixel:"Galmuri11","Galmuri9",ui-monospace,monospace;
+  --f-serif:var(--f-pixel);              /* 제목에 쓰던 자리를 도트 글꼴로 */
+  --r:0px;
+  --cut:6px;
+}
+.page-title, .hero-title, .pf-name, h2.h, .card-h, .g-head h2{font-weight:700; letter-spacing:0}
+.btn, .seg button, .tip, .eyebrow, .ep, .more, .tag, .link-back, .stat small, .kv dt, .field label, .label-like,
+.dock-menu a, .dock-menu button, .dock .login, .me-bal, .price, .sd-price, table.rec th, table.members th, .toast, .rl-note{font-family:var(--f-pixel)}
+.btn{border-radius:0; letter-spacing:0}
+/* 모서리를 깎은 상자 */
+.btn, .item, .stat, .wallet-pill, .toast, .rl-room, .rl-status, .my-reqs li, .tag, .dock .login, .me{
+  clip-path:polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%, 0 calc(100% - var(--cut)), 0 var(--cut));
+}
+.btn{--cut:5px} .tag{--cut:3px}
+.seg, .seg button, .seg .seg-ink, .input, .g-panel, .card, .pcard, .card-back, .dock-menu, .sold-tag, .stat, .rank, .dlg{border-radius:0}
+.btn.primary{background:var(--velvet); border-color:var(--velvet)}
+.btn.primary:hover{background:#FF3A8A; border-color:#FF3A8A}
+/* 펠트 테이블: 네 귀퉁이 꺾쇠 */
+.table::after{
+  content:""; position:absolute; inset:6px; pointer-events:none; z-index:6;
+  --c:var(--gold); --l:18px; --w:2px;
+  background:
+    linear-gradient(var(--c) 0 0) 0 0 / var(--l) var(--w), linear-gradient(var(--c) 0 0) 0 0 / var(--w) var(--l),
+    linear-gradient(var(--c) 0 0) 100% 0 / var(--l) var(--w), linear-gradient(var(--c) 0 0) 100% 0 / var(--w) var(--l),
+    linear-gradient(var(--c) 0 0) 0 100% / var(--l) var(--w), linear-gradient(var(--c) 0 0) 0 100% / var(--w) var(--l),
+    linear-gradient(var(--c) 0 0) 100% 100% / var(--l) var(--w), linear-gradient(var(--c) 0 0) 100% 100% / var(--w) var(--l);
+  background-repeat:no-repeat;
+}
+.rl-table::after{display:none}   /* 둥근 룰렛 테이블은 꺾쇠 대신 섬광 자리로 씀 */
+.rl-table.rl-flash::after{display:block}
+/* 큰 제목: 분홍 그림자 한 칸 */
+.hero-title{text-shadow:.06em .06em 0 #8F0D45, -.05em 0 0 rgba(239,26,114,.5), .05em 0 0 rgba(93,151,217,.6)}
+/* 글꼴 크기: 도트 글꼴은 같은 크기에서 더 커 보여 조금 줄임 */
+.page-title{font-size:clamp(2.25rem, min(5.8vw, 9vh), 5rem)}
