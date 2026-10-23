@@ -3,11 +3,11 @@
    수정 범위: 나이 · 키 · 성격 키워드 · 설명 · 링크 · 음악(유튜브)
    실제 권한 확인은 DB 함수 owner_update_character (supabase/update-6.sql)
    ========================================================= */
-import { sb } from "./data.js?v=20261024c";
-import { $, $$, esc, toast } from "./dom.js?v=20261024c";
-import { errMsg, showMsg } from "./forms.js?v=20261024c";
-import { nav } from "./state.js?v=20261024c";
-import { ALL, canEdit, renderProfile, ytId } from "./views.js?v=20261024c";
+import { publicUrl, sb } from "./data.js?v=20261024d";
+import { $, $$, esc, toast } from "./dom.js?v=20261024d";
+import { errMsg, showMsg } from "./forms.js?v=20261024d";
+import { nav } from "./state.js?v=20261024d";
+import { ALL, canEdit, renderProfile, ytId } from "./views.js?v=20261024d";
 
 const MAX_LINKS = 10;
 const current = () => ALL().find(c => c.id === nav.lastProfile);
@@ -30,6 +30,40 @@ document.addEventListener("click", e => {
   if (!b) return;
   b.getAttribute("aria-pressed") === "true" ? stopCharMusic() : playCharMusic();
 });
+
+/* ---------- 게임용 이미지 (룰렛 자리) — 캐릭터 이미지와 따로 ---------- */
+let gimg = { path: "", file: null };
+async function loadGameImg(c){
+  gimg = { path: "", file: null };
+  $("#pe-gimg").value = ""; $("#pe-gimg-del").checked = false;
+  const prev = $("#pe-gimg-prev");
+  prev.innerHTML = `<span aria-hidden="true">…</span>`;
+  const { data } = await sb.from("roulette_avatars").select("path").eq("character_id", c.uuid).maybeSingle();
+  gimg.path = data?.path || "";
+  prev.innerHTML = gimg.path ? `<img src="${esc(publicUrl("roulette", gimg.path))}" alt="현재 게임용 이미지">` : `<span aria-hidden="true">없음</span>`;
+  $("#pe-gimg-del-l").hidden = !gimg.path;
+}
+$("#pe-gimg").addEventListener("change", e => {
+  const f = e.target.files[0];
+  if (f && !/^image\//.test(f.type)){ e.target.value = ""; return; }
+  gimg.file = f || null;
+  if (f) $("#pe-gimg-prev").innerHTML = `<img src="${URL.createObjectURL(f)}" alt="새로 올릴 게임용 이미지">`;
+});
+async function saveGameImg(c){
+  if (gimg.file){
+    const { toWebP, extOf } = await import("./img.js?v=20261024d");
+    const blob = await toWebP(gimg.file, 512), path = `${c.uuid}/${Date.now()}.${extOf(blob)}`;
+    const up = await sb.storage.from("roulette").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
+    if (up.error) throw up.error;
+    const { error } = await sb.rpc("roulette_set_avatar", { p_character: c.uuid, p_path: path });
+    if (error){ sb.storage.from("roulette").remove([path]); throw error; }
+    if (gimg.path) sb.storage.from("roulette").remove([gimg.path]);
+  } else if ($("#pe-gimg-del").checked && gimg.path){
+    const { error } = await sb.rpc("roulette_set_avatar", { p_character: c.uuid, p_path: null });
+    if (error) throw error;
+    sb.storage.from("roulette").remove([gimg.path]);
+  }
+}
 
 /* ---------- 수정 창 ---------- */
 const dlg = $("#pf-dlg"), form = $("#pf-form");
@@ -54,6 +88,7 @@ function openEdit(){
   $("#pe-bgm").value = c.bgm || "";
   $("#pe-links").innerHTML = (c.links || []).map(l => linkRow(l, seq++)).join("");
   syncAdd();
+  loadGameImg(c);
   dlg.showModal();
   $("#pe-age").focus();
 }
@@ -81,6 +116,8 @@ async function save(){
     showMsg(err, missing ? "수정 기능이 아직 준비되지 않았습니다. 관리자가 supabase/update-6.sql을 실행해야 합니다." : errMsg(error));
     return;
   }
+  try { await saveGameImg(c); }
+  catch (e2){ btn.disabled = false; showMsg(err, "다른 내용은 저장했지만 게임용 이미지는 올리지 못했습니다: " + errMsg(e2)); Object.assign(c, vals); return; }
   Object.assign(c, vals);              // 화면 데이터 바로 갱신 (다른 사람에게는 새로 고침 때 반영)
   dlg.close();
   stopCharMusic();

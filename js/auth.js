@@ -1,12 +1,13 @@
-import { CALM_KEY } from "./config.js?v=20261024c";
-import { sb, subscribeProfile } from "./data.js?v=20261024c";
-import { $, toast } from "./dom.js?v=20261024c";
-import { applyCalm } from "./effects.js?v=20261024c";
-import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261024c";
-import { route } from "./router.js?v=20261024c";
-import { state } from "./state.js?v=20261024c";
-import { renderAccount, renderShop } from "./views.js?v=20261024c";
-import { loadMyRequests } from "./shop.js?v=20261024c";
+import { CALM_KEY } from "./config.js?v=20261024d";
+import { sb, subscribeProfile } from "./data.js?v=20261024d";
+import { $, toast } from "./dom.js?v=20261024d";
+import { applyCalm } from "./effects.js?v=20261024d";
+import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261024d";
+import { route } from "./router.js?v=20261024d";
+import { state } from "./state.js?v=20261024d";
+import { renderAccount, renderShop } from "./views.js?v=20261024d";
+import { loadMyRequests } from "./shop.js?v=20261024d";
+import { loadChipRequests, renderChipRequests } from "./chipreq.js?v=20261024d";
 
 /* =========================================================
    AUTH — 이메일 + 비밀번호, 초대제
@@ -26,7 +27,8 @@ export async function refreshAuth(session){
     }
   } else { state.profile = null; state.mine = []; }
   state.isAdmin = state.profile?.role === "admin";
-  await loadMyRequests();
+  await Promise.all([loadMyRequests(), loadChipRequests()]);
+  renderChipRequests();
   subscribeProfile();
   renderAccount();
   if (state.ready) renderShop();

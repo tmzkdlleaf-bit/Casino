@@ -1,9 +1,9 @@
-import { CONFIG, SUITS } from "./config.js?v=20261024c";
-import { EXTRA, RECORDS, USE_DB } from "./data.js?v=20261024c";
-import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261024c";
-import { initShow, layoutCast } from "./effects.js?v=20261024c";
-import { buyHtml, myReqHtml } from "./shop.js?v=20261024c";
-import { DATA, nav, state } from "./state.js?v=20261024c";
+import { CONFIG, SUITS } from "./config.js?v=20261024d";
+import { EXTRA, RECORDS, USE_DB } from "./data.js?v=20261024d";
+import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261024d";
+import { initShow, layoutCast } from "./effects.js?v=20261024d";
+import { buyHtml, myReqHtml } from "./shop.js?v=20261024d";
+import { DATA, nav, state } from "./state.js?v=20261024d";
 
 /* ---------- render ---------- */
 export const timeTag = (label, iso) => `<time${iso ? ` datetime="${esc(iso)}"` : ""}>${esc(label)}</time>`;
@@ -76,7 +76,7 @@ export function renderQuickLinks(){
 }
 
 export function renderHome(){
-  $("#roster-meta").textContent = `딜러 ${DATA.dealers.length}명 / 참가자 ${DATA.players.length}명`;
+  $("#roster-meta").textContent = `직원 ${DATA.dealers.length}명 / 참가자 ${DATA.players.length}명`;
   renderNext();
   renderSchedule();
   renderQuickLinks();
@@ -105,10 +105,10 @@ export function renderCast(){
   $("#cc-prev").hidden = $("#cc-next").hidden = list.length < 2;
   if (!list.length){ track.innerHTML = `<p class="empty-note">등록된 캐릭터가 없습니다.</p>`; $("#cc-count").textContent = ""; return; }
   track.innerHTML = list.map((c, i) => {
-    const dealer = c.role === "딜러";
+    const dealer = c.role === "직원";
     return `<a class="cc ${dealer ? "dealer" : "player"}${dealer && isRed(c.suit) ? " red-suit" : ""}" href="#characters/${c.id}" data-i="${i}" data-id="${c.id}" draggable="false"${dealer ? "" : ` style="--band:${c.chip === "red" ? "var(--velvet)" : "var(--felt)"}"`}>
       <span class="cc-in">
-        <span class="cc-name">${esc(c.name)}</span>
+        <span class="cc-name">${esc(c.name)}</span>${c.roleTitle ? `<span class="cc-role">${esc(c.roleTitle)}</span>` : ""}
         <span class="cc-frame">
           <span class="img">${imgSlot(c, "", i > 6, CC_SIZES)}</span>
           ${dealer ? `<span class="pip">${suitIcon(c.suit)}</span>` : `<span class="chip ${c.chip} badge" aria-hidden="true"></span>`}
@@ -137,13 +137,13 @@ export function updateEditBtn(){
 export function renderProfile(id, { quiet = false } = {}){
   const c = ALL().find(x => x.id === id);
   if (!c) return false;
-  const dealer = c.role === "딜러", list = dealer ? DATA.dealers : DATA.players, idx = list.indexOf(c), n = list.length;
+  const dealer = c.role === "직원", list = dealer ? DATA.dealers : DATA.players, idx = list.indexOf(c), n = list.length;
   const prev = list[(idx - 1 + n) % n], next = list[(idx + 1) % n];
 
   const v = $("#pf-visual");
   v.className = "pf-visual " + (dealer ? "dealer" : "player") + (dealer && isRed(c.suit) ? " red-suit" : "");
   v.style.setProperty("--band", c.chip === "red" ? "var(--velvet)" : "var(--felt)");
-  v.innerHTML = `<span class="img">${imgSlot(c, `${c.name} 캐릭터 이미지`, false, "(max-width: 860px) 100vw, 55vw")}</span>` +
+  v.innerHTML = `<a class="btn pf-back" href="#characters"><span class="back-ico" aria-hidden="true"></span>캐릭터 목록으로</a><span class="img">${imgSlot(c, `${c.name} 캐릭터 이미지`, false, "(max-width: 860px) 100vw, 55vw")}</span>` +
     (dealer ? `<span class="pip">${suitIcon(c.suit)}</span>` : `<span class="chip ${c.chip} badge" aria-hidden="true"></span>`) +
     (n > 1 ? `<nav class="pf-nav" aria-label="다른 ${c.role}">
       <a class="pf-arrow arrow prev" href="#characters/${prev.id}"><span class="sr">이전 ${c.role}: </span><span class="nm">${esc(prev.name)}</span></a>
@@ -153,7 +153,7 @@ export function renderProfile(id, { quiet = false } = {}){
     (ytId(c.bgm) ? `<div class="pf-music"><button class="btn small pf-play" type="button" id="pf-play" aria-pressed="false"><span class="note" aria-hidden="true">♪</span><span class="lb">음악 재생</span></button><div class="pf-yt" id="pf-yt"></div></div>` : "");
 
   const role = $("#pf-role");
-  role.textContent = c.role;
+  role.textContent = c.role + (c.roleTitle ? ` · ${c.roleTitle}` : "");
   role.className = "role " + (dealer ? "tag-d" : "tag-p");
   const name = $("#pf-name");
   name.dataset.text = c.name;
@@ -277,7 +277,7 @@ export function renderAccount(){
   if (on){
     const mine = myChars();
     $("#acct-email").textContent = state.session.user.email || "—";
-    $("#acct-char").textContent = mine.length ? mine.map(c => `${c.name} (${c.role})`).join(", ") : "연결 안 됨";
+    $("#acct-char").textContent = mine.length ? mine.map(c => `${c.name} (${c.roleTitle || c.role})`).join(", ") : "연결 안 됨";
     $("#acct-chips").textContent = mine.length ? mine.map(c => `${mine.length > 1 ? c.name + " " : ""}${c.balance.toLocaleString("ko-KR")}칩`).join(", ") : "—";
     if (document.activeElement !== $("#set-name")) $("#set-name").value = p?.display_name || "";
     $("#pw-user").value = state.session.user.email || "";
@@ -298,7 +298,7 @@ export function renderAccount(){
 /* =========================================================
    전적 — 게임 화면(표 + 요약 + 승리 순위)과 홈 '최근 전적'
    ========================================================= */
-const markOf = c => c.role === "딜러"
+const markOf = c => c.role === "직원"
   ? `<span class="mk${isRed(c.suit) ? " red" : ""}">${suitIcon(c.suit)}</span>`
   : `<span class="chip ${c.chip}" aria-hidden="true"></span>`;
 const winName = c => c ? `<a class="win-name" href="#characters/${c.id}">${markOf(c)}${esc(c.name)}</a>` : `<span class="muted">—</span>`;

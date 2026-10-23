@@ -1,22 +1,22 @@
-import { loadMine } from "./auth.js?v=20261024c";
-import { CONFIG } from "./config.js?v=20261024c";
-import { FOCUS, LOGS, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261024c";
-import { $, $$, announce, esc, toast } from "./dom.js?v=20261024c";
-import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261024c";
-import { renderMarkdown } from "./markdown.js?v=20261024c";
-import { extOf, toWebP } from "./img.js?v=20261024c";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
-import { state } from "./state.js?v=20261024c";
-import { ALL, renderAccount } from "./views.js?v=20261024c";
+import { loadMine } from "./auth.js?v=20261024d";
+import { CONFIG } from "./config.js?v=20261024d";
+import { FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261024d";
+import { $, $$, announce, esc, toast } from "./dom.js?v=20261024d";
+import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261024d";
+import { renderMarkdown } from "./markdown.js?v=20261024d";
+import { extOf, toWebP } from "./img.js?v=20261024d";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
+import { state } from "./state.js?v=20261024d";
+import { ALL, renderAccount } from "./views.js?v=20261024d";
 
 /* =========================================================
    ADMIN — 관리 페이지. 화면만 관리자에게 보이고, 실제 차단은 RLS + RPC가 담당
    ========================================================= */
 export const ADM = { tab: "characters", rows: {}, sel: null, dirty: false, tabsDrawn: false };
 
-export const ADMIN_TABS = [["characters", "캐릭터"], ["items", "아이템"], ["shop", "구매 요청"], ["chapters", "지난 이야기"], ["game_slots", "게임 일정"], ["game_records", "전적"], ["members", "멤버"]];
+export const ADMIN_TABS = [["characters", "캐릭터"], ["items", "아이템"], ["shop", "구매 요청"], ["chipreq", "칩 정산"], ["chapters", "지난 이야기"], ["game_slots", "게임 일정"], ["game_records", "전적"], ["members", "멤버"]];
 
 export const OPT = {
-  kind: [["dealer", "딜러"], ["player", "참가자"]],
+  kind: [["dealer", "직원"], ["player", "참가자"]],
   suit: [["spade", "♠ 스페이드"], ["heart", "♥ 하트"], ["club", "♣ 클럽"], ["diamond", "♦ 다이아"]],
   chip: [["green", "남색"], ["red", "분홍"]]
 };
@@ -29,10 +29,13 @@ const CHAR_FIELDS = [
   ] },
   { row: [
     { k: "kind", label: "구분", type: "select", required: true, options: () => OPT.kind },
+    { k: "role_title", label: "역할", type: "text", max: 20, hint: "예: 딜러, 바텐더, 벨 걸, 상점 주인, 총관리인 — 비우면 구분만 표시" }
+  ] },
+  { row: [
     { k: "sort_order", label: "표시 순서", type: "number", min: 0 }
   ] },
   { row: [
-    { k: "suit", label: "카드 무늬 (딜러)", type: "select", options: () => [["", "없음"], ...OPT.suit] },
+    { k: "suit", label: "카드 무늬 (직원)", type: "select", options: () => [["", "없음"], ...OPT.suit] },
     { k: "chip_color", label: "칩 색 (참가자)", type: "select", options: () => [["", "없음"], ...OPT.chip] }
   ] },
   { row: [
@@ -50,10 +53,10 @@ const CHAR_FIELDS = [
 export const SCHEMAS = {
   characters: {
     label: "캐릭터", key: "id", touch: true, needs: ["items"],
-    get select(){ return `id, slug, name, kind, suit, chip_color, image_path, thumb_path${FOCUS.ok ? ", image_focus" : ""}, age, height, keywords, description, sort_order`; },
+    get select(){ return `id, slug, name, kind${ROLE.ok ? ", role_title" : ""}, suit, chip_color, image_path, thumb_path${FOCUS.ok ? ", image_focus" : ""}, age, height, keywords, description, sort_order`; },
     order: [["sort_order"]],
-    title: r => r.name, meta: r => `${r.kind === "dealer" ? "딜러" : "참가자"} · ${r.slug}`,
-    get fields(){ return CHAR_FIELDS.filter(f => f.k !== "image_focus" || FOCUS.ok); },
+    title: r => r.name, meta: r => `${r.role_title || (r.kind === "dealer" ? "직원" : "참가자")} · ${r.slug}`,
+    get fields(){ return CHAR_FIELDS.map(f => f.row ? { row: f.row.filter(x => x.k !== "role_title" || ROLE.ok) } : f).filter(f => (f.k !== "image_focus" || FOCUS.ok) && (!f.row || f.row.length)); },
     after: row => `
       <section class="card sub-editor" aria-labelledby="inv-h">
         <h3 id="inv-h">소지품</h3>
@@ -64,6 +67,17 @@ export const SCHEMAS = {
           <button class="btn primary" type="button" data-inv-save data-char="${esc(row.id)}">소지품 저장</button>
         </div>
         <p class="adm-status" id="inv-status" role="status"></p>
+      </section>
+      <section class="card sub-editor" aria-labelledby="gimg-h" id="gimg-sec">
+        <h3 id="gimg-h">게임용 이미지 (룰렛 자리)</h3>
+        <p class="hint">룰렛 테이블 자리에 보이는 이미지입니다. 위의 캐릭터 이미지(목록·프로필)와 따로입니다. 정사각형으로 잘려 보이고, 비워 두면 캐릭터 이미지를 씁니다.</p>
+        <div class="img-field"><div class="img-prev rl-ava-prev" id="gimg-prev"><span aria-hidden="true">…</span></div>
+          <div><label class="sr" for="gimg-file">게임용 이미지 파일</label><input type="file" id="gimg-file" accept="image/*"></div></div>
+        <div class="form-actions">
+          <button class="btn primary" type="button" data-gimg-save data-char="${esc(row.id)}">게임용 이미지 저장</button>
+          <button class="btn danger" type="button" data-gimg-del data-char="${esc(row.id)}" disabled>지우기</button>
+        </div>
+        <p class="adm-status" id="gimg-status" role="status"></p>
       </section>`
   },
   items: {
@@ -111,7 +125,7 @@ export const SCHEMAS = {
         { k: "played_at", label: "일시", type: "datetime", hint: "비우면 저장하는 시각" }
       ] },
       { row: [
-        { k: "winner_id", label: "승자", type: "select", options: () => [["", "없음 (무승부 등)"], ...(ADM.rows.characters || []).map(c => [c.id, `${c.name} (${c.kind === "dealer" ? "딜러" : "참가자"})`])] },
+        { k: "winner_id", label: "승자", type: "select", options: () => [["", "없음 (무승부 등)"], ...(ADM.rows.characters || []).map(c => [c.id, `${c.name} (${c.kind === "dealer" ? "직원" : "참가자"})`])] },
         { k: "chips", label: "칩 변동", type: "number", hint: "표시용 숫자 — 실제 칩 지급·차감은 ‘멤버’ 탭에서" }
       ] },
       { k: "participant_ids", label: "참가한 캐릭터", type: "multi", options: () => (ADM.rows.characters || []).map(c => [c.id, c.name]) },
@@ -172,7 +186,7 @@ export async function admLoad(table){
 function ensureAdminCss(){
   if (document.getElementById("admin-css")) return;
   const l = document.createElement("link");
-  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261024c";
+  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261024d";
   document.head.append(l);
 }
 
@@ -191,12 +205,13 @@ export async function admShow(tab){
   try {
     if (tab === "members"){ await admMembers(); return; }
     if (tab === "shop"){ await admShop(); return; }
+    if (tab === "chipreq"){ await admChipReq(); return; }
     const s = SCHEMAS[tab];
     await Promise.all([admLoad(tab), ...(s.needs || []).map(admLoad)]);
     admRenderCrud(tab);
   } catch (err){
-    const sqlFor = { game_records: "update-5.sql", shop: "update-7.sql" }[tab];
-    const missing = sqlFor && /42P01|PGRST205|game_records|shop_requests/.test(`${err?.code} ${err?.message}`);
+    const sqlFor = { game_records: "update-5.sql", shop: "update-7.sql", chipreq: "update-9.sql" }[tab];
+    const missing = sqlFor && /42P01|PGRST205|game_records|shop_requests|chip_requests/.test(`${err?.code} ${err?.message}`);
     panel.innerHTML = missing
       ? `<p class="form-note">이 기능의 표가 아직 없습니다. Supabase → SQL Editor에서 <strong>supabase/${sqlFor}</strong>을 한 번 실행한 뒤 이 화면을 새로 고침해 주세요.</p>`
       : `<p class="form-error" role="alert">${esc(errMsg(err))}</p>`;
@@ -310,7 +325,7 @@ export function admRenderEditor(table){
     </form>
     ${row && s.after ? s.after(row) : ""}`;
   state.admDirty = false;
-  if (row && table === "characters") admLoadInventory(row.id);
+  if (row && table === "characters"){ admLoadInventory(row.id); admLoadGameImg(row.id); }
 }
 
 export function admCollect(form, s){
@@ -458,11 +473,13 @@ export async function admMembers(){
       <p class="form-note">새 멤버 초대: Supabase 대시보드 → Authentication → Users → <strong>Invite user</strong>. 초대받은 사람은 메일의 링크로 들어와 비밀번호를 정합니다.</p>
       <div class="table-scroll" style="margin-top:1.25rem">
         <table class="members" style="min-width:36rem">
-          <caption class="sr">멤버 목록 — 이름, 역할, 소유 캐릭터</caption>
-          <thead><tr><th scope="col">멤버</th><th scope="col">역할</th><th scope="col">소유 캐릭터</th></tr></thead>
+          <caption class="sr">멤버 목록 — 이름, 권한, 소유 캐릭터</caption>
+          <thead><tr><th scope="col">멤버</th><th scope="col">권한</th><th scope="col">소유 캐릭터</th></tr></thead>
           <tbody>${members.map(m => `<tr>
             <th scope="row" class="who" style="font-weight:400">${esc(nameOf(m))}<small>${esc(m.email || "")}</small></th>
-            <td class="${m.role === "admin" ? "tag-d" : ""}">${m.role === "admin" ? "관리자" : "멤버"}</td>
+            <td>${m.id === state.session?.user.id ? `<span class="tag-d">관리자 (나)</span>`
+              : `<label class="sr" for="role-${m.id}">${esc(nameOf(m))} 권한</label><select class="input small-sel" id="role-${m.id}" data-role="${m.id}" data-prev="${m.role === "admin" ? "admin" : "member"}">
+                  <option value="member"${m.role === "admin" ? "" : " selected"}>멤버</option><option value="admin"${m.role === "admin" ? " selected" : ""}>관리자</option></select>`}</td>
             <td>${esc(chars.filter(c => owner.get(c.uuid) === m.id).map(c => c.name).join(", ") || "—")}</td>
           </tr>`).join("") || `<tr><td colspan="3" class="muted">멤버가 없습니다.</td></tr>`}</tbody>
         </table>
@@ -569,6 +586,117 @@ document.addEventListener("comu:shop-req", () => {
   clearTimeout(shopT); shopT = setTimeout(() => admShop().catch(() => {}), 300);
 });
 
+/* ----- 칩 정산 요청 (update-9.sql) — 승인하면 칩 기록에 바로 들어감 ----- */
+ADM.creqFilter = "pending";
+export async function admChipReq(){
+  let q = sb.from("chip_requests").select("id, character_id, amount, reason, status, admin_note, requested_by, decided_by, created_at, decided_at")
+    .order("created_at", { ascending: ADM.creqFilter === "pending" }).limit(300);
+  if (ADM.creqFilter === "pending") q = q.eq("status", "pending");
+  const [rq, pc] = await Promise.all([q, sb.from("chip_requests").select("id", { count: "exact", head: true }).eq("status", "pending")]);
+  if (rq.error) throw rq.error;
+  const rows = rq.data || [], pend = pc.count ?? 0;
+  const charIds = [...new Set(rows.map(r => r.character_id))], userIds = [...new Set(rows.flatMap(r => [r.requested_by, r.decided_by]).filter(Boolean))];
+  const [bl, pr] = await Promise.all([
+    charIds.length ? sb.from("chip_balances").select("character_id, balance").in("character_id", charIds) : { data: [] },
+    userIds.length ? sb.from("profiles").select("id, display_name, email").in("id", userIds) : { data: [] }
+  ]);
+  const bal = new Map((bl.data || []).map(b => [b.character_id, b.balance ?? 0]));
+  const who = new Map((pr.data || []).map(p => [p.id, p.display_name || (p.email || "").split("@")[0] || "?"]));
+  const chars = new Map(ALL().map(c => [c.uuid, c]));
+  const tab = $("#tab-chipreq"); if (tab) tab.textContent = pend ? `칩 정산 (${pend})` : "칩 정산";
+  const when = iso => iso ? `${fmtDate(iso)} ${fmtTime(iso)}` : "";
+  const sign = v => (v > 0 ? "+" : "") + v.toLocaleString("ko-KR");
+  admPanel().innerHTML = `
+    <div class="card adm-shop">
+      <div class="g-head"><h2 class="card-h" style="margin:0">칩 정산 요청</h2>
+        <div class="seg" role="group" aria-label="보기" id="creq-filter" style="margin-left:auto">
+          <button type="button" data-creq-filter="pending" aria-pressed="${ADM.creqFilter === "pending"}">승인 대기 ${pend}</button>
+          <button type="button" data-creq-filter="all" aria-pressed="${ADM.creqFilter === "all"}">전체 기록</button>
+          <span class="seg-ink" aria-hidden="true"></span>
+        </div></div>
+      <p class="hint">멤버가 설정 화면에서 올린 요청입니다. 승인하면 그 칩이 바로 더해지거나 빠집니다. 빼는 요청은 잔액이 모자라면 승인되지 않습니다.</p>
+      ${rows.length ? `<div class="table-scroll"><table class="members shop-log">
+        <caption class="sr">칩 정산 요청 — 요청 시각, 캐릭터, 칩, 사유, 처리</caption>
+        <thead><tr><th scope="col">요청</th><th scope="col">캐릭터</th><th scope="col">칩</th><th scope="col">사유</th><th scope="col">처리</th></tr></thead>
+        <tbody>${rows.map(r => {
+          const c = chars.get(r.character_id), b = bal.get(r.character_id) ?? 0, short = r.status === "pending" && b + r.amount < 0;
+          return `<tr class="st-${r.status}">
+            <td class="when">${esc(when(r.created_at))}<small>${esc(who.get(r.requested_by) || "")}</small></td>
+            <th scope="row" class="who" style="font-weight:400">${esc(c?.name || "(삭제된 캐릭터)")}<small${short ? ` class="warn"` : ""}>보유 ${b.toLocaleString("ko-KR")}칩${short ? " · 부족" : ""}</small></th>
+            <td class="num${r.amount < 0 ? " minus" : ""}">${sign(r.amount)}</td>
+            <td class="memo">${esc(r.reason)}</td>
+            <td class="act">${r.status === "pending" ? `<div class="shop-act" data-creq-row="${esc(r.id)}">
+                <label class="sr" for="cn-${esc(r.id)}">관리자 메모</label><input class="input" id="cn-${esc(r.id)}" placeholder="메모 (선택)" maxlength="200">
+                <button class="btn small primary" type="button" data-creq-ok>승인</button><button class="btn small danger" type="button" data-creq-no>거절</button></div>`
+              : `<span class="st">${{ approved: "승인", rejected: "거절", cancelled: "본인 취소" }[r.status]}</span><small>${esc(when(r.decided_at))}${r.decided_by && r.status !== "cancelled" ? ` · ${esc(who.get(r.decided_by) || "")}` : ""}</small>${r.admin_note ? `<small>${esc(r.admin_note)}</small>` : ""}`}</td>
+          </tr>`; }).join("")}</tbody></table></div>`
+      : `<p class="empty-note">${ADM.creqFilter === "pending" ? "승인을 기다리는 요청이 없습니다." : "아직 정산 요청이 없습니다."}</p>`}
+    </div>`;
+  requestAnimationFrame(() => placeInk($("#creq-filter")));
+}
+async function admChipDecide(btn, approve){
+  const box = btn.closest("[data-creq-row]"), note = $("input", box).value.trim();
+  if (!approve && !confirm("이 요청을 거절할까요?")) return;
+  await withBusy(btn, async () => {
+    const { error } = await sb.rpc("admin_chip_decide", { p_request: box.dataset.creqRow, p_approve: approve, p_note: note });
+    if (error){ toast(errMsg(error)); return; }
+    toast(approve ? "승인했습니다 — 칩 반영 완료" : "거절했습니다");
+    await admChipReq();
+  });
+}
+let creqT = 0;
+document.addEventListener("comu:chip-req", () => {
+  if (ADM.tab !== "chipreq" || $('[data-page="admin"]').hidden) return;
+  if (document.activeElement?.closest?.("[data-creq-row]")) return;
+  clearTimeout(creqT); creqT = setTimeout(() => admChipReq().catch(() => {}), 300);
+});
+
+/* ----- 관리자 지정 (update-9.sql) ----- */
+async function admSetRole(sel){
+  const prev = sel.dataset.prev, admin = sel.value === "admin";
+  if (!confirm(admin ? "이 멤버를 관리자로 지정할까요? 관리 화면의 모든 기능을 쓸 수 있게 됩니다." : "이 멤버의 관리자 권한을 해제할까요?")){ sel.value = prev; return; }
+  const { error } = await sb.rpc("admin_set_role", { p_user: sel.dataset.role, p_admin: admin });
+  if (error){ sel.value = prev; toast(/PGRST202|admin_set_role/.test(`${error.code} ${error.message}`) ? "supabase/update-9.sql을 먼저 실행해 주세요" : errMsg(error)); return; }
+  sel.dataset.prev = sel.value;
+  toast(admin ? "관리자로 지정했습니다" : "관리자 권한을 해제했습니다");
+}
+
+/* ----- 게임용 이미지 (룰렛 자리) — 캐릭터 목록·프로필 이미지와 따로 ----- */
+export async function admLoadGameImg(charId){
+  const box = $("#gimg-prev"); if (!box) return;
+  const { data, error } = await sb.from("roulette_avatars").select("path").eq("character_id", charId).maybeSingle();
+  if (!box.isConnected) return;
+  if (error){ $("#gimg-sec").innerHTML = `<p class="hint">게임용 이미지를 쓰려면 supabase/update-8.sql을 먼저 실행해 주세요.</p>`; return; }
+  box.dataset.path = data?.path || "";
+  box.innerHTML = data ? `<img src="${esc(publicUrl("roulette", data.path))}" alt="현재 게임용 이미지">` : `<span aria-hidden="true">없음</span>`;
+  $("[data-gimg-del]").disabled = !data;
+}
+async function admSaveGameImg(btn){
+  const charId = btn.dataset.char, file = $("#gimg-file").files[0], old = $("#gimg-prev").dataset.path;
+  if (!file){ $("#gimg-status").textContent = "이미지 파일을 골라 주세요."; return; }
+  await withBusy(btn, async () => {
+    try {
+      const blob = await toWebP(file, 512), path = `${charId}/${Date.now()}.${extOf(blob)}`;
+      const up = await sb.storage.from("roulette").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
+      if (up.error) throw up.error;
+      const { error } = await sb.rpc("roulette_set_avatar", { p_character: charId, p_path: path });
+      if (error){ sb.storage.from("roulette").remove([path]); throw error; }
+      if (old) sb.storage.from("roulette").remove([old]);
+      $("#gimg-file").value = ""; $("#gimg-status").textContent = "저장했습니다."; toast("게임용 이미지를 저장했습니다");
+      admLoadGameImg(charId);
+    } catch (err){ $("#gimg-status").textContent = errMsg(err); }
+  });
+}
+async function admDelGameImg(btn){
+  const charId = btn.dataset.char, old = $("#gimg-prev").dataset.path;
+  if (!old || !confirm("게임용 이미지를 지울까요? (룰렛에서는 캐릭터 기본 이미지가 보입니다)")) return;
+  await withBusy(btn, async () => {
+    const { error } = await sb.rpc("roulette_set_avatar", { p_character: charId, p_path: null });
+    if (error){ $("#gimg-status").textContent = errMsg(error); return; }
+    sb.storage.from("roulette").remove([old]); $("#gimg-status").textContent = "지웠습니다."; admLoadGameImg(charId);
+  });
+}
+
 /* ----- 관리 페이지 이벤트 ----- */
 $("#admin-tabs").addEventListener("click", e => {
   const t = e.target.closest('[role="tab"]');
@@ -605,6 +733,12 @@ admPanel().addEventListener("click", async e => {
   const sf = t.closest("[data-shop-filter]");
   if (sf){ ADM.shopFilter = sf.dataset.shopFilter; await admShop(); $(`[data-shop-filter="${ADM.shopFilter}"]`)?.focus(); return; }
   if (t.closest("[data-shop-ok]")) return admShopDecide(t.closest("[data-shop-ok]"), true);
+  const cf = t.closest("[data-creq-filter]");
+  if (cf){ ADM.creqFilter = cf.dataset.creqFilter; await admChipReq(); $(`[data-creq-filter="${ADM.creqFilter}"]`)?.focus(); return; }
+  if (t.closest("[data-creq-ok]")) return admChipDecide(t.closest("[data-creq-ok]"), true);
+  if (t.closest("[data-creq-no]")) return admChipDecide(t.closest("[data-creq-no]"), false);
+  if (t.closest("[data-gimg-save]")) return admSaveGameImg(t.closest("[data-gimg-save]"));
+  if (t.closest("[data-gimg-del]")) return admDelGameImg(t.closest("[data-gimg-del]"));
   if (t.closest("[data-shop-no]")) return admShopDecide(t.closest("[data-shop-no]"), false);
   const pv = t.closest("[data-md-preview]");
   if (pv){
@@ -638,7 +772,7 @@ admPanel().addEventListener("click", async e => {
   if (t.closest(".bm-link")){ e.preventDefault(); toast("이 버튼은 누르지 말고 즐겨찾기 막대로 끌어다 놓으세요"); return; }
   if (t.closest("[data-log-room]")) return withBusy(t.closest("[data-log-room]"), logRoom);
   if (t.closest("[data-log-lib]")) return logLibPaste();
-  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261024c"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
+  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261024d"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
   const logSave = t.closest("[data-log-save]");
   if (logSave) return withBusy(logSave, () => logSaveNow(logSave.dataset.id));
   const logDel = t.closest("[data-log-del]");
@@ -666,6 +800,8 @@ admPanel().addEventListener("submit", async e => {
 });
 
 admPanel().addEventListener("change", async e => {
+  const rs = e.target.closest("[data-role]");
+  if (rs) return admSetRole(rs);
   const sel = e.target.closest("[data-owner]");
   if (!sel) return;
   const { error } = await sb.rpc("admin_set_owner", { p_character: sel.dataset.owner, p_owner: sel.value || null });
@@ -700,6 +836,11 @@ admPanel().addEventListener("click", e => {
 });
 
 admPanel().addEventListener("change", e => { if (e.target.id === "log-file") logRead(e.target); });
+admPanel().addEventListener("change", e => {
+  if (e.target.id !== "gimg-file") return;
+  const f = e.target.files[0];
+  if (f && /^image\//.test(f.type)){ $("#gimg-prev").innerHTML = `<img src="${URL.createObjectURL(f)}" alt="새로 올릴 게임용 이미지">`; $("#gimg-status").textContent = "‘게임용 이미지 저장’을 눌러야 반영됩니다."; }
+});
 
 admPanel().addEventListener("change", e => {
   const file = e.target.closest('#adm-form input[type="file"]');
@@ -724,7 +865,7 @@ async function logRead(input){
   if (!f) return;
   if (f.size > 60 * 1024 * 1024){ fieldError(input, "60MB 이하 파일만 올릴 수 있습니다."); return; }
   $("#log-status").textContent = "읽는 중…";
-  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261024c");
+  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261024d");
   const messages = parseLog(await f.text());
   $("#log-status").textContent = "";
   if (!messages.length){ fieldError(input, "대사를 찾지 못했습니다. 코코포리아에서 내보낸 로그 파일이 맞는지 확인해 주세요."); return; }
@@ -770,7 +911,7 @@ function libSummary(extra = ""){
 }
 
 async function logRoom(){
-  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261024c");
+  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261024d");
   const id = roomIdFrom($("#log-room").value);
   if (!id){ $("#log-lib-status").textContent = "코코포리아 룸 링크 형식이 아닙니다. (https://ccfolia.com/rooms/…)"; $("#log-room").focus(); return; }
   try {
@@ -786,7 +927,7 @@ async function logRoom(){
 }
 
 async function logLibPaste(){
-  const { parseLibrary } = await import("./logparse.js?v=20261024c");
+  const { parseLibrary } = await import("./logparse.js?v=20261024d");
   try {
     const lib = parseLibrary($("#log-lib-text").value);
     if (!lib.length){ $("#log-lib-status").textContent = "캐릭터를 찾지 못했습니다."; return; }
@@ -830,7 +971,7 @@ export async function backupFaces(urls, onProgress = () => {}){
 
 async function logSaveNow(id){
   if (!LOG.messages) return;
-  const { pack } = await import("./logparse.js?v=20261024c");
+  const { pack } = await import("./logparse.js?v=20261024d");
   const include = new Set($$('input[name="log-tab"]:checked').map(i => LOG.info.tabs[+i.value].name));
   const narrators = new Set($$('input[name="log-narr"]:checked').map(i => LOG.info.speakers[+i.value].name));
   if (!include.size){ $("#log-status").textContent = "저장할 탭을 하나 이상 골라 주세요."; return; }

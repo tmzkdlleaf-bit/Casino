@@ -1,14 +1,14 @@
-import { refreshAuth } from "./auth.js?v=20261024c";
-import { CALM_KEY, PAGES } from "./config.js?v=20261024c";
-import { AUTH_HASH, DB_CONFIGURED, USE_DB, loadAll, sb, showBootError } from "./data.js?v=20261024c";
-import { $, $$, announce, toast } from "./dom.js?v=20261024c";
-import { initBgm, initWorldBg } from "./ambience.js?v=20261024c";
-import { applyCalm, applyFilter, applyShow, castGo, castGoIndex, castStep, filterSummary, layoutCast, renderHeroChips, runIntro, setShowHover, showStep } from "./effects.js?v=20261024c";
-import { errMsg } from "./forms.js?v=20261024c";
-import { focusHeading, route } from "./router.js?v=20261024c";
-import { applyNavOrder } from "./navorder.js?v=20261024c";
-import { DATA, motionOK, nav, state } from "./state.js?v=20261024c";
-import { placeSegInk, renderAccount, renderCast, renderHome, renderInventory, renderNext, renderQuickLinks, renderRecords, renderSchedule, renderShop, renderStory } from "./views.js?v=20261024c";
+import { refreshAuth } from "./auth.js?v=20261024d";
+import { CALM_KEY, PAGES } from "./config.js?v=20261024d";
+import { AUTH_HASH, DB_CONFIGURED, USE_DB, loadAll, sb, showBootError } from "./data.js?v=20261024d";
+import { $, $$, announce, toast } from "./dom.js?v=20261024d";
+import { initBgm, initWorldBg } from "./ambience.js?v=20261024d";
+import { applyCalm, applyFilter, applyShow, castGo, castGoIndex, castStep, filterSummary, layoutCast, renderHeroChips, runIntro, setShowHover, showStep } from "./effects.js?v=20261024d";
+import { errMsg } from "./forms.js?v=20261024d";
+import { focusHeading, route } from "./router.js?v=20261024d";
+import { applyNavOrder } from "./navorder.js?v=20261024d";
+import { DATA, motionOK, nav, state } from "./state.js?v=20261024d";
+import { placeSegInk, renderAccount, renderCast, renderHome, renderInventory, renderNext, renderQuickLinks, renderRecords, renderSchedule, renderShop, renderStory } from "./views.js?v=20261024d";
 
 /* ---------- events ---------- */
 document.addEventListener("click", e => {

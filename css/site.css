@@ -511,6 +511,8 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .cc-frame .badge::before{border-width:1px}
 .cc.player .cc-frame .img::after{content:""; position:absolute; left:0; right:0; bottom:0; height:4px; background:var(--band, var(--felt))}
 .cc.is-center .cc-name{color:var(--ivory)}
+.cc-role{display:block; margin-top:-.45rem; font-family:var(--f-pixel); font-size:.8125rem; color:var(--smoke); text-align:center; white-space:nowrap}
+.cc.is-center .cc-role{color:var(--gold)}
 .cc.is-center .cc-frame{border-color:var(--gold); box-shadow:0 0 0 1px var(--gold), 0 0 34px rgba(93,151,217,.35), 0 18px 40px rgba(0,0,0,.5)}
 .cc.is-center .cc-frame::after{opacity:1}
 @media (hover:hover){ .cc:not(.is-center):hover .cc-frame{border-color:var(--gold)} }
@@ -542,9 +544,9 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .pf-visual .img img{width:100%; height:100%; object-fit:cover; object-position:50% 20%}
 .pf-visual::after{content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(90deg, transparent 60%, rgba(4,7,20,.8)); pointer-events:none}
 .pf-visual.dealer::before{content:""; position:absolute; inset:1.25rem; border:1px solid rgba(238,243,250,.3); border-radius:3px; pointer-events:none}
-.pf-visual .pip{position:absolute; top:2.1rem; left:2.1rem; display:flex; font-size:1.6rem; color:rgba(238,243,250,.9)}
+.pf-visual .pip{position:absolute; top:4.6rem; left:2.1rem; display:flex; font-size:1.6rem; color:rgba(238,243,250,.9)}
 .pf-visual.red-suit .pip{color:var(--red-hi)}
-.pf-visual .badge{position:absolute; top:1.9rem; left:1.9rem; --size:2.8rem}
+.pf-visual .badge{position:absolute; top:4.4rem; left:1.9rem; --size:2.8rem}
 .pf-visual.player::before{content:""; position:absolute; left:0; right:0; bottom:0; height:4px; background:var(--band)}
 .pf-nav{display:contents}
 .pf-arrow{position:absolute; top:50%; translate:0 -50%; z-index:3; width:3.25rem; height:3.25rem}
@@ -554,8 +556,10 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
 .pf-arrow:hover .nm, .pf-arrow:focus-visible .nm{opacity:1}
 .pf-count{position:absolute; right:1.75rem; bottom:1.9rem; z-index:3; padding:.25rem .85rem; border:1px solid var(--line-strong); border-radius:4px; background:rgba(4,7,20,.75); font-size:.8125rem; font-variant-numeric:tabular-nums; pointer-events:none}
 .pf-info{display:flex; flex-direction:column; padding:1.5rem var(--pad) 3rem}
-.pf-top{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.6rem}
-.pf-back{min-height:2.9rem; padding:.6rem 1.3rem .6rem 1rem; font-size:1rem; font-weight:500; background:rgba(4,7,20,.6)}
+.pf-top{display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:.6rem}
+.pf-top:not(:has(:not([hidden]))){display:none}   /* 수정 버튼이 없으면 빈 줄도 없앰 */
+/* 캐릭터 목록으로: 이미지 왼쪽 위 (조금 작게) */
+.pf-back{position:absolute; top:1.15rem; left:1.15rem; z-index:3; min-height:2.5rem; padding:.45rem 1.05rem .45rem .85rem; font-size:.9375rem; font-weight:500; background:rgba(4,7,20,.72)}
 .pf-back .back-ico{width:.55rem; height:.55rem; border:solid currentColor; border-width:0 0 2px 2px; rotate:45deg; translate:.1rem 0}
 /* 링크 */
 .pf-links{list-style:none; margin:0; padding:0; display:grid; gap:.45rem}
@@ -1153,7 +1157,7 @@ body.loading #cc-track:empty, body.loading #show, body.loading #shop:empty{anima
 .rl-main{display:grid; grid-template-rows:minmax(0,1fr) auto; gap:.75rem; min-height:0; min-width:0}
 .rl-table{position:relative; min-height:18rem; border-radius:50% / 42%; overflow:visible; isolation:isolate}
 .rl-table::before{content:""; position:absolute; inset:14% 18%; border-radius:50%; border:1px dashed rgba(173,207,234,.25); pointer-events:none}
-.rl-status{position:absolute; top:.6rem; left:50%; translate:-50% 0; z-index:3; margin:0; padding:.3rem .9rem; background:rgba(0,0,0,.6); border:1px solid var(--line); font-family:var(--f-serif); font-size:.875rem; white-space:nowrap; max-width:92%; overflow:hidden; text-overflow:ellipsis}
+.rl-status{position:absolute; top:-.9rem; left:50%; translate:-50% 0; z-index:3; margin:0; padding:.3rem .9rem; background:rgba(0,0,0,.6); border:1px solid var(--line); font-family:var(--f-serif); font-size:.875rem; white-space:nowrap; max-width:92%; overflow:hidden; text-overflow:ellipsis}
 .rl-status b{color:var(--gold); font-weight:700}
 .rl-status b.mine{color:var(--red-text)}
 .rl-status b.win{color:var(--ivory); text-shadow:0 0 12px var(--velvet)}
@@ -1340,3 +1344,13 @@ button.rl-seat:not([aria-disabled="true"]):hover .av{border-color:var(--gold)}
   .rl-head .page-lede{font-size:var(--s-1)}
   .rl-head{padding-bottom:.6rem}
 }
+
+/* 칩 정산 요청 (설정) */
+.creq-list{margin-top:1rem; padding-top:.9rem}
+.creq-list strong{color:var(--gold)} .creq-list strong.minus{color:var(--red-text)}
+#creq-form[hidden]{display:none}
+/* 룰렛 더미 자리 */
+.rl-seat.dummy .av{border-style:dashed; border-color:rgba(173,207,234,.7); background:repeating-linear-gradient(45deg, #0E1B45 0 6px, #111A3D 6px 12px)}
+.rl-seat .nm small.dm{color:var(--gold)}
+.rl-tools [aria-pressed="true"]{border-color:var(--gold); color:var(--gold)}
+.small-sel{width:auto; min-width:7.5rem; min-height:2.25rem; padding:.3rem 2.4rem .3rem .7rem; font-size:.875rem}

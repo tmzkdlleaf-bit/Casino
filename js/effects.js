@@ -1,7 +1,7 @@
-import { HERO_CHIPS, SUITS } from "./config.js?v=20261024c";
-import { $, $$, esc, isRed, splitText, suitIcon } from "./dom.js?v=20261024c";
-import { DATA, motionOK, state } from "./state.js?v=20261024c";
-import { ALL, placeSegInk, renderCast } from "./views.js?v=20261024c";
+import { HERO_CHIPS, SUITS } from "./config.js?v=20261024d";
+import { $, $$, esc, isRed, splitText, suitIcon } from "./dom.js?v=20261024d";
+import { DATA, motionOK, state } from "./state.js?v=20261024d";
+import { ALL, placeSegInk, renderCast } from "./views.js?v=20261024d";
 
 /* ---------- effects ---------- */
 
@@ -87,7 +87,7 @@ export function applyFilter({ instant = false, enter = false } = {}){
 }
 
 export function filterSummary(){
-  return state.filter === "player" ? `참가자 ${DATA.players.length}명` : `딜러 ${DATA.dealers.length}명`;
+  return state.filter === "player" ? `참가자 ${DATA.players.length}명` : `직원 ${DATA.dealers.length}명`;
 }
 
 export function applyCalm(){
@@ -126,12 +126,12 @@ function paint(i, instant = false){
     box.classList.add("swap");
     setTimeout(() => {
       if (seq !== SHOW.seq) return;
-      const dealer = c.role === "딜러";
+      const dealer = c.role === "직원";
       const mk = $(".show-mk", box);
       mk.className = "show-mk" + (dealer && isRed(c.suit) ? " red" : "");
       mk.innerHTML = dealer ? suitIcon(c.suit) : `<span class="chip ${c.chip}"></span>`;
       $("#show-nm").textContent = c.name;
-      $("#show-role").textContent = c.role;
+      $("#show-role").textContent = c.roleTitle || c.role;
       $("#show-link").href = `#characters/${c.id}`;
       box.classList.remove("swap");
     }, instant ? 0 : 300);

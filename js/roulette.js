@@ -5,19 +5,20 @@
    - 탄 위치는 서버만 앎. 화면은 서버가 돌려준 결과(채팅의 'shot' 기록)를 보고 효과만 그림
    - 실시간 연결이 끊겨도 5초마다 다시 불러와 따라감
    ========================================================= */
-import { USE_DB, publicUrl, sb } from "./data.js?v=20261024c";
-import { $, $$, announce, esc, setTitle, toast } from "./dom.js?v=20261024c";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261024c";
-import { motionOK, nav, state } from "./state.js?v=20261024c";
-import { ALL, myChars } from "./views.js?v=20261024c";
+import { USE_DB, publicUrl, sb } from "./data.js?v=20261024d";
+import { $, $$, announce, esc, setTitle, toast } from "./dom.js?v=20261024d";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261024d";
+import { motionOK, nav, state } from "./state.js?v=20261024d";
+import { ALL, myChars } from "./views.js?v=20261024d";
 
 const RL = {
   id: null, room: null, seats: [], bets: [], chat: [], avatars: new Map(),
   chan: null, live: false, poll: 0, reloadT: 0, loading: null,
-  target: null, myChar: null, fxSeen: new Set(), lastChat: 0, wasMyTurn: false, missing: false,
+  target: null, myChar: null, autoDummy: false, autoT: 0, fxSeen: new Set(), lastChat: 0, wasMyTurn: false, missing: false,
   fxUntil: 0, renderT: 0
 };
 const LOBBY = { chan: null, t: 0 };
+const DUMMY = { ok: true };   // roulette_seats.dummy_name (update-9.sql)
 const n = v => Number(v || 0).toLocaleString("ko-KR");
 const STATUS = { waiting: "대기 중", playing: "진행 중", finished: "끝남", cancelled: "취소됨" };
 const missingTable = e => /42P01|PGRST205|PGRST202|roulette_/.test(`${e?.code} ${e?.message}`);
@@ -25,7 +26,8 @@ const NEED_SQL = `<p class="form-note">러시안 룰렛이 아직 준비되지 �
 
 /* 캐릭터 정보 (공개 데이터) */
 const charOf = uuid => ALL().find(c => c.uuid === uuid) || { uuid, name: "(알 수 없음)", role: "", chip: "green" };
-const seatChar = s => charOf(s.character_id);
+// 더미 자리 (update-9.sql): 캐릭터 없이 이름만. 차례가 오면 관리자가 대신 진행
+const seatChar = s => s.character_id ? charOf(s.character_id) : { uuid: null, name: s.dummy_name || "더미", role: "더미", chip: "green", dummy: true };
 const avatarOf = c => {
   const a = RL.avatars.get(c.uuid);
   return a ? publicUrl("roulette", a.path) : (c.thumb || c.img || "");
@@ -33,6 +35,13 @@ const avatarOf = c => {
 const mineUuids = () => new Set(state.mine.map(m => m.uuid));
 const mySeat = () => { const mine = mineUuids(); return RL.seats.find(s => mine.has(s.character_id)) || null; };
 const seatAt = i => RL.seats.find(s => s.seat === i) || null;
+/* 지금 내가 움직일 수 있는 자리: 내 캐릭터 차례, 또는 (관리자) 더미 차례 */
+const ctlSeat = () => {
+  const r = RL.room; if (!r || r.status !== "playing") return null;
+  const s = seatAt(r.turn_seat); if (!s || !s.alive) return null;
+  return (s.character_id ? mineUuids().has(s.character_id) : state.isAdmin) ? s : null;
+};
+const canAct = () => !!ctlSeat();
 const isMyTurn = () => { const r = RL.room, me = mySeat(); return !!(r && me && r.status === "playing" && r.turn_seat === me.seat && me.alive); };
 const betOpen = () => RL.room?.status === "playing" && RL.seats.every(s => s.alive);
 
@@ -110,7 +119,8 @@ function closeRoom(){
 async function openRoom(id){
   if (RL.id !== id){
     closeRoom();
-    Object.assign(RL, { id, room: null, seats: [], bets: [], chat: [], avatars: new Map(), target: null, fxSeen: new Set(), lastChat: 0, wasMyTurn: false });
+    let auto = false; try { auto = sessionStorage.getItem("rl-auto:" + id) === "1"; } catch (_) {}   // 더미 자동 진행은 새로 고침해도 유지
+    Object.assign(RL, { id, autoDummy: auto, room: null, seats: [], bets: [], chat: [], avatars: new Map(), target: null, fxSeen: new Set(), lastChat: 0, wasMyTurn: false });
     $("#rl-chat").innerHTML = ""; $("#rl-ring").innerHTML = ""; $("#rl-bar").innerHTML = ""; $("#rl-tools").innerHTML = "";
     $("#rl-status").textContent = "불러오는 중…"; $("#rl-meta").textContent = "";
   }
@@ -139,11 +149,12 @@ async function load(quiet){
   RL.loading = (async () => {
     const [r, s, b, c] = await Promise.all([
       sb.from("roulette_rooms").select("id, title, status, max_seats, entry_fee, pass_rule, pot, turn_seat, shots, round, self_survived, winner_seat, started_at, ended_at").eq("id", id).maybeSingle(),
-      sb.from("roulette_seats").select("seat, character_id, alive, out_at").eq("room_id", id).order("seat"),
+      sb.from("roulette_seats").select(`seat, character_id, alive, out_at${DUMMY.ok ? ", dummy_name" : ""}`).eq("room_id", id).order("seat"),
       sb.from("roulette_bets").select("id, seat, character_id, amount, payout").eq("room_id", id),
       sb.from("roulette_chat").select("id, name, body, kind, data, created_at").eq("room_id", id).gt("id", RL.lastChat).order("id", { ascending: false }).limit(120)
     ]);
     if (RL.id !== id) return;
+    if (DUMMY.ok && s.error && /dummy_name/.test(s.error.message || "")){ DUMMY.ok = false; RL.loading = null; return load(quiet); }
     const err = [r, s, b, c].find(x => x.error)?.error;
     if (err){
       if (!quiet || missingTable(err)) roomError(missingTable(err) ? NEED_SQL : `<p class="form-error" role="alert">${esc(errMsg(err))}</p>`);
@@ -151,7 +162,7 @@ async function load(quiet){
     }
     if (!r.data){ roomError(`<p class="empty-note">없는 방입니다. 지워졌을 수 있습니다.</p><p style="text-align:center"><a class="btn" href="#game">방 목록으로</a></p>`); return; }
     RL.room = r.data; RL.seats = s.data || []; RL.bets = b.data || [];
-    const ids = RL.seats.map(x => x.character_id).concat(myChars().map(x => x.uuid));
+    const ids = RL.seats.map(x => x.character_id).filter(Boolean).concat(myChars().map(x => x.uuid));
     if (ids.length){
       const av = await sb.from("roulette_avatars").select("character_id, path").in("character_id", [...new Set(ids)]);
       if (!av.error) RL.avatars = new Map(av.data.map(a => [a.character_id, a]));
@@ -182,9 +193,10 @@ function render(){
   const me = mySeat();
   if (me) RL.myChar = me.character_id;
   else if (!myChars().some(c => c.uuid === RL.myChar)) RL.myChar = myChars().sort((a, b) => (a.role === "참가자" ? 0 : 1) - (b.role === "참가자" ? 0 : 1))[0]?.uuid || null;
-  // 내 차례가 아니면 겨냥 초기화, 내 차례면 기본은 나
-  if (!isMyTurn()) RL.target = null;
-  else if (RL.target == null || !seatAt(RL.target)?.alive) RL.target = me.seat;
+  // 움직일 차례가 아니면 겨냥 초기화, 내 차례(또는 관리자의 더미 차례)면 기본은 그 자리 자신
+  const ctl = ctlSeat();
+  if (!ctl){ RL.target = null; RL.ctlSeat = null; }
+  else if (RL.ctlSeat !== ctl.seat || RL.target == null || !seatAt(RL.target)?.alive){ RL.target = ctl.seat; RL.ctlSeat = ctl.seat; }
 
   const t = $("#rl-title");
   if (t.textContent !== r.title) t.textContent = r.title;
@@ -197,6 +209,24 @@ function render(){
   const my = isMyTurn();
   if (my && !RL.wasMyTurn){ toast("내 차례입니다"); announce("내 차례입니다. 쏠 사람을 고르세요."); }
   RL.wasMyTurn = my;
+  autoDummy();
+}
+
+/* 더미 자동 진행 (관리자 화면에서 켰을 때만): 1.4초 뒤 나에게 쏘거나(60%) 다른 사람에게, 살았으면 가끔 넘김 */
+function autoDummy(){
+  clearTimeout(RL.autoT);
+  const ctl = ctlSeat();
+  if (!RL.autoDummy || !ctl || ctl.character_id) return;
+  RL.autoT = setTimeout(async () => {
+    const now = ctlSeat(); if (!now || now.seat !== ctl.seat || now.character_id) return;
+    const r = RL.room;
+    if (r.self_survived && Math.random() < .35){ await call("roulette_pass", { p_room: RL.id }); load(true); return; }
+    const others = RL.seats.filter(x => x.alive && x.seat !== ctl.seat);
+    const t = Math.random() < .6 || !others.length ? ctl.seat : others[Math.floor(Math.random() * others.length)].seat;
+    const res = await call("roulette_shoot", { p_room: RL.id, p_target: t });
+    if (res && typeof res === "object"){ const key = `${res.round}:${res.shot_no}`; if (!RL.fxSeen.has(key)){ RL.fxSeen.add(key); fx(res); } }
+    load(true);
+  }, 1400);
 }
 
 function renderStatus(){
@@ -204,7 +234,9 @@ function renderStatus(){
   const turn = r.turn_seat != null ? seatAt(r.turn_seat) : null;
   let html = "";
   if (r.status === "waiting") html = `<b>대기 중</b> — ${RL.seats.length < 2 ? "두 명 이상 앉으면" : "관리자가 시작하면"} 게임이 열립니다`;
-  else if (r.status === "playing") html = isMyTurn()
+  else if (r.status === "playing") html = canAct() && !ctlSeat().character_id
+    ? `<b class="mine">${esc(seatChar(turn).name)} 차례</b> — 더미라 관리자가 대신 진행 · ${r.round}번째 탄창`
+    : isMyTurn()
     ? `<b class="mine">내 차례</b> — 쏠 사람을 고르세요 · ${r.round}번째 탄창`
     : `<b>${esc(turn ? seatChar(turn).name : "—")}</b>의 차례 · ${r.round}번째 탄창`;
   else if (r.status === "finished"){ const w = seatAt(r.winner_seat); html = `<b class="win">${esc(w ? seatChar(w).name : "—")} 우승</b>${r.pot ? ` · 판돈 ${n(r.pot)}칩` : ""}`; }
@@ -215,7 +247,7 @@ function renderStatus(){
 /* 자리: 내 자리를 맨 아래에 두고 둥글게 */
 function renderRing(){
   const r = RL.room, me = mySeat(), N = r.max_seats, base = me ? me.seat : 0;
-  const my = isMyTurn(), admin = state.isAdmin && r.status === "waiting";
+  const my = canAct(), ctl = ctlSeat(), admin = state.isAdmin && r.status === "waiting";
   const betBy = {}; RL.bets.forEach(b => { betBy[b.seat] = (betBy[b.seat] || 0) + b.amount; });
   $("#rl-ring").style.setProperty("--n", N);
   $("#rl-ring").innerHTML = Array.from({ length: N }, (_, i) => {
@@ -226,11 +258,11 @@ function renderRing(){
     const c = seatChar(s), src = avatarOf(c), isMe = me && me.seat === i;
     const turn = r.status === "playing" && r.turn_seat === i, win = r.status === "finished" && r.winner_seat === i;
     const can = (my && s.alive) || (admin && !isMe);
-    const label = `${c.name}${isMe ? " (나)" : ""}${!s.alive ? ", 탈락" : ""}${turn ? ", 지금 차례" : ""}${win ? ", 우승" : ""}${my && s.alive ? (i === me.seat ? " — 나에게 겨누기" : " — 이 사람에게 겨누기") : admin && !isMe ? " — 자리 비우기" : ""}`;
-    return `<button type="button" class="rl-seat${s.alive ? "" : " dead"}${turn ? " turn" : ""}${isMe ? " me" : ""}${win ? " win" : ""}${RL.target === i ? " aimed" : ""}"
+    const label = `${c.name}${c.dummy ? " (더미)" : ""}${isMe ? " (나)" : ""}${!s.alive ? ", 탈락" : ""}${turn ? ", 지금 차례" : ""}${win ? ", 우승" : ""}${my && s.alive ? (i === ctl.seat ? " — 자기 자신에게 겨누기" : " — 이 자리에 겨누기") : admin && !isMe ? " — 자리 비우기" : ""}`;
+    return `<button type="button" class="rl-seat${c.dummy ? " dummy" : ""}${s.alive ? "" : " dead"}${turn ? " turn" : ""}${isMe ? " me" : ""}${win ? " win" : ""}${RL.target === i ? " aimed" : ""}"
       style="${pos}" data-seat="${i}" data-ang="${ang}" ${can ? "" : `aria-disabled="true"`} aria-pressed="${RL.target === i}" aria-label="${esc(label)}">
       <span class="av">${src ? `<img src="${esc(src)}" alt="" decoding="async" draggable="false">` : `<span class="ph">${esc(c.name.slice(0, 1))}</span>`}<span class="x" aria-hidden="true"></span></span>
-      <span class="nm">${c.role === "딜러" ? "" : `<span class="chip ${c.chip}" aria-hidden="true"></span>`}${esc(c.name)}${isMe ? `<small>나</small>` : ""}</span>
+      <span class="nm">${c.role === "직원" ? "" : `<span class="chip ${c.chip}" aria-hidden="true"></span>`}${esc(c.name)}${isMe ? `<small>나</small>` : ""}${c.dummy ? `<small class="dm">더미</small>` : ""}</span>
       ${betBy[i] ? `<span class="bet" aria-hidden="true">${n(betBy[i])}</span>` : ""}
     </button>`;
   }).join("");
@@ -264,14 +296,14 @@ function renderBar(){
       <button class="btn primary" type="button" data-act="join"${RL.seats.length >= r.max_seats ? " disabled" : ""}>${chars.length > 1 ? "" : esc(chars[0].name) + "(으)로 "}자리에 앉기</button>
       ${r.entry_fee ? `<p class="rl-note">참가비 ${n(r.entry_fee)}칩은 시작할 때 빠집니다.</p>` : ""}`;
   } else if (r.status === "playing"){
-    const my = isMyTurn(), tg = RL.target != null ? seatAt(RL.target) : null;
+    const ctl = ctlSeat(), my = !!ctl, dummyTurn = my && !ctl.character_id, tg = RL.target != null ? seatAt(RL.target) : null;
     const canPass = my && (r.pass_rule === "free" || r.self_survived);
-    const shootLabel = !my ? "쏘기" : tg && tg.seat === me.seat ? "나에게 쏘기" : `${esc(seatChar(tg).name)}에게 쏘기`;
+    const shootLabel = !my ? "쏘기" : tg && tg.seat === ctl.seat ? (dummyTurn ? `${esc(seatChar(ctl).name)} 자신에게 쏘기` : "나에게 쏘기") : `${esc(seatChar(tg).name)}에게 쏘기`;
     html = `
       <button class="btn rl-act shoot" type="button" data-act="shoot"${my ? "" : " disabled"}><span class="k" aria-hidden="true">⚡</span>${shootLabel}</button>
       <button class="btn rl-act" type="button" data-act="pass"${canPass ? "" : " disabled"} ${my && !canPass ? `title="나에게 한 번 쏘고 살아남아야 넘길 수 있습니다"` : ""}>넘기기</button>
       <button class="btn rl-act" type="button" data-act="bet"${betOpen() && chars.length ? "" : " disabled"}>베팅하기</button>
-      <p class="rl-note">${my ? (r.self_survived ? "살았습니다! 한 번 더 쏘거나 넘길 수 있습니다." : "자리를 눌러 겨눌 사람을 바꿀 수 있습니다.") : me && !me.alive ? "탈락했습니다. 구경하며 채팅할 수 있습니다." : betOpen() ? "첫 탈락자가 나오기 전까지 베팅할 수 있습니다." : "베팅이 마감되었습니다."}</p>`;
+      <p class="rl-note">${dummyTurn ? `더미 차례입니다. 관리자가 대신 쏘거나 넘깁니다${RL.autoDummy ? " (자동 진행 중)" : ""}.` : my ? (r.self_survived ? "살았습니다! 한 번 더 쏘거나 넘길 수 있습니다." : "자리를 눌러 겨눌 사람을 바꿀 수 있습니다.") : me && !me.alive ? "탈락했습니다. 구경하며 채팅할 수 있습니다." : betOpen() ? "첫 탈락자가 나오기 전까지 베팅할 수 있습니다." : "베팅이 마감되었습니다."}</p>`;
   } else {
     const myBets = RL.bets.filter(b => mineUuids().has(b.character_id));
     const got = myBets.reduce((s, b) => s + (b.payout || 0), 0), put = myBets.reduce((s, b) => s + b.amount, 0);
@@ -287,6 +319,8 @@ function renderTools(){
   const canAva = state.session && (myChars().length || (a && RL.seats.length));
   $("#rl-tools").innerHTML = [
     canAva ? `<button class="btn small" type="button" data-act="avatar">자리 이미지</button>` : "",
+    a && DUMMY.ok && r.status === "waiting" ? `<button class="btn small" type="button" data-act="dummy"${RL.seats.length >= r.max_seats ? " disabled" : ""}>더미 추가</button>` : "",
+    a && r.status === "playing" && RL.seats.some(s => !s.character_id) ? `<button class="btn small" type="button" data-act="auto" aria-pressed="${RL.autoDummy}">더미 자동 ${RL.autoDummy ? "켬" : "끔"}</button>` : "",
     a && r.status === "waiting" ? `<button class="btn small primary" type="button" data-act="start"${RL.seats.length < 2 ? " disabled" : ""}>게임 시작</button>` : "",
     a && r.status === "playing" ? `<button class="btn small" type="button" data-act="skip">차례 넘기기</button>` : "",
     a && (r.status === "waiting" || r.status === "playing") ? `<button class="btn small danger" type="button" data-act="cancel">게임 취소</button>` : "",
@@ -414,7 +448,7 @@ $("#rl-ring").addEventListener("click", async e => {
   const b = e.target.closest("button.rl-seat");
   if (!b || b.getAttribute("aria-disabled") === "true") return;
   const i = +b.dataset.seat, r = RL.room;
-  if (isMyTurn()){
+  if (canAct()){
     RL.target = i;
     $$("#rl-ring .rl-seat").forEach(x => { const on = +x.dataset.seat === i; x.classList.toggle("aimed", on); x.setAttribute("aria-pressed", on); });
     aimGun(i); renderBar();
@@ -430,6 +464,7 @@ async function act(btn){
   const a = btn.dataset.act, r = RL.room, id = RL.id;
   if (!r || btn.disabled) return;
   if (a === "bet") return openBet();
+  if (a === "auto"){ RL.autoDummy = !RL.autoDummy; try { sessionStorage.setItem("rl-auto:" + RL.id, RL.autoDummy ? "1" : ""); } catch (_) {} renderTools(); renderBar(); autoDummy(); toast(RL.autoDummy ? "더미 차례를 자동으로 진행합니다" : "더미 자동 진행을 껐습니다"); return; }
   if (a === "avatar") return openAvatar();
   if (a === "cancel" && !confirm("게임을 취소할까요? 참가비와 베팅은 모두 돌려줍니다.")) return;
   if (a === "delete" && !confirm("이 방을 지울까요? 채팅과 베팅 기록도 함께 지워집니다. (칩 기록과 전적은 남습니다)")) return;
@@ -441,9 +476,10 @@ async function act(btn){
       res = await call("roulette_join", { p_room: id, p_character: ch }, "자리에 앉았습니다");
       if (res !== null) RL.myChar = ch;
     }
+    else if (a === "dummy") res = await call("admin_roulette_add_dummy", { p_room: id, p_name: null }, "더미를 앉혔습니다");
     else if (a === "leave") res = await call("roulette_leave", { p_room: id }, "자리에서 일어났습니다");
     else if (a === "shoot"){
-      const me = mySeat(), t = RL.target ?? me?.seat;
+      const t = RL.target ?? ctlSeat()?.seat;
       res = await call("roulette_shoot", { p_room: id, p_target: t });
       if (res && typeof res === "object"){
         const key = `${res.round}:${res.shot_no}`;
@@ -505,7 +541,7 @@ $("#rl-bet-form").addEventListener("submit", async e => {
 let avaFile = null;
 function avaChoices(){
   const mine = myChars().map(c => ({ uuid: c.uuid, name: c.name }));
-  if (state.isAdmin) RL.seats.forEach(s => { if (!mine.some(m => m.uuid === s.character_id)) mine.push({ uuid: s.character_id, name: seatChar(s).name }); });
+  if (state.isAdmin) RL.seats.forEach(s => { if (s.character_id && !mine.some(m => m.uuid === s.character_id)) mine.push({ uuid: s.character_id, name: seatChar(s).name }); });
   return mine;
 }
 function avaPreview(){
@@ -534,7 +570,7 @@ $("#rl-ava-form").addEventListener("submit", async e => {
   const cid = $("#rl-ava-char").value, old = RL.avatars.get(cid)?.path;
   await withBusy($('button[type="submit"]', e.target), async () => {
     try {
-      const { toWebP, extOf } = await import("./img.js?v=20261024c");
+      const { toWebP, extOf } = await import("./img.js?v=20261024d");
       const blob = await toWebP(avaFile, 512), path = `${cid}/${Date.now()}.${extOf(blob)}`;
       const up = await sb.storage.from("roulette").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
       if (up.error) throw up.error;

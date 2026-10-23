@@ -1,4 +1,4 @@
-import { SITE_NAME } from "./config.js?v=20261024c";
+import { SITE_NAME } from "./config.js?v=20261024d";
 
 export const setTitle = t => { document.title = t ? `${t} | ${SITE_NAME}` : SITE_NAME; };
 

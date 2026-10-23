@@ -1,4 +1,4 @@
-import { $$ } from "./dom.js?v=20261024c";
+import { $$ } from "./dom.js?v=20261024d";
 
 /* =========================================================
    FORM — 검증·오류 표시·처리 중 상태 (접근성: aria-invalid + 오류 문구 연결)
@@ -13,6 +13,7 @@ export const ERR_TEXT = [
   [/duplicate key.*slug|slug.*duplicate/i, "이미 쓰고 있는 주소(slug)입니다."],
   [/duplicate key|23505/i, "같은 값이 이미 있습니다."],
   [/foreign key|23503/i, "다른 곳에서 사용 중이라 처리할 수 없습니다. 연결된 항목을 먼저 정리해 주세요."],
+  [/check constraint|23514/i, "허용되지 않는 값이라 저장하지 못했습니다. (관리자: 최신 supabase/update-*.sql 실행 여부 확인)"],
   [/row-level security|permission denied|42501|JWT/i, "권한이 없습니다. 다시 로그인해 주세요."],
   [/Failed to fetch|NetworkError|timeout|Load failed/i, "연결이 원활하지 않습니다. 잠시 후 다시 시도해 주세요."],
   [/otp_expired|expired/i, "링크가 만료되었습니다. 비밀번호 재설정을 다시 요청하거나 관리자에게 초대를 다시 요청해 주세요."]

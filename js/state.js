@@ -1,4 +1,4 @@
-import { CALM_KEY, SUITS } from "./config.js?v=20261024c";
+import { CALM_KEY, SUITS } from "./config.js?v=20261024d";
 
 export const mqReduce = matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -23,7 +23,7 @@ export function PROFILE_DUMMY(){
 
 export const DATA = {
   // characters (+ inventory). id = slug
-  dealers: Array.from({ length: 7 }, (_, i) => ({ id: "d" + (i + 1), uuid: "d" + (i + 1), name: "딜러 " + (i + 1), role: "딜러", suit: SUITS[i % 4], img: "", ...PROFILE_DUMMY() })),
+  dealers: Array.from({ length: 7 }, (_, i) => ({ id: "d" + (i + 1), uuid: "d" + (i + 1), name: "직원 " + (i + 1), role: "직원", suit: SUITS[i % 4], img: "", ...PROFILE_DUMMY() })),
   players: Array.from({ length: 7 }, (_, i) => ({ id: "p" + (i + 1), uuid: "p" + (i + 1), name: "참가자 " + (i + 1), role: "참가자", chip: i % 2 ? "red" : "green", img: "", ...PROFILE_DUMMY() })),
   chapters: Array.from({ length: 5 }, (_, i) => ({ number: i + 1, title: "회차 제목", summary: "요약 자리입니다.", date: "0000.00.00" })),
   items: Array.from({ length: 8 }, () => ({ name: "아이템 이름", price: 0 })),

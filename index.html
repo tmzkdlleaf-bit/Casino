@@ -27,24 +27,24 @@
 <!-- 제목·버튼: 갈무리 도트 글꼴 (SIL OFL, 버전 고정 + SRI) / 본문: IBM Plex Sans KR — 실제 쓰는 굵기만 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.css" integrity="sha384-55uQGdclWjXwWY0yHikdtcfcat9pPBqMBCVFIeWjRhvPPUYbpJLhIJegzTcFoh/A" crossorigin="anonymous">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="css/site.css?v=20261024c">
+<link rel="stylesheet" href="css/site.css?v=20261024d">
 <!-- 파일 주소 끝의 ?v=날짜 는 버전 표시 — 바꿔 올릴 때마다 함께 바꾸면 브라우저가 옛 파일을 쓰지 않음 (js 안의 import 주소도 같은 값) -->
 <!-- 모듈 미리 받기: import 사슬을 따라 차례로 받는 대기 시간 제거 (관리 모듈은 제외 — 관리자만 필요할 때 받음) -->
-<link rel="modulepreload" href="js/main.js?v=20261024c">
-<link rel="modulepreload" href="js/config.js?v=20261024c">
-<link rel="modulepreload" href="js/state.js?v=20261024c">
-<link rel="modulepreload" href="js/dom.js?v=20261024c">
-<link rel="modulepreload" href="js/data.js?v=20261024c">
-<link rel="modulepreload" href="js/views.js?v=20261024c">
-<link rel="modulepreload" href="js/effects.js?v=20261024c">
-<link rel="modulepreload" href="js/router.js?v=20261024c">
-<link rel="modulepreload" href="js/auth.js?v=20261024c">
-<link rel="modulepreload" href="js/forms.js?v=20261024c">
-<link rel="modulepreload" href="js/markdown.js?v=20261024c">
-<link rel="modulepreload" href="js/ambience.js?v=20261024c">
-<link rel="modulepreload" href="js/navorder.js?v=20261024c">
-<link rel="modulepreload" href="js/charedit.js?v=20261024c">
-<link rel="modulepreload" href="js/shop.js?v=20261024c">
+<link rel="modulepreload" href="js/main.js?v=20261024d">
+<link rel="modulepreload" href="js/config.js?v=20261024d">
+<link rel="modulepreload" href="js/state.js?v=20261024d">
+<link rel="modulepreload" href="js/dom.js?v=20261024d">
+<link rel="modulepreload" href="js/data.js?v=20261024d">
+<link rel="modulepreload" href="js/views.js?v=20261024d">
+<link rel="modulepreload" href="js/effects.js?v=20261024d">
+<link rel="modulepreload" href="js/router.js?v=20261024d">
+<link rel="modulepreload" href="js/auth.js?v=20261024d">
+<link rel="modulepreload" href="js/forms.js?v=20261024d">
+<link rel="modulepreload" href="js/markdown.js?v=20261024d">
+<link rel="modulepreload" href="js/ambience.js?v=20261024d">
+<link rel="modulepreload" href="js/navorder.js?v=20261024d">
+<link rel="modulepreload" href="js/charedit.js?v=20261024d">
+<link rel="modulepreload" href="js/shop.js?v=20261024d">
 </head>
 <body class="intro-on loading">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -152,7 +152,7 @@
 
       <section class="table p-cast" id="p-cast" aria-labelledby="h-cast">
         <div class="g-head">
-          <h2 id="h-cast">딜러와 참가자</h2>
+          <h2 id="h-cast">직원과 참가자</h2>
           <a class="more" href="#characters">전체 보기</a>
         </div>
         <div class="show" id="show">
@@ -174,8 +174,8 @@
   <section data-page="characters" class="page cast-page" hidden>
     <header class="page-head cast-head">
       <h1 class="page-title split">캐릭터</h1>
-      <div class="seg" role="group" aria-label="딜러·참가자 전환" id="seg">
-        <button type="button" data-filter="dealer" aria-pressed="true">딜러 <span class="num" id="count-dealer"></span></button>
+      <div class="seg" role="group" aria-label="직원·참가자 전환" id="seg">
+        <button type="button" data-filter="dealer" aria-pressed="true">직원 <span class="num" id="count-dealer"></span></button>
         <button type="button" data-filter="player" aria-pressed="false">참가자 <span class="num" id="count-player"></span></button>
         <span class="seg-ink" aria-hidden="true"></span>
       </div>
@@ -199,7 +199,6 @@
       <div class="pf-visual" id="pf-visual"></div>
       <div class="pf-info pane">
         <div class="pf-top">
-          <a class="btn pf-back" href="#characters"><span class="back-ico" aria-hidden="true"></span>캐릭터 목록으로</a>
           <button class="btn" type="button" id="pf-edit" hidden>내 캐릭터 수정</button>
         </div>
         <div class="pf-head">
@@ -397,6 +396,21 @@
             </div>
           </form>
         </section>
+        <!-- 칩 정산 요청: 멤버가 올리고 관리자가 승인 (supabase/update-9.sql) -->
+        <section class="g-panel card" aria-labelledby="creq-h" id="creq-card" hidden>
+          <h2 class="card-h" id="creq-h">칩 정산 요청</h2>
+          <p class="hint" style="margin-top:0">활동 정산처럼 칩을 더하거나(+) 빼야(-) 할 때 요청합니다. 관리자가 승인하면 반영됩니다.</p>
+          <form class="form" id="creq-form" novalidate>
+            <p class="form-error" id="creq-err" role="alert" hidden></p>
+            <div class="field" id="creq-char-f"><label for="creq-char">캐릭터</label><select class="input" id="creq-char"></select></div>
+            <div class="row2">
+              <div class="field"><label for="creq-amt">칩</label><input class="input" id="creq-amt" type="number" inputmode="numeric" step="1" placeholder="100 또는 -50" required aria-describedby="creq-amt-h"><span class="hint" id="creq-amt-h">빼는 요청은 앞에 - 를 붙입니다</span></div>
+              <div class="field"><label for="creq-why">사유</label><input class="input" id="creq-why" maxlength="200" placeholder="예: 10월 1주 활동" required></div>
+            </div>
+            <div class="form-actions"><button class="btn primary" type="submit">요청 보내기</button></div>
+          </form>
+          <div id="creq-list"></div>
+        </section>
         <section class="g-panel card" aria-labelledby="disp-h">
           <h2 class="card-h" id="disp-h">화면</h2>
           <div class="switch">
@@ -515,6 +529,11 @@
       <div id="pe-links"></div>
       <button class="btn small" type="button" id="pe-link-add">링크 추가</button>
     </fieldset>
+    <div class="field"><span class="label-like" id="pe-gimg-l">게임용 이미지 (룰렛 자리)</span>
+      <div class="img-field"><div class="img-prev rl-ava-prev" id="pe-gimg-prev"></div>
+        <div><label class="sr" for="pe-gimg">새 게임용 이미지</label><input type="file" id="pe-gimg" accept="image/*" aria-describedby="pe-gimg-l pe-gimg-h">
+          <label class="check" id="pe-gimg-del-l" hidden><input type="checkbox" id="pe-gimg-del">지우고 캐릭터 이미지 쓰기</label></div></div>
+      <span class="hint" id="pe-gimg-h">캐릭터 이미지와 따로, 룰렛 테이블에만 보입니다. 정사각형으로 잘려 보입니다.</span></div>
     <div class="field"><label for="pe-bgm">캐릭터 음악 (유튜브 링크)</label><input class="input" id="pe-bgm" name="bgm" type="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=…" aria-describedby="pe-bgm-h pe-bgm-err"><span class="hint" id="pe-bgm-h">비우면 재생 버튼이 사라집니다</span><span class="field-error" id="pe-bgm-err" hidden></span></div>
     <div class="form-actions">
       <button class="btn primary" type="submit" value="save" id="pe-save">저장</button>
@@ -575,6 +594,6 @@
 <!-- 버전 고정 + 무결성 해시(SRI): CDN 파일이 바뀌면 브라우저가 실행을 거부 -->
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"
         integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
-<script type="module" src="js/main.js?v=20261024c"></script>
+<script type="module" src="js/main.js?v=20261024d"></script>
 </body>
 </html>

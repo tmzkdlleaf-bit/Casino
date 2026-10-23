@@ -1,9 +1,9 @@
-import { loadMine } from "./auth.js?v=20261024c";
-import { CONFIG } from "./config.js?v=20261024c";
-import { $, toast } from "./dom.js?v=20261024c";
-import { route } from "./router.js?v=20261024c";
-import { DATA, nav, state } from "./state.js?v=20261024c";
-import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261024c";
+import { loadMine } from "./auth.js?v=20261024d";
+import { CONFIG } from "./config.js?v=20261024d";
+import { $, toast } from "./dom.js?v=20261024d";
+import { route } from "./router.js?v=20261024d";
+import { DATA, nav, state } from "./state.js?v=20261024d";
+import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261024d";
 
 /* =========================================================
    DATA LAYER — Supabase 조회 → 화면용 DATA 모양으로 변환
@@ -46,7 +46,8 @@ export function mapCharacter(r){
     id: r.slug,
     uuid: r.id,
     name: r.name,
-    role: r.kind === "dealer" ? "딜러" : "참가자",
+    role: r.kind === "dealer" ? "직원" : "참가자",
+    roleTitle: r.role_title || "",                // 역할 이름 (예: 바텐더) — update-9.sql
     suit: SUIT_MAP[r.suit] || "♠",
     chip: r.chip_color || "green",
     img: publicUrl("characters", r.image_path),
@@ -78,8 +79,9 @@ export function withTimeout(promise, ms = 12000){
 export const LOGS = { ok: true };
 export const FOCUS = { ok: true };
 export const EXTRA = { ok: true };   // characters.links · bgm_url (update-6.sql)
+export const ROLE = { ok: true };    // characters.role_title (update-9.sql)
 const charQuery = () => sb.from("characters")
-  .select(`id, slug, name, kind, suit, chip_color, image_path, thumb_path${FOCUS.ok ? ", image_focus" : ""}${EXTRA.ok ? ", links, bgm_url" : ""}, age, height, keywords, description, sort_order, inventory(quantity, note, sort_order, items(name, description, image_path))`)
+  .select(`id, slug, name, kind, suit, chip_color, image_path, thumb_path${FOCUS.ok ? ", image_focus" : ""}${EXTRA.ok ? ", links, bgm_url" : ""}${ROLE.ok ? ", role_title" : ""}, age, height, keywords, description, sort_order, inventory(quantity, note, sort_order, items(name, description, image_path))`)
   .order("sort_order");
 const chapterQuery = () => sb.from("chapters").select(`id, number, title, summary, played_on${LOGS.ok ? ", log_path" : ""}`).order("number");
 const missingCol = (e, col) => e && (e.code === "42703" || e.code === "PGRST204") && new RegExp(col).test(e.message || "");
@@ -123,6 +125,7 @@ export async function loadAll(){
   ]));
   if (FOCUS.ok && missingCol(q[0].error, "image_focus")){ FOCUS.ok = false; q = [...q]; q[0] = await charQuery(); }
   if (EXTRA.ok && missingCol(q[0].error, "links|bgm_url")){ EXTRA.ok = false; q = [...q]; q[0] = await charQuery(); }
+  if (ROLE.ok && missingCol(q[0].error, "role_title")){ ROLE.ok = false; q = [...q]; q[0] = await charQuery(); }
   if (LOGS.ok && missingCol(q[1].error, "log_path")){ LOGS.ok = false; q = [...q]; q[1] = await chapterQuery(); }
   const failed = q.find(r => r.error);
   if (failed) throw failed.error;
@@ -132,7 +135,7 @@ export async function loadAll(){
   const byUuid = Object.fromEntries(all.map(c => [c.uuid, c]));
   const records = await withTimeout(loadRecords(byUuid)).catch(() => []);
   return {
-    dealers: all.filter(c => c.role === "딜러"),
+    dealers: all.filter(c => c.role === "직원"),
     players: all.filter(c => c.role === "참가자"),
     chapters: chapters.map(c => ({ id: c.id, number: c.number, title: c.title, summary: c.summary, date: fmtDate(c.played_on), iso: c.played_on, log: publicUrl("logs", c.log_path) })),
     items: items.map(it => ({ id: it.id, name: it.name, description: it.description, price: it.price, stock: it.stock, img: publicUrl("items", it.image_path) })),
@@ -185,10 +188,17 @@ export function subscribeProfile(){
     })
     // 구매 요청: 멤버는 자기 것만, 관리자는 전부 도착 (update-7.sql)
     .on("postgres_changes", { event: "*", schema: "public", table: "shop_requests" }, ({ eventType, new: row }) => {
-      import("./shop.js?v=20261024c").then(m => m.onRequestChange(row));
+      import("./shop.js?v=20261024d").then(m => m.onRequestChange(row));
       if (!state.isAdmin) return;
       if (eventType === "INSERT" && !state.mine.some(m => m.uuid === row.character_id)) toast(`새 구매 요청: ${row.item_name} ×${row.quantity}`);
       document.dispatchEvent(new CustomEvent("comu:shop-req", { detail: row }));
+    })
+    // 칩 정산 요청 (update-9.sql)
+    .on("postgres_changes", { event: "*", schema: "public", table: "chip_requests" }, ({ eventType, new: row }) => {
+      import("./chipreq.js?v=20261024d").then(m => m.onChipRequestChange(row));
+      if (!state.isAdmin) return;
+      if (eventType === "INSERT" && !state.mine.some(m => m.uuid === row.character_id)) toast(`새 칩 정산 요청: ${row.amount > 0 ? "+" : ""}${row.amount}칩`);
+      document.dispatchEvent(new CustomEvent("comu:chip-req", { detail: row }));
     })
     .subscribe();
   chanProfile.uid = uid;
