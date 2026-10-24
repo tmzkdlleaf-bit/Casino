@@ -1,12 +1,12 @@
-import { loadMine } from "./auth.js?v=20261024f";
-import { CONFIG } from "./config.js?v=20261024f";
-import { FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261024f";
-import { $, $$, announce, esc, toast } from "./dom.js?v=20261024f";
-import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261024f";
-import { renderMarkdown } from "./markdown.js?v=20261024f";
-import { extOf, toWebP } from "./img.js?v=20261024f";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
-import { state } from "./state.js?v=20261024f";
-import { ALL, renderAccount } from "./views.js?v=20261024f";
+import { loadMine } from "./auth.js?v=20261025a";
+import { CONFIG } from "./config.js?v=20261025a";
+import { FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261025a";
+import { $, $$, announce, esc, toast } from "./dom.js?v=20261025a";
+import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261025a";
+import { renderMarkdown } from "./markdown.js?v=20261025a";
+import { extOf, toWebP } from "./img.js?v=20261025a";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
+import { state } from "./state.js?v=20261025a";
+import { ALL, renderAccount } from "./views.js?v=20261025a";
 
 /* =========================================================
    ADMIN — 관리 페이지. 화면만 관리자에게 보이고, 실제 차단은 RLS + RPC가 담당
@@ -181,7 +181,7 @@ export async function admLoad(table){
 function ensureAdminCss(){
   if (document.getElementById("admin-css")) return;
   const l = document.createElement("link");
-  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261024f";
+  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261025a";
   document.head.append(l);
 }
 
@@ -541,9 +541,10 @@ export async function admMembers(){
   const chars = ALL();
   const nameOf = m => m.display_name || (m.email || "").split("@")[0] || "이름 없음";
   admPanel().innerHTML = `
+    <div class="card adm-invite" id="adm-invite" hidden></div>
     <div class="card">
       <div class="g-head"><h2 class="card-h" style="margin:0">멤버</h2>
-        <a class="btn small" style="margin-left:auto" href="https://supabase.com/dashboard/project/${esc(new URL(CONFIG.SUPABASE_URL).hostname.split(".")[0])}/auth/users" target="_blank" rel="noopener" title="Supabase → Invite user">멤버 초대<span class="sr"> (Supabase 대시보드, 새 창)</span> ↗</a></div>
+        <a class="btn small" style="margin-left:auto" href="https://supabase.com/dashboard/project/${esc(new URL(CONFIG.SUPABASE_URL).hostname.split(".")[0])}/auth/users" target="_blank" rel="noopener" title="Supabase → Add user">계정 직접 만들기<span class="sr"> (Supabase 대시보드, 새 창)</span> ↗</a></div>
       <div class="table-scroll">
         <table class="members" style="min-width:36rem">
           <caption class="sr">멤버 목록 — 이름, 권한, 소유 캐릭터</caption>
@@ -587,6 +588,47 @@ export async function admMembers(){
         </table>
       </div>
     </div>`;
+  admInvite();
+}
+
+/* ----- 가입 링크 (update-11.sql + 서버 함수 signup) — 공용 링크 하나, 켜고 끄거나 새로 바꿈 ----- */
+const inviteUrl = code => `${location.origin}${location.pathname}#join/${code}`;
+async function admInvite(){
+  const box = $("#adm-invite");
+  if (!box) return;
+  const { data, error } = await sb.rpc("admin_invite_get");
+  if (error || !data?.[0]) return;   // update-11.sql 전이면 숨김
+  const inv = data[0];
+  box.hidden = false;
+  box.innerHTML = `
+    <div class="g-head"><h2 class="card-h" style="margin:0">가입 링크</h2>
+      <label class="check inv-on"><input type="checkbox" id="inv-on"${inv.enabled ? " checked" : ""}> 받기</label></div>
+    <div class="inv-row${inv.enabled ? "" : " off"}">
+      <input class="input" id="inv-url" readonly value="${esc(inviteUrl(inv.code))}" aria-label="가입 링크"${inv.enabled ? "" : " disabled"}>
+      <button class="btn small primary" type="button" id="inv-copy"${inv.enabled ? "" : " disabled"}>복사</button>
+      <button class="btn small" type="button" id="inv-new">새 링크</button>
+    </div>`;
+  $("#inv-url").addEventListener("focus", e => e.target.select());
+  $("#inv-copy").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText($("#inv-url").value); toast("가입 링크를 복사했습니다"); }
+    catch (_) { $("#inv-url").select(); toast("링크를 길게 눌러 복사해 주세요"); }
+  });
+  $("#inv-on").addEventListener("change", async e => {
+    const on = e.target.checked;
+    const { error } = await sb.rpc("admin_invite_set", { p_enabled: on, p_renew: false });
+    if (error){ toast(errMsg(error)); e.target.checked = !on; return; }
+    toast(on ? "가입 링크를 켰습니다" : "가입 링크를 껐습니다. 이제 링크로 가입할 수 없습니다");
+    admInvite();
+  });
+  $("#inv-new").addEventListener("click", async e => {
+    if (!confirm("새 링크로 바꾸면 지금 링크는 더 이상 쓸 수 없습니다. 바꿀까요?")) return;
+    await withBusy(e.currentTarget, async () => {
+      const { error } = await sb.rpc("admin_invite_set", { p_enabled: null, p_renew: true });
+      if (error){ toast(errMsg(error)); return; }
+      toast("새 가입 링크를 만들었습니다");
+      await admInvite();
+    });
+  });
 }
 
 /* ----- 구매 요청 (update-7.sql) — 승인하면 서버가 칩 차감 + 재고 감소 + 소지품 지급을 한 번에 ----- */
@@ -835,7 +877,7 @@ admPanel().addEventListener("click", async e => {
   if (t.closest(".bm-link")){ e.preventDefault(); toast("이 버튼은 누르지 말고 즐겨찾기 막대로 끌어다 놓으세요"); return; }
   if (t.closest("[data-log-room]")) return withBusy(t.closest("[data-log-room]"), logRoom);
   if (t.closest("[data-log-lib]")) return logLibPaste();
-  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261024f"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
+  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261025a"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
   const logSave = t.closest("[data-log-save]");
   if (logSave) return withBusy(logSave, () => logSaveNow(logSave.dataset.id));
   const logDel = t.closest("[data-log-del]");
@@ -928,7 +970,7 @@ async function logRead(input){
   if (!f) return;
   if (f.size > 60 * 1024 * 1024){ fieldError(input, "60MB 이하 파일만 올릴 수 있습니다."); return; }
   $("#log-status").textContent = "읽는 중…";
-  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261024f");
+  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261025a");
   const messages = parseLog(await f.text());
   $("#log-status").textContent = "";
   if (!messages.length){ fieldError(input, "대사를 찾지 못했습니다. 코코포리아에서 내보낸 로그 파일이 맞는지 확인해 주세요."); return; }
@@ -974,7 +1016,7 @@ function libSummary(extra = ""){
 }
 
 async function logRoom(){
-  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261024f");
+  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261025a");
   const id = roomIdFrom($("#log-room").value);
   if (!id){ $("#log-lib-status").textContent = "코코포리아 룸 링크 형식이 아닙니다. (https://ccfolia.com/rooms/…)"; $("#log-room").focus(); return; }
   try {
@@ -990,7 +1032,7 @@ async function logRoom(){
 }
 
 async function logLibPaste(){
-  const { parseLibrary } = await import("./logparse.js?v=20261024f");
+  const { parseLibrary } = await import("./logparse.js?v=20261025a");
   try {
     const lib = parseLibrary($("#log-lib-text").value);
     if (!lib.length){ $("#log-lib-status").textContent = "캐릭터를 찾지 못했습니다."; return; }
@@ -1034,7 +1076,7 @@ export async function backupFaces(urls, onProgress = () => {}){
 
 async function logSaveNow(id){
   if (!LOG.messages) return;
-  const { pack } = await import("./logparse.js?v=20261024f");
+  const { pack } = await import("./logparse.js?v=20261025a");
   const include = new Set($$('input[name="log-tab"]:checked').map(i => LOG.info.tabs[+i.value].name));
   const narrators = new Set($$('input[name="log-narr"]:checked').map(i => LOG.info.speakers[+i.value].name));
   if (!include.size){ $("#log-status").textContent = "저장할 탭을 하나 이상 골라 주세요."; return; }

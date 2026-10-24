@@ -1403,3 +1403,5 @@ button.rl-seat:not([aria-disabled="true"]):hover .av{border-color:var(--gold)}
 #rl-meta{display:flex; flex-wrap:wrap; justify-content:flex-end; row-gap:.1rem}
 @media (max-width:860px){ #rl-meta{justify-content:flex-start} }
 .rank .w{white-space:nowrap}
+.join-bad{display:grid; gap:1rem; justify-items:start}
+.join-bad p{margin:0}

@@ -170,3 +170,10 @@ table.shop-log .st-cancelled{opacity:.6}
 .bk-list li{display:flex; justify-content:space-between; gap:.5rem; padding:.2rem 0; border-bottom:1px solid var(--line-2); color:var(--text-2)}
 .bk-list b{font-variant-numeric:tabular-nums; color:var(--ivory); font-weight:400}
 .bk-list li.bad b{color:var(--red-text)}
+
+/* 가입 링크 */
+.adm-invite{margin-bottom:1.25rem}
+.adm-invite .inv-on{margin-left:auto}
+.inv-row{display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:.5rem; margin-top:.6rem}
+.inv-row .input{font-size:.875rem; min-height:2.5rem}
+.inv-row.off .input{opacity:.45; text-decoration:line-through}
