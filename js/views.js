@@ -1,9 +1,9 @@
-import { CONFIG, SUITS } from "./config.js?v=20261024e";
-import { EXTRA, RECORDS, USE_DB } from "./data.js?v=20261024e";
-import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261024e";
-import { initShow, layoutCast } from "./effects.js?v=20261024e";
-import { buyHtml, myReqHtml } from "./shop.js?v=20261024e";
-import { DATA, nav, state } from "./state.js?v=20261024e";
+import { CONFIG, SUITS } from "./config.js?v=20261024f";
+import { EXTRA, RECORDS, USE_DB, sb } from "./data.js?v=20261024f";
+import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261024f";
+import { initShow, layoutCast } from "./effects.js?v=20261024f";
+import { buyHtml, myReqHtml } from "./shop.js?v=20261024f";
+import { DATA, nav, state } from "./state.js?v=20261024f";
 
 /* ---------- render ---------- */
 export const timeTag = (label, iso) => `<time${iso ? ` datetime="${esc(iso)}"` : ""}>${esc(label)}</time>`;
@@ -310,6 +310,20 @@ export function winCounts(recs){
   return [...m.values()].sort((a, b) => b.w - a.w);
 }
 
+/* 룰렛 전적 (update-10.sql roulette_stats): 판 수 · 우승 · 룰렛으로 늘거나 준 칩 */
+const RLS = { rows: null, at: 0, busy: false, ok: true };
+const RL_GAME = "러시안 룰렛";
+async function loadRlStats(){
+  if (!USE_DB || !RLS.ok || RLS.busy || Date.now() - RLS.at < 20000) return;
+  RLS.busy = true;
+  const { data, error } = await sb.rpc("roulette_stats");
+  RLS.busy = false; RLS.at = Date.now();
+  if (error){ RLS.ok = false; return; }
+  RLS.rows = data || [];
+  if (nav.current === "game") renderRecords();
+}
+export function refreshRlStats(){ RLS.at = 0; }
+
 /* 분류 버튼은 종류가 바뀔 때만 다시 그림 — 누를 때마다 다시 그리면 키보드 포커스가 사라짐 */
 let recGames = "";
 export function renderRecords(){
@@ -342,6 +356,23 @@ export function renderRecords(){
     </tr>`).join("") : `<tr><td colspan="6" class="empty-note">${empty}</td></tr>`;
   $("#rec-more").hidden = recs.length <= state.recLimit;
 
+  // 룰렛만 볼 때: 판 수와 칩까지 보여 주는 순위
+  const rl = state.recFilter === RL_GAME || (state.recFilter === "전체" && games.length === 1 && games[0] === RL_GAME);
+  $("#h-rank").textContent = rl ? "룰렛 순위" : "승리 순위";
+  if (rl){
+    loadRlStats();
+    if (RLS.rows){
+      const byUuid = new Map(ALL().map(c => [c.uuid, c]));
+      const list = RLS.rows.map(x => ({ x, c: byUuid.get(x.character_id) })).filter(v => v.c);
+      const mx = Math.max(1, ...list.map(v => v.x.wins));
+      $("#rec-rank").innerHTML = list.length ? list.slice(0, 8).map(({ x, c }, i) => `<li>
+          <span class="no">${String(i + 1).padStart(2, "0")}</span>${winName(c)}<span class="w">${x.wins}승 <small>/ ${x.played}판</small></span>
+          <span class="rl-net${x.net < 0 ? " minus" : ""}">칩 ${chipText(x.net)} · 생존율 ${Math.round(x.wins / x.played * 100)}%</span>
+          <span class="bar" aria-hidden="true"><i style="--p:${(x.wins / mx * 100).toFixed(1)}%"></i></span></li>`).join("")
+        : `<li class="slot-note">기록이 쌓이면 순위가 보입니다.</li>`;
+      return;
+    }
+  }
   const max = top?.w || 1;
   $("#rec-rank").innerHTML = ranks.length ? ranks.slice(0, 5).map((x, i) => `<li>
       <span class="no">${String(i + 1).padStart(2, "0")}</span>${winName(x.c)}<span class="w">${x.w}승</span>

@@ -5,12 +5,12 @@
    - 탄 위치는 서버만 앎. 화면은 서버가 돌려준 결과(채팅의 'shot' 기록)를 보고 효과만 그림
    - 실시간 연결이 끊겨도 5초마다 다시 불러와 따라감
    ========================================================= */
-import { USE_DB, publicUrl, sb } from "./data.js?v=20261024e";
-import { $, $$, announce, esc, setTitle, toast } from "./dom.js?v=20261024e";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261024e";
-import { motionOK, nav, state } from "./state.js?v=20261024e";
-import { ALL, myChars } from "./views.js?v=20261024e";
-import { sfx, sfxOn, setSfx } from "./sfx.js?v=20261024e";
+import { USE_DB, publicUrl, sb } from "./data.js?v=20261024f";
+import { $, $$, announce, esc, setTitle, toast } from "./dom.js?v=20261024f";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261024f";
+import { motionOK, nav, state } from "./state.js?v=20261024f";
+import { ALL, myChars } from "./views.js?v=20261024f";
+import { sfx, sfxVol, setSfxVol } from "./sfx.js?v=20261024f";
 
 /* ---------- 전기 충격기 (도트 그림) — 오른쪽을 향함, 한 칸 = 1 ---------- */
 const GUN = ["........................................", "....KKKKKKKKKKKKKKKKKKKKKKKKK...........", "...KSSSSSSSSSSSSSSSSSSSSSSSSSK..........", "..KLLLLLLLLLLLLLLLLLLLLLLLLLLLKKKKKKKK..", "..KLBBYYBYYBYYBBBBBBBBBBBBBBBKPPPPPPPK..", "..KLBBBBBBBBBBBBBBBBBBBBBBBBBKPQQQQQPKWW", "..KDBBBBBBBBBBBBBBBBBBBBBBBBBKPPPPPPPK..", "..KDDDDDDDDDDDDDDDDDDDDDDDDDDKPQQQQQPKWW", "..KKKKKKDDDDDDDKKKKKKKKKKKKKKKPPPPPPPK..", ".......KGGGGGKDK....K.......KKKKKKKKK...", "......KGgGGGKKDK...K....................", "......KGGGGGK.KMK..K....................", ".....KGgGGGK...KMKK.....................", ".....KGGGGGK....KK......................", "....KGgGGGK.............................", "....KGGGGGK.............................", "....KKKKKKK............................."];
@@ -27,10 +27,11 @@ const RL = {
   id: null, room: null, seats: [], bets: [], chat: [], avatars: new Map(),
   chan: null, live: false, poll: 0, reloadT: 0, loading: null,
   target: null, myChar: null, autoDummy: false, autoT: 0, fxSeen: new Set(), lastChat: 0, wasMyTurn: false, missing: false,
-  fxUntil: 0, renderT: 0
+  fxUntil: 0, renderT: 0, actedAt: 0, skew: 0, tickT: 0, timeoutTry: 0
 };
 const LOBBY = { chan: null, t: 0 };
-const DUMMY = { ok: true };   // roulette_seats.dummy_name (update-9.sql)
+const DUMMY = { ok: true };
+const TURN = { ok: true }, TURN_SEC = 60;   // 차례 시간 제한 (update-10.sql 없으면 꺼짐)   // roulette_seats.dummy_name (update-9.sql)
 const n = v => Number(v || 0).toLocaleString("ko-KR");
 const STATUS = { waiting: "대기 중", playing: "진행 중", finished: "끝남", cancelled: "취소됨" };
 const missingTable = e => /42P01|PGRST205|PGRST202|roulette_/.test(`${e?.code} ${e?.message}`);
@@ -125,6 +126,7 @@ $$(".rl-dlg [data-close]").forEach(b => b.addEventListener("click", () => b.clos
 function closeRoom(){
   if (RL.chan){ sb.removeChannel(RL.chan); RL.chan = null; }
   clearInterval(RL.poll); RL.poll = 0; RL.live = false;
+  clearInterval(RL.tickT); RL.tickT = 0;
   RL.id = null;
 }
 
@@ -132,7 +134,7 @@ async function openRoom(id){
   if (RL.id !== id){
     closeRoom();
     let auto = false; try { auto = sessionStorage.getItem("rl-auto:" + id) === "1"; } catch (_) {}   // 더미 자동 진행은 새로 고침해도 유지
-    Object.assign(RL, { id, autoDummy: auto, room: null, seats: [], bets: [], chat: [], avatars: new Map(), target: null, fxSeen: new Set(), lastChat: 0, wasMyTurn: false });
+    Object.assign(RL, { id, timeoutTry: 0, autoDummy: auto, room: null, seats: [], bets: [], chat: [], avatars: new Map(), target: null, fxSeen: new Set(), lastChat: 0, wasMyTurn: false });
     $("#rl-chat").innerHTML = ""; $("#rl-ring").innerHTML = ""; $("#rl-bar").innerHTML = ""; $("#rl-tools").innerHTML = "";
     $("#rl-status").textContent = "불러오는 중…"; $("#rl-meta").textContent = "";
   }
@@ -140,6 +142,7 @@ async function openRoom(id){
   if (RL.id !== id || !RL.room) return;
   subscribe(id);
   RL.poll = setInterval(() => { if (!RL.live && !document.hidden) load(true); }, 5000);
+  RL.tickT = setInterval(tick, 1000);
 }
 
 function subscribe(id){
@@ -160,7 +163,7 @@ async function load(quiet){
   const id = RL.id;
   RL.loading = (async () => {
     const [r, s, b, c] = await Promise.all([
-      sb.from("roulette_rooms").select("id, title, status, max_seats, entry_fee, pass_rule, pot, turn_seat, shots, round, self_survived, winner_seat, started_at, ended_at").eq("id", id).maybeSingle(),
+      sb.from("roulette_rooms").select("id, title, status, max_seats, entry_fee, pass_rule, pot, turn_seat, shots, round, self_survived, winner_seat, started_at, ended_at, last_action_at").eq("id", id).maybeSingle(),
       sb.from("roulette_seats").select(`seat, character_id, alive, out_at${DUMMY.ok ? ", dummy_name" : ""}`).eq("room_id", id).order("seat"),
       sb.from("roulette_bets").select("id, seat, character_id, amount, payout").eq("room_id", id),
       sb.from("roulette_chat").select("id, name, body, kind, data, created_at").eq("room_id", id).gt("id", RL.lastChat).order("id", { ascending: false }).limit(120)
@@ -173,6 +176,12 @@ async function load(quiet){
       return;
     }
     if (!r.data){ roomError(`<p class="empty-note">없는 방입니다. 지워졌을 수 있습니다.</p><p style="text-align:center"><a class="btn" href="#game">방 목록으로</a></p>`); return; }
+    // 내 시계와 서버 시계 차이: 행동 직후 바로 받은 경우에만 잼 (실시간 연결 또는 내가 방금 한 행동)
+    const prev = RL.room?.last_action_at, nowAct = r.data.last_action_at;
+    if (prev && nowAct && prev !== nowAct && (RL.live || Date.now() - RL.actedAt < 3000)){
+      const d = Date.now() - Date.parse(nowAct);
+      if (Math.abs(d) < 300000) RL.skew = d;
+    }
     RL.room = r.data; RL.seats = s.data || []; RL.bets = b.data || [];
     const ids = RL.seats.map(x => x.character_id).filter(Boolean).concat(myChars().map(x => x.uuid));
     if (ids.length){
@@ -213,9 +222,9 @@ function render(){
   const t = $("#rl-title");
   if (t.textContent !== r.title) t.textContent = r.title;
   setTitle(r.title);
-  $("#rl-meta").textContent = [STATUS[r.status], `자리 ${RL.seats.length}/${r.max_seats}`, r.entry_fee ? `참가비 ${n(r.entry_fee)}칩` : "참가비 없음",
-    r.pass_rule === "free" ? "넘기기 자유" : "넘기기: 나에게 쏘고 살아남은 뒤"].join(" · ");
-  renderStatus(); renderRing(); renderCyl(); renderBar(); renderTools(); renderPool();
+  $("#rl-meta").innerHTML = [STATUS[r.status], `자리 ${RL.seats.length}/${r.max_seats}`, r.entry_fee ? `참가비 ${n(r.entry_fee)}칩` : "참가비 없음",
+    r.pass_rule === "free" ? "넘기기 자유" : "넘기기는 나에게 쏜 뒤", r.status === "playing" && TURN.ok ? `차례당 ${TURN_SEC}초` : ""].filter(Boolean).map(x => `<span>${x}</span>`).join("");
+  renderStatus(); renderRing(); renderCyl(); renderBar(); renderTools(); renderPool(); tick();
   aimGun(RL.target ?? r.turn_seat);
 
   const my = isMyTurn();
@@ -253,6 +262,7 @@ function renderStatus(){
     : `<b>${esc(turn ? seatChar(turn).name : "—")}</b> 차례 · 시계 방향 ↻`;
   else if (r.status === "finished"){ const w = seatAt(r.winner_seat); html = `<b class="win">${esc(w ? seatChar(w).name : "—")} 우승</b>${r.pot ? ` · 판돈 ${n(r.pot)}칩` : ""}`; }
   else html = `<b>취소된 게임</b> — 참가비와 베팅은 돌려드렸습니다`;
+  if (r.status === "playing" && TURN.ok) html += `<span class="left" id="rl-left"></span>`;
   el.innerHTML = html;
 }
 
@@ -283,6 +293,7 @@ function renderRing(){
       <span class="nm">${c.role === "직원" ? "" : `<span class="chip ${c.chip}" aria-hidden="true"></span>`}${esc(c.name)}${isMe ? `<small>나</small>` : ""}${c.dummy ? `<small class="dm">더미</small>` : ""}</span>
       ${betBy[i] ? `<span class="bet" aria-hidden="true">${n(betBy[i])}</span>` : ""}
       ${nextSeat === i && nextSeat !== r.turn_seat ? `<span class="nx" aria-hidden="true">다음</span>` : ""}
+      ${turn && TURN.ok ? `<span class="tm" aria-hidden="true"></span>` : ""}
     </button>`;
   }).join("");
 }
@@ -291,6 +302,28 @@ function renderRing(){
 function nextAlive(from){
   const alive = RL.seats.filter(s => s.alive).map(s => s.seat).sort((a, b) => a - b);
   return alive.find(x => x > from) ?? alive[0] ?? null;
+}
+
+/* ---------- 차례 60초 제한 (update-10.sql) ----------
+   서버가 마지막 행동 시각을 기준으로 판단. 화면은 1초마다 남은 시간만 고쳐 그림.
+   시간이 다 되면 보고 있던 사람 아무나 roulette_timeout 을 불러 다음 차례로 넘김 (서버가 60초를 다시 확인) */
+function leftSec(){
+  const r = RL.room;
+  if (!r || r.status !== "playing" || !r.last_action_at) return null;
+  return Math.max(0, Math.ceil(TURN_SEC - (Date.now() - RL.skew - Date.parse(r.last_action_at)) / 1000));
+}
+function tick(){
+  const left = leftSec(), on = left != null && TURN.ok;
+  const lab = $("#rl-left"), tm = $("#rl-ring .rl-seat.turn .tm");
+  if (lab) { lab.textContent = on ? `${left}초` : ""; lab.classList.toggle("low", on && left <= 10); }
+  if (tm) { tm.textContent = on ? left : ""; tm.classList.toggle("low", on && left <= 10); }
+  if (on && left === 0 && state.session && Date.now() > RL.timeoutTry && !(RL.fxUntil > Date.now())){
+    RL.timeoutTry = Date.now() + 4000;
+    sb.rpc("roulette_timeout", { p_room: RL.id }).then(({ data, error }) => {
+      if (error){ if (/PGRST202|roulette_timeout/.test(`${error.code} ${error.message}`)) { TURN.ok = false; render(); } return; }
+      if (data) load(true);
+    });
+  }
 }
 
 /* 탄창 6칸: 쏜 칸은 비어 보임. 남은 칸 중 어디에 있는지는 아무도 모름 */
@@ -345,8 +378,10 @@ function renderBar(){
 function renderTools(){
   const r = RL.room, a = state.isAdmin;
   const canAva = state.session && (myChars().length || (a && RL.seats.length));
-  $("#rl-tools").innerHTML = [
-    `<button class="btn small rl-snd" type="button" data-act="sound" aria-pressed="${sfxOn()}" title="효과음">${sfxOn() ? "소리 켬" : "소리 끔"}</button>`,
+  const tools = $("#rl-tools");
+  // 소리 막대는 처음 한 번만 그림 (끄는 중에 다시 그려져 손에서 빠지지 않게)
+  if (!$(".rl-btns", tools)) tools.innerHTML = `<label class="rl-vol" title="효과음 크기"><span>소리</span><input type="range" id="rl-vol" min="0" max="100" step="10" value="${Math.round(sfxVol() * 100)}" aria-label="효과음 크기"><output>${Math.round(sfxVol() * 100) || "끔"}</output></label><span class="rl-btns"></span>`;
+  const html = [
     canAva ? `<button class="btn small" type="button" data-act="avatar">자리 이미지</button>` : "",
     a && DUMMY.ok && r.status === "waiting" ? `<button class="btn small" type="button" data-act="dummy"${RL.seats.length >= r.max_seats ? " disabled" : ""}>더미 추가</button>` : "",
     a && r.status === "playing" && RL.seats.some(s => !s.character_id) ? `<button class="btn small" type="button" data-act="auto" aria-pressed="${RL.autoDummy}">더미 자동 ${RL.autoDummy ? "켬" : "끔"}</button>` : "",
@@ -355,6 +390,8 @@ function renderTools(){
     a && (r.status === "waiting" || r.status === "playing") ? `<button class="btn small danger" type="button" data-act="cancel">게임 취소</button>` : "",
     a && (r.status === "finished" || r.status === "cancelled") ? `<button class="btn small danger" type="button" data-act="delete">방 지우기</button>` : ""
   ].join("");
+  const box = $(".rl-btns", tools);
+  if (box.dataset.h !== html){ box.innerHTML = html; box.dataset.h = html; }
 }
 
 /* ---------- 채팅 ---------- */
@@ -502,6 +539,7 @@ function fx(d){
 async function call(fn, args, ok){
   const { data, error } = await sb.rpc(fn, args);
   if (error){ toast(missingTable(error) ? "supabase/update-8.sql을 먼저 실행해 주세요" : errMsg(error)); return null; }
+  RL.actedAt = Date.now();
   if (ok) toast(ok);
   return data ?? true;
 }
@@ -526,7 +564,6 @@ async function act(btn){
   const a = btn.dataset.act, r = RL.room, id = RL.id;
   if (!r || btn.disabled) return;
   if (a === "bet") return openBet();
-  if (a === "sound"){ setSfx(!sfxOn()); renderTools(); if (sfxOn()) setTimeout(() => sfx("turn"), 60); return; }
   if (a === "auto"){ RL.autoDummy = !RL.autoDummy; try { sessionStorage.setItem("rl-auto:" + RL.id, RL.autoDummy ? "1" : ""); } catch (_) {} renderTools(); renderBar(); autoDummy(); toast(RL.autoDummy ? "더미 차례를 자동으로 진행합니다" : "더미 자동 진행을 껐습니다"); return; }
   if (a === "avatar") return openAvatar();
   if (a === "cancel" && !confirm("게임을 취소할까요? 참가비와 베팅은 모두 돌려줍니다.")) return;
@@ -633,7 +670,7 @@ $("#rl-ava-form").addEventListener("submit", async e => {
   const cid = $("#rl-ava-char").value, old = RL.avatars.get(cid)?.path;
   await withBusy($('button[type="submit"]', e.target), async () => {
     try {
-      const { toWebP, extOf } = await import("./img.js?v=20261024e");
+      const { toWebP, extOf } = await import("./img.js?v=20261024f");
       const blob = await toWebP(avaFile, 512), path = `${cid}/${Date.now()}.${extOf(blob)}`;
       const up = await sb.storage.from("roulette").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
       if (up.error) throw up.error;
@@ -658,3 +695,12 @@ $("#rl-ava-del").addEventListener("click", async e => {
 /* 로그인·로그아웃, 칩 변화, 창 크기 */
 document.addEventListener("comu:auth", () => { if (nav.current === "roulette" && RL.room) render(); if (nav.current === "game") loadLobby(); });
 addEventListener("resize", () => { if (nav.current === "roulette" && RL.room) aimGun(RL.target ?? RL.room.turn_seat); });
+
+/* 효과음 크기: 움직이는 동안 숫자만 바꾸고, 놓으면 들려줌 */
+$("#rl-tools").addEventListener("input", e => {
+  if (e.target.id !== "rl-vol") return;
+  const v = +e.target.value;
+  setSfxVol(v / 100);
+  e.target.nextElementSibling.textContent = v || "끔";
+});
+$("#rl-tools").addEventListener("change", e => { if (e.target.id === "rl-vol" && +e.target.value) sfx("turn"); });

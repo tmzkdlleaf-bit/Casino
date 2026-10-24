@@ -1154,10 +1154,10 @@ body.loading #cc-track:empty, body.loading #show, body.loading #shop:empty{anima
 .rl-title{font-size:clamp(2rem, min(4.6vw, 7vh), 3.6rem); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .rl-tools{display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.45rem}
 .rl-wrap{display:grid; grid-template-columns:minmax(0,1fr) clamp(17rem, 24vw, 22rem); gap:var(--gap); min-height:0}
-.rl-main{display:grid; grid-template-rows:minmax(0,1fr) auto; gap:.75rem; min-height:0; min-width:0}
+.rl-main{display:grid; grid-template-rows:auto minmax(0,1fr) auto; gap:.75rem; min-height:0; min-width:0}
 .rl-table{position:relative; min-height:18rem; border-radius:50% / 42%; overflow:visible; isolation:isolate}
 .rl-table::before{content:""; position:absolute; inset:14% 18%; border-radius:50%; border:1px dashed rgba(173,207,234,.25); pointer-events:none}
-.rl-status{position:absolute; top:-.9rem; left:50%; translate:-50% 0; z-index:3; margin:0; padding:.3rem .9rem; background:rgba(0,0,0,.6); border:1px solid var(--line); font-family:var(--f-serif); font-size:.875rem; white-space:nowrap; max-width:92%; overflow:hidden; text-overflow:ellipsis}
+.rl-status{justify-self:center; z-index:3; margin:0; padding:.3rem .9rem; background:rgba(0,0,0,.6); border:1px solid var(--line); font-family:var(--f-serif); font-size:.875rem; white-space:nowrap; max-width:92%; overflow:hidden; text-overflow:ellipsis}
 .rl-status b{color:var(--gold); font-weight:700}
 .rl-status b.mine{color:var(--red-text)}
 .rl-status b.win{color:var(--ivory); text-shadow:0 0 12px var(--velvet)}
@@ -1378,4 +1378,28 @@ button.rl-seat:not([aria-disabled="true"]):hover .av{border-color:var(--gold)}
 .rl-seat .nm small.dm{color:var(--gold)}
 .rl-tools [aria-pressed="true"]{border-color:var(--gold); color:var(--gold)}
 .small-sel{width:auto; min-width:7.5rem; min-height:2.25rem; padding:.3rem 2.4rem .3rem .7rem; font-size:.875rem}
-@media (max-width:700px){ .rl-mag{position:static; translate:none} .rl-status{top:.35rem; font-size:.8125rem} }
+@media (max-width:700px){ .rl-mag{position:static; translate:none} .rl-status{font-size:.8125rem} }
+
+/* 룰렛 방 정보: 항목 단위로만 줄바꿈 */
+#rl-meta span{white-space:nowrap}
+#rl-meta span + span::before{content:"·"; margin-inline:.4rem; color:var(--smoke)}
+/* 차례 남은 시간 */
+.rl-status .left{margin-left:.5rem; font-variant-numeric:tabular-nums; color:var(--text-2)}
+.rl-status .left.low{color:var(--red-text)}
+.rl-seat .tm{position:absolute; top:-.2rem; right:.2rem; min-width:1.6rem; padding:0 .3rem; background:var(--velvet); color:#fff; font-family:var(--f-serif); font-size:.6875rem; line-height:1.5; text-align:center; font-variant-numeric:tabular-nums}
+.rl-seat .tm.low{animation:tm-blink 1s steps(2) infinite}
+@keyframes tm-blink{50%{background:var(--black-2)}}
+.rl-seat .tm:empty{display:none}
+
+/* 효과음 크기 */
+.rl-vol{display:inline-flex; align-items:center; gap:.45rem; padding:0 .6rem; min-height:2.25rem; border:1px solid var(--line); font-family:var(--f-serif); font-size:.8125rem; color:var(--text-2)}
+.rl-vol input{width:5.5rem; accent-color:var(--velvet)}
+.rl-vol output{min-width:1.6rem; text-align:right; font-variant-numeric:tabular-nums; color:var(--ivory)}
+.rl-btns{display:contents}
+.rank .w small{font-weight:400; color:var(--smoke)}
+.rank .rl-net{grid-column:2 / -1; font-size:.75rem; color:var(--text-2); font-variant-numeric:tabular-nums}
+.rank .rl-net.minus{color:var(--red-text)}
+.rl-head .head-side{min-width:0; max-width:min(44rem, 100%)}
+#rl-meta{display:flex; flex-wrap:wrap; justify-content:flex-end; row-gap:.1rem}
+@media (max-width:860px){ #rl-meta{justify-content:flex-start} }
+.rank .w{white-space:nowrap}

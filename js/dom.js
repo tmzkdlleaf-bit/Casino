@@ -1,4 +1,4 @@
-import { SITE_NAME } from "./config.js?v=20261024e";
+import { SITE_NAME } from "./config.js?v=20261024f";
 
 export const setTitle = t => { document.title = t ? `${t} | ${SITE_NAME}` : SITE_NAME; };
 
@@ -14,10 +14,10 @@ export const isRed = s => s === "♥" || s === "♦";
 const SUIT_ID = { "♠": "spade", "♥": "heart", "♣": "club", "♦": "diamond" };
 export const suitIcon = (s, cls = "") => `<svg class="suit-ico ${cls}" aria-hidden="true" focusable="false"><use href="#s-${SUIT_ID[s] || "spade"}"/></svg>`;
 
-export function toast(msg){
+export function toast(msg, ms = 2200){
   const t = $("#toast");
   t.textContent = msg; t.classList.add("show");
-  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2200);
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), ms);
 }
 
 /* 화면 밖 공지 (스크린리더) */

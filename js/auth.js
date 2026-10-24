@@ -1,13 +1,14 @@
-import { CALM_KEY } from "./config.js?v=20261024e";
-import { sb, subscribeProfile } from "./data.js?v=20261024e";
-import { $, toast } from "./dom.js?v=20261024e";
-import { applyCalm } from "./effects.js?v=20261024e";
-import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261024e";
-import { route } from "./router.js?v=20261024e";
-import { state } from "./state.js?v=20261024e";
-import { renderAccount, renderShop } from "./views.js?v=20261024e";
-import { loadMyRequests } from "./shop.js?v=20261024e";
-import { loadChipRequests, renderChipRequests } from "./chipreq.js?v=20261024e";
+import { CALM_KEY } from "./config.js?v=20261024f";
+import { sb, subscribeProfile } from "./data.js?v=20261024f";
+import { $, toast } from "./dom.js?v=20261024f";
+import { applyCalm } from "./effects.js?v=20261024f";
+import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261024f";
+import { route } from "./router.js?v=20261024f";
+import { state } from "./state.js?v=20261024f";
+import { renderAccount, renderShop } from "./views.js?v=20261024f";
+import { SHOP, loadMyRequests } from "./shop.js?v=20261024f";
+import { notifyUnseen } from "./notify.js?v=20261024f";
+import { CREQ, loadChipRequests, renderChipRequests } from "./chipreq.js?v=20261024f";
 
 /* =========================================================
    AUTH — 이메일 + 비밀번호, 초대제
@@ -28,6 +29,7 @@ export async function refreshAuth(session){
   } else { state.profile = null; state.mine = []; }
   state.isAdmin = state.profile?.role === "admin";
   await Promise.all([loadMyRequests(), loadChipRequests()]);
+  if (before !== `${state.session?.user.id}|${state.isAdmin}`) notifyUnseen(SHOP.reqs, CREQ.list);   // 로그인·접속할 때 한 번
   renderChipRequests();
   subscribeProfile();
   renderAccount();

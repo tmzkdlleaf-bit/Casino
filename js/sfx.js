@@ -3,15 +3,29 @@
    저작권·용량 걱정 없음. 브라우저 규칙상 방문자가 화면을 한 번 누른 뒤부터 소리가 남
    click 빈 칸 철컥 · charge 충전 · zap 파지직 · spin 탄창 돌리기 · turn 내 차례 · bet 칩 · win 우승 · out 탈락
    ========================================================= */
-const KEY = "comu-sfx";
+const KEY = "comu-sfx", VKEY = "comu-sfx-vol";
 let ctx = null, master = null, noiseBuf = null;
-let on = true;
-try { on = localStorage.getItem(KEY) !== "0"; } catch (_) {}
+let on = true, vol = .7;   // vol: 0~1
+try {
+  on = localStorage.getItem(KEY) !== "0";
+  const v = parseFloat(localStorage.getItem(VKEY));
+  if (v >= 0 && v <= 1) vol = v;
+} catch (_) {}
+const gainOf = v => .8 * Math.pow(v, 1.6);   // 귀로 듣기에 고르게 커지도록
 
-export const sfxOn = () => on;
+export const sfxOn = () => on && vol > 0;
+export const sfxVol = () => (on ? vol : 0);
 export function setSfx(v){
   on = !!v;
   try { localStorage.setItem(KEY, on ? "1" : "0"); } catch (_) {}
+  if (on) unlock();
+}
+/* 소리 크기 0~1. 0이면 끔 */
+export function setSfxVol(v){
+  vol = Math.min(1, Math.max(0, +v || 0));
+  on = vol > 0;
+  try { localStorage.setItem(VKEY, String(vol)); localStorage.setItem(KEY, on ? "1" : "0"); } catch (_) {}
+  if (master) master.gain.value = gainOf(vol);
   if (on) unlock();
 }
 
@@ -20,7 +34,7 @@ function unlock(){
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
     ctx = new AC();
-    master = ctx.createGain(); master.gain.value = .55;
+    master = ctx.createGain(); master.gain.value = gainOf(vol);
     const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 6;
     master.connect(comp).connect(ctx.destination);
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 1.5, ctx.sampleRate);
@@ -125,7 +139,7 @@ const SOUNDS = {
 };
 
 export function sfx(name){
-  if (!on) return;
+  if (!on || vol <= 0) return;
   if (!ctx) unlock();
   if (!ready() || !SOUNDS[name]) return;
   try { SOUNDS[name](); } catch (_) {}

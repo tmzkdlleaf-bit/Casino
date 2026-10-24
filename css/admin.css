@@ -11,7 +11,7 @@
 .admin-panel:focus-visible{outline-offset:6px; border-radius:4px}
 .adm{display:grid; grid-template-columns:minmax(15rem, 20rem) minmax(0, 1fr); gap:1.5rem; align-items:start}
 @media (max-width:960px){ .adm{grid-template-columns:1fr} }
-.adm-list{position:sticky; top:6rem; display:grid; gap:.75rem}
+.adm-list{position:sticky; top:0; display:grid; gap:.75rem}   /* 관리 화면은 자체 스크롤 칸 안이라 0 */
 @media (max-width:960px){ .adm-list{position:static} }
 .adm-list ul{list-style:none; margin:0; padding:0; max-height:60vh; overflow-y:auto; border-top:1px solid var(--line-2)}
 .adm-list li button{
@@ -161,3 +161,12 @@ table.shop-log .st-cancelled{opacity:.6}
 .sub-editor{margin-top:1rem}
 .sub-editor h3{margin:0 0 .75rem; font-family:var(--f-pixel); font-size:1rem}
 .file-btn{cursor:pointer}
+
+/* 백업 */
+.adm-backup{display:grid; gap:.8rem; max-width:34rem; padding:1.2rem 1.4rem}
+.adm-backup .card-h{margin:0}
+.adm-backup-row{display:flex; flex-wrap:wrap; align-items:center; gap:.8rem}
+.bk-list{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(12rem, 1fr)); gap:.2rem 1.2rem; font-size:.8125rem}
+.bk-list li{display:flex; justify-content:space-between; gap:.5rem; padding:.2rem 0; border-bottom:1px solid var(--line-2); color:var(--text-2)}
+.bk-list b{font-variant-numeric:tabular-nums; color:var(--ivory); font-weight:400}
+.bk-list li.bad b{color:var(--red-text)}

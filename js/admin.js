@@ -1,12 +1,12 @@
-import { loadMine } from "./auth.js?v=20261024e";
-import { CONFIG } from "./config.js?v=20261024e";
-import { FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261024e";
-import { $, $$, announce, esc, toast } from "./dom.js?v=20261024e";
-import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261024e";
-import { renderMarkdown } from "./markdown.js?v=20261024e";
-import { extOf, toWebP } from "./img.js?v=20261024e";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
-import { state } from "./state.js?v=20261024e";
-import { ALL, renderAccount } from "./views.js?v=20261024e";
+import { loadMine } from "./auth.js?v=20261024f";
+import { CONFIG } from "./config.js?v=20261024f";
+import { FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261024f";
+import { $, $$, announce, esc, toast } from "./dom.js?v=20261024f";
+import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261024f";
+import { renderMarkdown } from "./markdown.js?v=20261024f";
+import { extOf, toWebP } from "./img.js?v=20261024f";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
+import { state } from "./state.js?v=20261024f";
+import { ALL, renderAccount } from "./views.js?v=20261024f";
 
 /* =========================================================
    ADMIN — 관리 페이지. 화면만 관리자에게 보이고, 실제 차단은 RLS + RPC가 담당
@@ -18,7 +18,7 @@ export const ADMIN_GROUPS = [
   [["shop", "구매 요청"], ["chipreq", "칩 정산"]],
   [["characters", "캐릭터"], ["items", "아이템"], ["chapters", "지난 이야기"]],
   [["game_slots", "게임 일정"], ["game_records", "전적"]],
-  [["members", "멤버"]]
+  [["members", "멤버"], ["backup", "백업"]]
 ];
 export const ADMIN_TABS = ADMIN_GROUPS.flat();
 ADM.badge = { shop: 0, chipreq: 0 };
@@ -181,7 +181,7 @@ export async function admLoad(table){
 function ensureAdminCss(){
   if (document.getElementById("admin-css")) return;
   const l = document.createElement("link");
-  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261024e";
+  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261024f";
   document.head.append(l);
 }
 
@@ -210,6 +210,7 @@ export async function admShow(tab){
   panel.innerHTML = `<p class="adm-status" role="status">불러오는 중…</p>`;
   try {
     if (tab === "members"){ await admMembers(); return; }
+    if (tab === "backup"){ admBackup(); return; }
     if (tab === "shop"){ await admShop(); return; }
     if (tab === "chipreq"){ await admChipReq(); return; }
     const s = SCHEMAS[tab];
@@ -479,6 +480,55 @@ export async function admSaveInventory(btn){
 }
 
 /* ----- 멤버 · 캐릭터별 칩 ----- */
+/* =========================================================
+   백업: 모든 표를 JSON 파일 하나로 내려받음 (이미지 파일 자체는 빠지고 경로만 들어감)
+   ========================================================= */
+const BACKUP_TABLES = ["profiles", "characters", "inventory", "items", "chapters", "logs", "notices", "notice_categories",
+  "chip_ledger", "shop_requests", "chip_requests", "game_slots", "game_records",
+  "roulette_rooms", "roulette_seats", "roulette_bets", "roulette_chat", "roulette_avatars"];
+const BACKUP_LABEL = { profiles: "멤버", characters: "캐릭터", inventory: "소지품", items: "상점 아이템", chapters: "지난 이야기", logs: "로그", notices: "공지", notice_categories: "공지 분류",
+  chip_ledger: "칩 기록", shop_requests: "구매 요청", chip_requests: "칩 정산 요청", game_slots: "게임 일정", game_records: "전적",
+  roulette_rooms: "룰렛 방", roulette_seats: "룰렛 자리", roulette_bets: "룰렛 베팅", roulette_chat: "룰렛 채팅", roulette_avatars: "룰렛 자리 이미지" };
+function admBackup(){
+  let last = null; try { last = localStorage.getItem("comu-backup-at"); } catch (_) {}
+  admPanel().innerHTML = `<section class="card adm-backup">
+    <h3 class="card-h">백업</h3>
+    <p class="hint">캐릭터 · 칩 기록 · 구매 기록 · 게임 기록 전부를 파일 하나로 받습니다. 이미지는 빠집니다.</p>
+    <div class="adm-backup-row"><button class="btn primary" type="button" id="bk-go">백업 받기</button>
+      <span class="hint" id="bk-last">${last ? `마지막: ${esc(new Date(last).toLocaleString("ko-KR"))}` : ""}</span></div>
+    <ul class="bk-list" id="bk-list" hidden></ul>
+  </section>`;
+  $("#bk-go").addEventListener("click", e => withBusy(e.currentTarget, admBackupRun));
+}
+async function fetchAll(table){
+  const rows = [];
+  for (let from = 0; ; from += 1000){
+    let { data, error } = await sb.from(table).select("*").order("id").range(from, from + 999);
+    if (error && /column .*id|42703/.test(`${error.code} ${error.message}`)) ({ data, error } = await sb.from(table).select("*").range(from, from + 999));
+    if (error) throw error;
+    rows.push(...data);
+    if (data.length < 1000) return rows;
+  }
+}
+async function admBackupRun(){
+  const out = { site: "Titfortat777", made_at: new Date().toISOString(), tables: {} }, list = $("#bk-list"), lines = [];
+  list.hidden = false; list.innerHTML = "";
+  for (const t of BACKUP_TABLES){
+    try { out.tables[t] = await fetchAll(t); lines.push(`<li><span>${BACKUP_LABEL[t] || t}</span><b>${out.tables[t].length.toLocaleString("ko-KR")}</b></li>`); }
+    catch (err){ if (!/42P01|PGRST205/.test(`${err?.code} ${err?.message}`)) lines.push(`<li class="bad"><span>${BACKUP_LABEL[t] || t}</span><b>실패</b></li>`); }
+    list.innerHTML = lines.join("");
+  }
+  const d = new Date(), p = v => String(v).padStart(2, "0");
+  const name = `titfortat777-backup-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.json`;
+  const url = URL.createObjectURL(new Blob([JSON.stringify(out, null, 1)], { type: "application/json" }));
+  const a = Object.assign(document.createElement("a"), { href: url, download: name });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  try { localStorage.setItem("comu-backup-at", out.made_at); } catch (_) {}
+  $("#bk-last").textContent = `마지막: ${d.toLocaleString("ko-KR")}`;
+  toast("백업 파일을 내려받았습니다");
+}
+
 export async function admMembers(){
   const [pr, ch, bl] = await Promise.all([
     sb.from("profiles").select("id, email, display_name, role, created_at").order("created_at"),
@@ -785,7 +835,7 @@ admPanel().addEventListener("click", async e => {
   if (t.closest(".bm-link")){ e.preventDefault(); toast("이 버튼은 누르지 말고 즐겨찾기 막대로 끌어다 놓으세요"); return; }
   if (t.closest("[data-log-room]")) return withBusy(t.closest("[data-log-room]"), logRoom);
   if (t.closest("[data-log-lib]")) return logLibPaste();
-  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261024e"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
+  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261024f"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
   const logSave = t.closest("[data-log-save]");
   if (logSave) return withBusy(logSave, () => logSaveNow(logSave.dataset.id));
   const logDel = t.closest("[data-log-del]");
@@ -878,7 +928,7 @@ async function logRead(input){
   if (!f) return;
   if (f.size > 60 * 1024 * 1024){ fieldError(input, "60MB 이하 파일만 올릴 수 있습니다."); return; }
   $("#log-status").textContent = "읽는 중…";
-  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261024e");
+  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261024f");
   const messages = parseLog(await f.text());
   $("#log-status").textContent = "";
   if (!messages.length){ fieldError(input, "대사를 찾지 못했습니다. 코코포리아에서 내보낸 로그 파일이 맞는지 확인해 주세요."); return; }
@@ -924,7 +974,7 @@ function libSummary(extra = ""){
 }
 
 async function logRoom(){
-  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261024e");
+  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261024f");
   const id = roomIdFrom($("#log-room").value);
   if (!id){ $("#log-lib-status").textContent = "코코포리아 룸 링크 형식이 아닙니다. (https://ccfolia.com/rooms/…)"; $("#log-room").focus(); return; }
   try {
@@ -940,7 +990,7 @@ async function logRoom(){
 }
 
 async function logLibPaste(){
-  const { parseLibrary } = await import("./logparse.js?v=20261024e");
+  const { parseLibrary } = await import("./logparse.js?v=20261024f");
   try {
     const lib = parseLibrary($("#log-lib-text").value);
     if (!lib.length){ $("#log-lib-status").textContent = "캐릭터를 찾지 못했습니다."; return; }
@@ -984,7 +1034,7 @@ export async function backupFaces(urls, onProgress = () => {}){
 
 async function logSaveNow(id){
   if (!LOG.messages) return;
-  const { pack } = await import("./logparse.js?v=20261024e");
+  const { pack } = await import("./logparse.js?v=20261024f");
   const include = new Set($$('input[name="log-tab"]:checked').map(i => LOG.info.tabs[+i.value].name));
   const narrators = new Set($$('input[name="log-narr"]:checked').map(i => LOG.info.speakers[+i.value].name));
   if (!include.size){ $("#log-status").textContent = "저장할 탭을 하나 이상 골라 주세요."; return; }
