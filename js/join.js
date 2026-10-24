@@ -2,9 +2,10 @@
    가입 — 관리자가 공유한 링크(#join/코드)로만
    코드 확인과 계정 만들기는 서버 함수(supabase/functions/signup)가 함. 사이트 자체 가입은 막혀 있음
    ========================================================= */
-import { sb } from "./data.js?v=20261025a";
-import { $, toast } from "./dom.js?v=20261025a";
-import { fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261025a";
+import { loginEmail } from "./config.js?v=20261025b";
+import { sb } from "./data.js?v=20261025b";
+import { $, toast } from "./dom.js?v=20261025b";
+import { fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261025b";
 
 let code = "";
 
@@ -29,15 +30,15 @@ $("#join-form").addEventListener("submit", async e => {
   if (!validateForm(f)) return;
   if (pw.value !== pw2.value){ fieldError(pw2, "비밀번호가 서로 다릅니다."); pw2.focus(); return; }
   await withBusy($('button[type="submit"]', f), async () => {
-    const email = f.email.value.trim(), password = pw.value;
-    const { error } = await sb.functions.invoke("signup", { body: { email, password, code, name: f.name.value.trim() } });
+    const id = f.email.value.trim().toLowerCase(), password = pw.value;
+    const { error } = await sb.functions.invoke("signup", { body: { id, password, code, name: f.name.value.trim() } });
     if (error){
       let msg = "가입하지 못했습니다. 잠시 후 다시 시도해 주세요.";
       try { msg = (await error.context.json()).error || msg; } catch (_) {}
       showMsg($("#join-error"), msg);
       return;
     }
-    const { error: le } = await sb.auth.signInWithPassword({ email, password });
+    const { error: le } = await sb.auth.signInWithPassword({ email: loginEmail(id), password });
     f.reset();
     if (le){ toast("가입했습니다. 로그인해 주세요"); location.hash = "#login"; return; }
     toast("가입했습니다. 관리자가 캐릭터를 연결하면 칩과 상점을 쓸 수 있어요", 5000);

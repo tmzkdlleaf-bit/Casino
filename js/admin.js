@@ -1,12 +1,12 @@
-import { loadMine } from "./auth.js?v=20261025a";
-import { CONFIG } from "./config.js?v=20261025a";
-import { FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261025a";
-import { $, $$, announce, esc, toast } from "./dom.js?v=20261025a";
-import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261025a";
-import { renderMarkdown } from "./markdown.js?v=20261025a";
-import { extOf, toWebP } from "./img.js?v=20261025a";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
-import { state } from "./state.js?v=20261025a";
-import { ALL, renderAccount } from "./views.js?v=20261025a";
+import { loadMine } from "./auth.js?v=20261025b";
+import { CONFIG, idOf } from "./config.js?v=20261025b";
+import { FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261025b";
+import { $, $$, announce, esc, toast } from "./dom.js?v=20261025b";
+import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261025b";
+import { renderMarkdown } from "./markdown.js?v=20261025b";
+import { extOf, toWebP } from "./img.js?v=20261025b";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
+import { state } from "./state.js?v=20261025b";
+import { ALL, renderAccount } from "./views.js?v=20261025b";
 
 /* =========================================================
    ADMIN — 관리 페이지. 화면만 관리자에게 보이고, 실제 차단은 RLS + RPC가 담당
@@ -181,7 +181,7 @@ export async function admLoad(table){
 function ensureAdminCss(){
   if (document.getElementById("admin-css")) return;
   const l = document.createElement("link");
-  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261025a";
+  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261025b";
   document.head.append(l);
 }
 
@@ -547,15 +547,16 @@ export async function admMembers(){
         <a class="btn small" style="margin-left:auto" href="https://supabase.com/dashboard/project/${esc(new URL(CONFIG.SUPABASE_URL).hostname.split(".")[0])}/auth/users" target="_blank" rel="noopener" title="Supabase → Add user">계정 직접 만들기<span class="sr"> (Supabase 대시보드, 새 창)</span> ↗</a></div>
       <div class="table-scroll">
         <table class="members" style="min-width:36rem">
-          <caption class="sr">멤버 목록 — 이름, 권한, 소유 캐릭터</caption>
-          <thead><tr><th scope="col">멤버</th><th scope="col">권한</th><th scope="col">소유 캐릭터</th></tr></thead>
+          <caption class="sr">멤버 목록 — 이름, 권한, 소유 캐릭터, 비밀번호 초기화</caption>
+          <thead><tr><th scope="col">멤버</th><th scope="col">권한</th><th scope="col">소유 캐릭터</th><th scope="col"><span class="sr">비밀번호</span></th></tr></thead>
           <tbody>${members.map(m => `<tr>
-            <th scope="row" class="who" style="font-weight:400">${esc(nameOf(m))}<small>${esc(m.email || "")}</small></th>
+            <th scope="row" class="who" style="font-weight:400">${esc(nameOf(m))}<small>${esc(idOf(m.email))}</small></th>
             <td>${m.id === state.session?.user.id ? `<span class="tag-d">관리자 (나)</span>`
               : `<label class="sr" for="role-${m.id}">${esc(nameOf(m))} 권한</label><select class="input small-sel" id="role-${m.id}" data-role="${m.id}" data-prev="${m.role === "admin" ? "admin" : "member"}">
                   <option value="member"${m.role === "admin" ? "" : " selected"}>멤버</option><option value="admin"${m.role === "admin" ? " selected" : ""}>관리자</option></select>`}</td>
             <td>${esc(chars.filter(c => owner.get(c.uuid) === m.id).map(c => c.name).join(", ") || "—")}</td>
-          </tr>`).join("") || `<tr><td colspan="3" class="muted">멤버가 없습니다.</td></tr>`}</tbody>
+            <td class="pw-cell">${m.id === state.session?.user.id ? "" : `<button class="btn small" type="button" data-pwreset="${m.id}" data-name="${esc(nameOf(m))}">비밀번호 초기화</button>`}</td>
+          </tr>`).join("") || `<tr><td colspan="4" class="muted">멤버가 없습니다.</td></tr>`}</tbody>
         </table>
       </div>
     </div>
@@ -877,7 +878,7 @@ admPanel().addEventListener("click", async e => {
   if (t.closest(".bm-link")){ e.preventDefault(); toast("이 버튼은 누르지 말고 즐겨찾기 막대로 끌어다 놓으세요"); return; }
   if (t.closest("[data-log-room]")) return withBusy(t.closest("[data-log-room]"), logRoom);
   if (t.closest("[data-log-lib]")) return logLibPaste();
-  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261025a"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
+  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261025b"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
   const logSave = t.closest("[data-log-save]");
   if (logSave) return withBusy(logSave, () => logSaveNow(logSave.dataset.id));
   const logDel = t.closest("[data-log-del]");
@@ -970,7 +971,7 @@ async function logRead(input){
   if (!f) return;
   if (f.size > 60 * 1024 * 1024){ fieldError(input, "60MB 이하 파일만 올릴 수 있습니다."); return; }
   $("#log-status").textContent = "읽는 중…";
-  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261025a");
+  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261025b");
   const messages = parseLog(await f.text());
   $("#log-status").textContent = "";
   if (!messages.length){ fieldError(input, "대사를 찾지 못했습니다. 코코포리아에서 내보낸 로그 파일이 맞는지 확인해 주세요."); return; }
@@ -1016,7 +1017,7 @@ function libSummary(extra = ""){
 }
 
 async function logRoom(){
-  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261025a");
+  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261025b");
   const id = roomIdFrom($("#log-room").value);
   if (!id){ $("#log-lib-status").textContent = "코코포리아 룸 링크 형식이 아닙니다. (https://ccfolia.com/rooms/…)"; $("#log-room").focus(); return; }
   try {
@@ -1032,7 +1033,7 @@ async function logRoom(){
 }
 
 async function logLibPaste(){
-  const { parseLibrary } = await import("./logparse.js?v=20261025a");
+  const { parseLibrary } = await import("./logparse.js?v=20261025b");
   try {
     const lib = parseLibrary($("#log-lib-text").value);
     if (!lib.length){ $("#log-lib-status").textContent = "캐릭터를 찾지 못했습니다."; return; }
@@ -1076,7 +1077,7 @@ export async function backupFaces(urls, onProgress = () => {}){
 
 async function logSaveNow(id){
   if (!LOG.messages) return;
-  const { pack } = await import("./logparse.js?v=20261025a");
+  const { pack } = await import("./logparse.js?v=20261025b");
   const include = new Set($$('input[name="log-tab"]:checked').map(i => LOG.info.tabs[+i.value].name));
   const narrators = new Set($$('input[name="log-narr"]:checked').map(i => LOG.info.speakers[+i.value].name));
   if (!include.size){ $("#log-status").textContent = "저장할 탭을 하나 이상 골라 주세요."; return; }
@@ -1114,3 +1115,24 @@ async function logDelete(id){
   await admLoad("chapters"); admRenderCrud("chapters");
   refreshPublic();
 }
+
+/* 비밀번호 초기화: 임시 비밀번호를 만들어 서버 함수(signup, action reset)로 바꾸고, 화면에 보여 주며 복사 */
+admPanel().addEventListener("click", async e => {
+  const b = e.target.closest("[data-pwreset]");
+  if (!b) return;
+  if (!confirm(`${b.dataset.name}의 비밀번호를 임시 비밀번호로 바꿀까요? 지금 비밀번호는 더 이상 쓸 수 없습니다.`)) return;
+  const abc = "abcdefghjkmnpqrstuvwxyz23456789", rnd = crypto.getRandomValues(new Uint8Array(10));
+  const temp = Array.from(rnd, x => abc[x % abc.length]).join("");
+  await withBusy(b, async () => {
+    const { error } = await sb.functions.invoke("signup", { body: { action: "reset", user: b.dataset.pwreset, password: temp } });
+    if (error){
+      let msg = "초기화하지 못했습니다";
+      try { msg = (await error.context.json()).error || msg; } catch (_) {}
+      toast(msg); return;
+    }
+    let copied = false;
+    try { await navigator.clipboard.writeText(temp); copied = true; } catch (_) {}
+    b.closest("td").innerHTML = `<span class="pw-temp">임시 비밀번호 <code>${temp}</code>${copied ? " · 복사됨" : ""}</span>`;
+    toast(`${b.dataset.name}에게 임시 비밀번호를 전달해 주세요`, 4000);
+  });
+});

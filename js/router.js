@@ -1,12 +1,12 @@
-import { showLoginNotice } from "./auth.js?v=20261025a";
-import { PAGES, PAGE_TITLES } from "./config.js?v=20261025a";
-import { USE_DB } from "./data.js?v=20261025a";
-import { $, $$, setTitle, splitText } from "./dom.js?v=20261025a";
-import { applyFilter, castSelect, showStart, showStop } from "./effects.js?v=20261025a";
-import { DATA, motionOK, nav, state } from "./state.js?v=20261025a";
-import { ALL, renderAccount, renderProfile, renderRecords, renderShop } from "./views.js?v=20261025a";
-import { stopCharMusic } from "./charedit.js?v=20261025a";
-import { renderNavOrderList } from "./navorder.js?v=20261025a";
+import { showLoginNotice } from "./auth.js?v=20261025b";
+import { PAGES, PAGE_TITLES } from "./config.js?v=20261025b";
+import { USE_DB } from "./data.js?v=20261025b";
+import { $, $$, setTitle, splitText } from "./dom.js?v=20261025b";
+import { applyFilter, castSelect, showStart, showStop } from "./effects.js?v=20261025b";
+import { DATA, motionOK, nav, state } from "./state.js?v=20261025b";
+import { ALL, renderAccount, renderProfile, renderRecords, renderShop } from "./views.js?v=20261025b";
+import { stopCharMusic } from "./charedit.js?v=20261025b";
+import { renderNavOrderList } from "./navorder.js?v=20261025b";
 
 export function resolve(){
   const [page, param] = (location.hash.slice(1) || "home").split("/");
@@ -50,15 +50,15 @@ export function route(){
   if (view === "characters") applyFilter({ instant: from === "profile", enter: from !== "profile" });
   if (view === "game") renderRecords();
   // 상점: 들어올 때마다 내 요청·잔액을 새로 (실시간 연결이 끊겨 있어도 승인 결과가 보이게)
-  if (view === "shop" && USE_DB && state.session) Promise.all([import("./shop.js?v=20261025a"), import("./auth.js?v=20261025a")])
+  if (view === "shop" && USE_DB && state.session) Promise.all([import("./shop.js?v=20261025b"), import("./auth.js?v=20261025b")])
     .then(async ([m, a]) => { await a.loadMine(); await Promise.all([m.loadMyRequests(), m.reloadItems()]); renderAccount(); renderShop(); });
   if (view === "settings"){
     renderAccount(); renderNavOrderList();
-    import("./chipreq.js?v=20261025a").then(async m => { m.renderChipRequests(); await m.loadChipRequests(); m.renderChipRequests(); });
+    import("./chipreq.js?v=20261025b").then(async m => { m.renderChipRequests(); await m.loadChipRequests(); m.renderChipRequests(); });
   }
-  if (view === "admin") import("./admin.js?v=20261025a").then(m => m.admOpen());
+  if (view === "admin") import("./admin.js?v=20261025b").then(m => m.admOpen());
   if (view === "login") showLoginNotice();
-  if (view === "join") import("./join.js?v=20261025a").then(m => m.openJoin(param));
+  if (view === "join") import("./join.js?v=20261025b").then(m => m.openJoin(param));
   if (view === "password"){
     $("#pw-lede").textContent = { invite: "초대를 수락했습니다. 사용할 비밀번호를 정해 주세요.", recovery: "새 비밀번호를 정해 주세요." }[state.pwMode] || "새 비밀번호를 입력해 주세요.";
     $("#pw-form").reset(); $("#pw-error").hidden = true;
@@ -66,10 +66,10 @@ export function route(){
 
   $$(".pane, .scroll", section).forEach(p => p.scrollTop = 0);   // 페이지는 고정, 창 안만 처음으로
 
-  if (view === "log") import("./logview.js?v=20261025a").then(m => m.openLog(param));
+  if (view === "log") import("./logview.js?v=20261025b").then(m => m.openLog(param));
   // 러시안 룰렛: 게임 화면 = 방 목록, #roulette/방ID = 방. 다른 화면으로 가면 실시간 연결을 끊음
   if (view === "game" || view === "roulette" || from === "game" || from === "roulette")
-    import("./roulette.js?v=20261025a").then(m => m.onRoute(view, param)).catch(err => console.error("[roulette]", err));
+    import("./roulette.js?v=20261025b").then(m => m.onRoute(view, param)).catch(err => console.error("[roulette]", err));
   view === "home" ? showStart() : showStop();
 
   // 새 화면만 서서히 떠오름 (전체 화면 캡처 방식의 뷰 전환은 무거워서 쓰지 않음)

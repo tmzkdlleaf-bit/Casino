@@ -1,9 +1,9 @@
-import { CONFIG, SUITS } from "./config.js?v=20261025a";
-import { EXTRA, RECORDS, USE_DB, sb } from "./data.js?v=20261025a";
-import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261025a";
-import { initShow, layoutCast } from "./effects.js?v=20261025a";
-import { buyHtml, myReqHtml } from "./shop.js?v=20261025a";
-import { DATA, nav, state } from "./state.js?v=20261025a";
+import { CONFIG, SUITS, idOf } from "./config.js?v=20261025b";
+import { EXTRA, RECORDS, USE_DB, sb } from "./data.js?v=20261025b";
+import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261025b";
+import { initShow, layoutCast } from "./effects.js?v=20261025b";
+import { buyHtml, myReqHtml } from "./shop.js?v=20261025b";
+import { DATA, nav, state } from "./state.js?v=20261025b";
 
 /* ---------- render ---------- */
 export const timeTag = (label, iso) => `<time${iso ? ` datetime="${esc(iso)}"` : ""}>${esc(label)}</time>`;
@@ -276,11 +276,11 @@ export function renderAccount(){
   $$("#site-head [data-admin-only]").forEach(el => el.hidden = !state.isAdmin);
   if (on){
     const mine = myChars();
-    $("#acct-email").textContent = state.session.user.email || "—";
+    $("#acct-email").textContent = idOf(state.session.user.email) || "—";
     $("#acct-char").textContent = mine.length ? mine.map(c => `${c.name} (${c.roleTitle || c.role})`).join(", ") : "연결 안 됨";
     $("#acct-chips").textContent = mine.length ? mine.map(c => `${mine.length > 1 ? c.name + " " : ""}${c.balance.toLocaleString("ko-KR")}칩`).join(", ") : "—";
     if (document.activeElement !== $("#set-name")) $("#set-name").value = p?.display_name || "";
-    $("#pw-user").value = state.session.user.email || "";
+    $("#pw-user").value = idOf(state.session.user.email);
   }
   updateEditBtn();
   // 칩은 캐릭터별. 상점에는 대표 캐릭터(참가자 우선)의 잔액을 표시

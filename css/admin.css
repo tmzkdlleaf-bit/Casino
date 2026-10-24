@@ -177,3 +177,6 @@ table.shop-log .st-cancelled{opacity:.6}
 .inv-row{display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:.5rem; margin-top:.6rem}
 .inv-row .input{font-size:.875rem; min-height:2.5rem}
 .inv-row.off .input{opacity:.45; text-decoration:line-through}
+.pw-cell{text-align:right; white-space:nowrap}
+.pw-temp{font-size:.8125rem; color:var(--text-2)}
+.pw-temp code{padding:.1rem .4rem; background:var(--black); color:var(--ivory); font-family:inherit; letter-spacing:.04em; user-select:all}

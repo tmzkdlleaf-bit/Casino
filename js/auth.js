@@ -1,14 +1,14 @@
-import { CALM_KEY } from "./config.js?v=20261025a";
-import { sb, subscribeProfile } from "./data.js?v=20261025a";
-import { $, toast } from "./dom.js?v=20261025a";
-import { applyCalm } from "./effects.js?v=20261025a";
-import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261025a";
-import { route } from "./router.js?v=20261025a";
-import { state } from "./state.js?v=20261025a";
-import { renderAccount, renderShop } from "./views.js?v=20261025a";
-import { SHOP, loadMyRequests } from "./shop.js?v=20261025a";
-import { notifyUnseen } from "./notify.js?v=20261025a";
-import { CREQ, loadChipRequests, renderChipRequests } from "./chipreq.js?v=20261025a";
+import { CALM_KEY, isIdAccount, loginEmail } from "./config.js?v=20261025b";
+import { sb, subscribeProfile } from "./data.js?v=20261025b";
+import { $, toast } from "./dom.js?v=20261025b";
+import { applyCalm } from "./effects.js?v=20261025b";
+import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261025b";
+import { route } from "./router.js?v=20261025b";
+import { state } from "./state.js?v=20261025b";
+import { renderAccount, renderShop } from "./views.js?v=20261025b";
+import { SHOP, loadMyRequests } from "./shop.js?v=20261025b";
+import { notifyUnseen } from "./notify.js?v=20261025b";
+import { CREQ, loadChipRequests, renderChipRequests } from "./chipreq.js?v=20261025b";
 
 /* =========================================================
    AUTH — 이메일 + 비밀번호, 초대제
@@ -61,7 +61,7 @@ $("#login-form").addEventListener("submit", async e => {
   showMsg($("#login-error"), "");
   if (!validateForm(f)) return;
   await withBusy($('button[type="submit"]', f), async () => {
-    const { error } = await sb.auth.signInWithPassword({ email: f.email.value.trim(), password: f.password.value });
+    const { error } = await sb.auth.signInWithPassword({ email: loginEmail(f.email.value), password: f.password.value });
     if (error){
       showMsg($("#login-error"), errMsg(error));
       f.password.value = ""; f.password.focus();
@@ -76,12 +76,18 @@ $("#login-form").addEventListener("submit", async e => {
 $("#forgot").addEventListener("click", async e => {
   const email = $("#login-email");
   showMsg($("#login-error"), "");
-  if (!email.value.trim() || !checkField(email)){
-    fieldError(email, "재설정 메일을 받을 이메일을 입력해 주세요.");
+  if (!email.value.trim()){
+    fieldError(email, "아이디를 입력해 주세요.");
     email.focus(); return;
   }
+  // 아이디 계정은 메일이 없어서 관리자가 초기화 (관리 → 멤버)
+  if (isIdAccount(loginEmail(email.value))){
+    $("#login-note")?.remove();
+    $("#login-form").insertAdjacentHTML("afterbegin", `<p class="form-note" id="login-note" role="status">관리자에게 비밀번호 초기화를 요청해 주세요. 받은 임시 비밀번호로 로그인한 뒤 설정에서 바꾸면 됩니다.</p>`);
+    return;
+  }
   await withBusy(e.currentTarget, async () => {
-    const { error } = await sb.auth.resetPasswordForEmail(email.value.trim(), { redirectTo: location.origin + location.pathname });
+    const { error } = await sb.auth.resetPasswordForEmail(loginEmail(email.value), { redirectTo: location.origin + location.pathname });
     if (error){ showMsg($("#login-error"), errMsg(error)); return; }
     $("#login-note")?.remove();
     $("#login-form").insertAdjacentHTML("afterbegin", `<p class="form-note" id="login-note" role="status">가입된 이메일이라면 재설정 메일이 발송됩니다. 메일의 링크를 눌러 새 비밀번호를 정해 주세요.</p>`);
@@ -112,6 +118,7 @@ $("#acct-form").addEventListener("submit", async e => {
     const { data, error } = await sb.from("profiles").update({ display_name: name.value.trim() }).eq("id", state.session.user.id).select("display_name").single();
     if (error){ toast(errMsg(error)); return; }
     state.profile = { ...state.profile, display_name: data.display_name };
+    renderAccount();
     toast("저장했습니다");
   });
 });

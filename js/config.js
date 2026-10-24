@@ -62,3 +62,9 @@ export const SUITS = ["♠", "♥", "♣", "♦"];
    #home  #characters  #characters/d3  #story  #story/3  #game ...
    ------------------------------------------------------------------ */
 export const PAGES = ["home","characters","story","shop","game","roulette","settings","admin","login","join","password"];
+
+/* 아이디 로그인: 아이디 계정은 내부적으로 "<아이디>@titfortat777.invalid" 주소로 저장됨 (메일은 안 감) */
+export const ID_DOMAIN = "titfortat777.invalid";
+export const idOf = email => (email || "").endsWith("@" + ID_DOMAIN) ? email.slice(0, -ID_DOMAIN.length - 1) : (email || "");
+export const loginEmail = v => { v = (v || "").trim(); return v.includes("@") ? v : `${v.toLowerCase()}@${ID_DOMAIN}`; };
+export const isIdAccount = email => (email || "").endsWith("@" + ID_DOMAIN);
