@@ -2,11 +2,11 @@
    상점 구매 — 요청 → 관리자 승인 → 칩 차감·소지품 지급 (supabase/update-7.sql)
    요청할 때는 칩이 빠지지 않고, 승인되는 순간 서버에서 한 번에 처리됨
    ========================================================= */
-import { CURRENCY, USE_DB, publicUrl, sb, fmtDate, fmtTime } from "./data.js?v=20261027b";
-import { $, CUR, chipAmt, curOf, esc, toast, announce } from "./dom.js?v=20261027b";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261027b";
-import { DATA, state } from "./state.js?v=20261027b";
-import { balOf, myChars, renderShop } from "./views.js?v=20261027b";
+import { CURRENCY, USE_DB, publicUrl, sb, fmtDate, fmtTime } from "./data.js?v=20261027c";
+import { $, CUR, chipAmt, curOf, esc, toast, announce } from "./dom.js?v=20261027c";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261027c";
+import { DATA, state } from "./state.js?v=20261027c";
+import { balOf, myChars, renderShop } from "./views.js?v=20261027c";
 
 export const SHOP = { reqs: [], ok: true, loaded: false };
 export const STATUS = { pending: "승인 대기", approved: "승인됨", rejected: "거절됨", cancelled: "취소함" };

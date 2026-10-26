@@ -1523,3 +1523,17 @@ button.rl-seat:not([aria-disabled="true"]):hover .av{border-color:var(--gold)}
   .bj-betbox{flex-basis:100%; justify-content:center}
 }
 .bj-seat .nm small.dm{color:var(--gold)}
+
+/* 블랙잭 최종 결과 */
+.bj-final{position:absolute; left:50%; top:50%; translate:-50% -50%; z-index:6; width:min(22rem, 90%); display:grid; gap:.6rem; justify-items:center; padding:1.2rem 1.4rem;
+  background:rgba(5,8,26,.92); border:1px solid var(--gold); box-shadow:0 0 0 4px rgba(5,8,26,.6), 0 20px 40px rgba(0,0,0,.6); animation:pop-in .5s var(--ease) both}
+.bj-final[hidden]{display:none}
+.bj-final h2{margin:0; font-family:var(--f-serif); font-size:var(--s1)}
+.bj-final .sub{margin:0; font-size:.8125rem; color:var(--text-2)}
+.bj-final ol{list-style:none; margin:0; padding:0; width:100%; display:grid; gap:.3rem}
+.bj-final li{display:grid; grid-template-columns:1.6rem minmax(0,1fr) auto; align-items:center; gap:.5rem; padding:.3rem .5rem; border-bottom:1px solid var(--line-2)}
+.bj-final li:first-child{background:rgba(173,207,234,.08)}
+.bj-final .no{font-family:var(--f-serif); color:var(--smoke)}
+.bj-final li:first-child .no{color:var(--gold)}
+.bj-final .nm{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+@keyframes pop-in{from{opacity:0; scale:.92}}

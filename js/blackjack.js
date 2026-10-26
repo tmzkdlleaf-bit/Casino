@@ -5,18 +5,20 @@
    - 흐름: 앉기 → 베팅(첫 베팅 20초 뒤 또는 모두 걸면 바로) → 자리 순서대로 카드 받기/멈추기/두 배 → 딜러 → 정산
    - 카드 더미와 딜러의 엎은 카드는 서버만 앎. 화면은 받은 카드만 그림
    ========================================================= */
-import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261027b";
-import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261027b";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261027b";
-import { nav, state } from "./state.js?v=20261027b";
-import { ALL, balOf, myChars } from "./views.js?v=20261027b";
-import { sfx, sfxVol, setSfxVol } from "./sfx.js?v=20261027b";
+import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261027c";
+import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261027c";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261027c";
+import { nav, state } from "./state.js?v=20261027c";
+import { ALL, balOf, myChars } from "./views.js?v=20261027c";
+import { sfx, sfxVol, setSfxVol } from "./sfx.js?v=20261027c";
 
 const BJ = {
   id: null, t: null, seats: [], avatars: new Map(), chan: null, live: false, poll: 0, tickT: 0, loading: null,
-  lastChat: 0, seen: new Set(), wasMyTurn: false, skew: 0, actedAt: 0, tickTry: 0, myChar: null, missing: false, betAmt: null
+  lastChat: 0, seen: new Set(), wasMyTurn: false, skew: 0, actedAt: 0, tickTry: 0, myChar: null, missing: false, betAmt: null,
+  vis: new Set(), queue: [], anim: false, animT: 0, held: [], soundRound: -1, results: null
 };
 const LOBBY = { chan: null, t: 0 };
+const ROUNDS = { ok: true };  // bj_tables.max_rounds (update-15.sql)
 const DUMMY = { ok: true };   // bj_seats.dummy_name (update-14.sql)
 const TURN_SEC = 30;
 const n = v => Number(v || 0).toLocaleString("ko-KR");
@@ -98,7 +100,7 @@ async function loadLobby(){
   const box = $("#bj-rooms");
   if (!USE_DB){ box.innerHTML = `<li class="slot-note">데이터베이스에 연결되면 테이블이 보입니다.</li>`; return; }
   const { data, error } = await sb.from("bj_tables")
-    .select("id, title, status, phase, currency, min_bet, max_bet, max_seats, round, created_at, bj_seats(count)")
+    .select(`id, title, status, phase, currency, min_bet, max_bet, max_seats, round, created_at, bj_seats(count)${ROUNDS.ok ? ", max_rounds" : ""}`)
     .order("created_at", { ascending: false }).limit(20);
   if (error){ BJ.missing = missingTable(error); box.innerHTML = BJ.missing ? `<li>${NEED_SQL}</li>` : `<li class="form-error" role="alert">${esc(errMsg(error))}</li>`; return; }
   BJ.missing = false;
@@ -109,8 +111,8 @@ async function loadLobby(){
     return `<li><a class="rl-room ${open ? (t.phase === "playing" ? "st-playing" : "st-waiting") : "st-finished"}" href="#blackjack/${esc(t.id)}">
       <span class="rl-dot" aria-hidden="true"></span>
       <span class="t">${esc(t.title)}</span>
-      <span class="m"><span class="st">${open ? (t.phase === "playing" ? "진행 중" : "베팅 중") : "닫힘"}</span> · 자리 ${cnt}/${t.max_seats} · ${chipAmt(t.min_bet, t.currency)}~${n(t.max_bet)}</span>
-      <span class="go" aria-hidden="true">${open ? (cnt < t.max_seats ? "앉으러 가기" : "구경하기") : "기록 보기"}</span></a></li>`;
+      <span class="m"><span class="st">${open ? (t.phase === "playing" ? "진행 중" : "베팅 중") : "끝남"}</span> · 자리 ${cnt}/${t.max_seats}${t.max_rounds ? ` · ${t.round}/${t.max_rounds}판` : ""} · ${chipAmt(t.min_bet, t.currency)}~${n(t.max_bet)}</span>
+      <span class="go" aria-hidden="true">${open ? (cnt < t.max_seats ? "앉으러 가기" : "구경하기") : "결과 보기"}</span></a></li>`;
   }).join("") : `<li class="slot-note">${state.isAdmin ? "아직 테이블이 없습니다. ‘테이블 만들기’로 열어 주세요." : "열린 테이블이 없습니다. 관리자가 열면 여기에 보입니다."}</li>`;
 }
 
@@ -123,7 +125,8 @@ $("#bj-new-form").addEventListener("submit", async e => {
   await withBusy($('button[type="submit"]', e.target), async () => {
     const { data, error } = await sb.rpc("admin_bj_create", {
       p_title: $("#bj-new-title").value.trim(), p_currency: $('input[name="bj-cur"]:checked').value,
-      p_min: min, p_max: max, p_seats: +$("#bj-new-seats").value
+      p_min: min, p_max: max, p_seats: +$("#bj-new-seats").value,
+      ...(ROUNDS.ok ? { p_rounds: Math.min(100, Math.max(1, parseInt($("#bj-new-rounds").value, 10) || 10)) } : {})
     });
     if (error){ showMsg($("#bj-new-err"), missingTable(error) ? "supabase/update-13.sql을 먼저 실행해 주세요." : errMsg(error)); return; }
     $("#bj-new-dlg").close();
@@ -143,7 +146,9 @@ function closeTable(){
 async function openTable(id){
   if (BJ.id !== id){
     closeTable();
-    Object.assign(BJ, { id, t: null, seats: [], avatars: new Map(), lastChat: 0, seen: new Set(), wasMyTurn: false, tickTry: 0, betAmt: null });
+    clearTimeout(BJ.animT);
+    Object.assign(BJ, { id, t: null, seats: [], avatars: new Map(), lastChat: 0, seen: new Set(), wasMyTurn: false, tickTry: 0, betAmt: null,
+      vis: new Set(), queue: [], anim: false, held: [], soundRound: -1, results: null });
     $("#bj-chat").innerHTML = ""; $("#bj-seats").innerHTML = ""; $("#bj-dealer").innerHTML = ""; $("#bj-bar").innerHTML = ""; $("#bj-tools").innerHTML = "";
     $("#bj-status").textContent = "불러오는 중…"; $("#bj-meta").textContent = "";
   }
@@ -167,28 +172,31 @@ async function load(quiet){
   const id = BJ.id;
   BJ.loading = (async () => {
     const [t, s, c] = await Promise.all([
-      sb.from("bj_tables").select("id, title, status, phase, currency, min_bet, max_bet, max_seats, round, turn_seat, dealer_cards, bet_deadline, last_action_at").eq("id", id).maybeSingle(),
+      sb.from("bj_tables").select(`id, title, status, phase, currency, min_bet, max_bet, max_seats, round, turn_seat, dealer_cards, bet_deadline, last_action_at${ROUNDS.ok ? ", max_rounds" : ""}`).eq("id", id).maybeSingle(),
       sb.from("bj_seats").select(`seat, character_id, bet, cards, state, doubled, result, payout${DUMMY.ok ? ", dummy_name" : ""}`).eq("table_id", id).order("seat"),
       sb.from("bj_chat").select("id, name, body, kind, data, created_at").eq("table_id", id).gt("id", BJ.lastChat).order("id", { ascending: false }).limit(120)
     ]);
     if (BJ.id !== id) return;
     if (DUMMY.ok && s.error && /dummy_name/.test(s.error.message || "")){ DUMMY.ok = false; BJ.loading = null; return load(quiet); }
+    if (ROUNDS.ok && t.error && /max_rounds/.test(t.error.message || "")){ ROUNDS.ok = false; BJ.loading = null; return load(quiet); }
     const err = [t, s, c].find(x => x.error)?.error;
     if (err){ if (!quiet || missingTable(err)) tableError(missingTable(err) ? NEED_SQL : `<p class="form-error" role="alert">${esc(errMsg(err))}</p>`); return; }
     if (!t.data){ tableError(`<p class="empty-note">없는 테이블입니다. 지워졌을 수 있습니다.</p><p style="text-align:center"><a class="btn" href="#game">게임으로</a></p>`); return; }
     // 내 시계와 서버 시계 차이: 행동 직후 바로 받은 경우에만 잼
     const prev = BJ.t?.last_action_at, now = t.data.last_action_at;
     if (prev && now && prev !== now && (BJ.live || Date.now() - BJ.actedAt < 3000)){ const d = Date.now() - Date.parse(now); if (Math.abs(d) < 300000) BJ.skew = d; }
-    const roundChanged = BJ.t && BJ.t.round !== t.data.round;
+    const first = !BJ.t;
     BJ.t = t.data; BJ.seats = s.data || [];
-    if (roundChanged) BJ.seen.clear();
+    syncReveal(first);
     const ids = BJ.seats.map(x => x.character_id).concat(myChars().map(x => x.uuid));
     if (ids.length){
       const av = await sb.from("roulette_avatars").select("character_id, path").in("character_id", [...new Set(ids)]);
       if (!av.error) BJ.avatars = new Map(av.data.map(a => [a.character_id, a]));
     }
     ingestChat((c.data || []).reverse(), quiet);
+    if (BJ.t.status === "closed" && !BJ.results) loadResults();
     render();
+    if (!BJ.anim && !BJ.queue.length) flushHeld();
   })().finally(() => { BJ.loading = null; });
   return BJ.loading;
 }
@@ -199,6 +207,54 @@ function tableError(html){
   $("#bj-dealer").innerHTML = ""; $("#bj-bar").innerHTML = ""; $("#bj-tools").innerHTML = "";
 }
 
+/* =========================================================
+   카드 한 장씩 보여 주기 — 서버는 결과를 한 번에 주지만, 화면은 실제 딜러처럼 순서대로 펼침
+   순서: 첫 장(자리 순서) → 딜러 앞면 → 둘째 장 → 딜러 엎은 카드 → 추가로 받은 카드(자리 순서) → 딜러가 엎은 카드 뒤집기 → 딜러가 더 받는 카드
+   ========================================================= */
+const DK = (r, k) => `${r}:d:${k}`, SK = (r, seat, k) => `${r}:${seat}:${k}`;
+function revealOrder(){
+  const t = BJ.t, r = t.round, out = [], d = t.dealer_cards || [];
+  const seats = BJ.seats.filter(x => x.cards.length).sort((a, b) => a.seat - b.seat);
+  if (!d.length && !seats.length) return out;
+  for (let k = 0; k < 2; k++){
+    seats.forEach(x => { if (x.cards.length > k) out.push([SK(r, x.seat, k), 380]); });
+    if (k === 0 && d.length) out.push([DK(r, 0), 380]);
+    if (k === 1 && d.length) out.push([DK(r, "back"), 380]);
+  }
+  seats.forEach(x => { for (let k = 2; k < x.cards.length; k++) out.push([SK(r, x.seat, k), 520]); });
+  for (let k = 1; k < d.length; k++) out.push([DK(r, k), k === 1 ? 800 : 900]);   // 딜러 쪽은 천천히
+  return out;
+}
+function syncReveal(first){
+  const order = revealOrder();
+  if (first){ order.forEach(([k]) => BJ.vis.add(k)); return; }
+  const queued = new Set(BJ.queue.map(q => q[0]));
+  order.forEach(it => { if (!BJ.vis.has(it[0]) && !queued.has(it[0])) BJ.queue.push(it); });
+  if (BJ.queue.length && !BJ.anim){ BJ.anim = true; BJ.animT = setTimeout(step, 120); }
+}
+function step(){
+  const it = BJ.queue.shift();
+  if (!it || !BJ.t){ BJ.anim = false; finishAnim(); return; }
+  BJ.vis.add(it[0]);
+  const m = it[0].match(/^\d+:(\d+):(\d+)$/), s = m && seatAt(+m[1]);
+  const done = s && visCards(s).length === s.cards.length;
+  sfx(done && total(s.cards) > 21 ? "out" : "card");
+  renderDealer(); renderSeats();
+  BJ.animT = setTimeout(step, it[1]);
+}
+function finishAnim(){
+  flushHeld();
+  if (!BJ.t) return;
+  render();
+  const t = BJ.t, me = mySeat();
+  if (t.phase === "betting" && me?.result && me.cards.length && BJ.soundRound !== t.round){
+    BJ.soundRound = t.round;
+    sfx(/win|blackjack/.test(me.result) ? "win" : me.result === "lose" ? "out" : "card");
+  }
+}
+const visCards = x => x.cards.filter((_, k) => BJ.vis.has(SK(BJ.t.round, x.seat, k)));
+const dealerDone = () => { const t = BJ.t, d = t.dealer_cards || []; return d.every((_, k) => BJ.vis.has(DK(t.round, k))); };
+
 /* ---------- 그리기 ---------- */
 function render(){
   const t = BJ.t; if (!t) return;
@@ -207,19 +263,22 @@ function render(){
   else if (!myChars().some(c => c.uuid === BJ.myChar)) BJ.myChar = myChars().sort((a, b) => (a.role === "참가자" ? 0 : 1) - (b.role === "참가자" ? 0 : 1))[0]?.uuid || null;
   if ($("#bj-title").textContent !== t.title) $("#bj-title").textContent = t.title;
   setTitle(t.title);
-  $("#bj-meta").innerHTML = [CUR[cur()].name, `베팅 ${n(t.min_bet)}~${n(t.max_bet)}`, `자리 ${BJ.seats.length}/${t.max_seats}`, t.status === "closed" ? "닫힘" : `${t.round}판째`]
+  $("#bj-meta").innerHTML = [CUR[cur()].name, `베팅 ${n(t.min_bet)}~${n(t.max_bet)}`, `자리 ${BJ.seats.length}/${t.max_seats}`, t.max_rounds ? `${t.round}/${t.max_rounds}판` : `${t.round}판째`, t.status === "closed" && !BJ.anim ? "끝남" : ""].filter(Boolean)
     .map(x => `<span>${x}</span>`).join("");
-  renderDealer(); renderSeats(); renderStatus(); renderBar(); renderTools(); tick();
-  const my = isMyTurn();
+  renderDealer(); renderSeats(); renderStatus(); renderBar(); renderTools(); renderFinal(); tick();
+  const my = isMyTurn() && !BJ.anim;
   if (my && !BJ.wasMyTurn){ toast("내 차례입니다"); announce("내 차례입니다. 카드를 더 받거나 멈추세요."); sfx("turn"); }
   BJ.wasMyTurn = my;
 }
 
 function renderDealer(){
-  const t = BJ.t, cards = t.dealer_cards || [], playing = t.phase === "playing";
-  const shown = cards.map((c, i) => cardHtml(c, `${t.round}:d:${i}`)).join("") + (playing && cards.length === 1 ? cardHtml(0, `${t.round}:d:hole`, true) : "");
-  const tot = cards.length ? (playing ? `${total(cards)}+?` : total(cards)) : "";
-  const bust = !playing && cards.length && total(cards) > 21, bj = !playing && isBJ(cards);
+  const t = BJ.t, r = t.round, cards = t.dealer_cards || [];
+  const vis = cards.filter((_, k) => BJ.vis.has(DK(r, k)));
+  const showBack = BJ.vis.has(DK(r, "back")) && !BJ.vis.has(DK(r, 1));
+  const shown = vis.map((c, i) => cardHtml(c, DK(r, i))).join("") + (showBack ? cardHtml(0, DK(r, "hole"), true) : "");
+  const full = vis.length === cards.length && cards.length > 1;   // 엎은 카드까지 다 펼침
+  const tot = vis.length ? (full ? total(vis) : `${total(vis)}${showBack ? "+?" : ""}`) : "";
+  const bust = full && total(vis) > 21, bj = full && isBJ(vis);
   $("#bj-dealer").innerHTML = `<div class="bj-hand dealer">
       <span class="bj-who">딜러${tot !== "" ? ` <b class="bj-tot${bust ? " bust" : bj ? " bj" : ""}">${bj ? "블랙잭" : bust ? `${tot} 버스트` : tot}</b>` : ""}</span>
       <div class="bj-cards">${shown || `<span class="bj-empty">17 이상에서 멈춤</span>`}</div>
@@ -233,16 +292,18 @@ function renderSeats(){
     const s = seatAt(i), off = i - (N - 1) / 2, arc = `style="--dy:${(-Math.pow(Math.abs(off), 1.6) * 14).toFixed(1)}px"`;   // 양 끝이 살짝 올라가 둥글게
     if (!s) return `<div class="bj-seat empty" ${arc}><span class="av"></span><span class="nm">빈 자리</span></div>`;
     const c = seatChar(s), src = c.dummy ? "" : avatarOf(c), isMe = me && me.seat === i;
-    const turn = t.phase === "playing" && t.turn_seat === i, tot = total(s.cards);
-    const tag = s.state === "bust" ? `<span class="bj-tag bust">버스트</span>`
-      : s.state === "blackjack" ? `<span class="bj-tag bj">블랙잭</span>`
+    const vc = visCards(s), complete = vc.length === s.cards.length, settled = complete && dealerDone() && !BJ.anim;
+    const turn = t.phase === "playing" && t.turn_seat === i && !BJ.anim, tot = total(vc);
+    const tag = !complete ? ""
+      : s.state === "bust" || (s.result && tot > 21 && !settled) ? `<span class="bj-tag bust">버스트</span>`
+      : s.state === "blackjack" || (s.result && isBJ(s.cards) && !settled) ? `<span class="bj-tag bj">블랙잭</span>`
       : s.state === "stood" ? `<span class="bj-tag">멈춤</span>`
       : s.state === "bet" ? `<span class="bj-tag ready">베팅 완료</span>`
-      : s.result && s.cards.length ? `<span class="bj-tag res-${s.result}">${RESULT[s.result]}${s.character_id ? (s.payout > s.bet ? ` +${n(s.payout - s.bet)}` : s.result === "lose" ? ` -${n(s.bet)}` : "") : ""}</span>` : "";
-    const label = `${c.name}${isMe ? " (나)" : ""}${s.cards.length ? `, 카드 ${s.cards.map(cardName).join(", ")}, 합 ${tot}` : ""}${s.bet ? `, 베팅 ${s.bet}` : ""}${turn ? ", 지금 차례" : ""}`;
-    return `<div ${arc} class="bj-seat${isMe ? " mine" : ""}${turn ? " turn" : ""}${s.state === "bust" || s.result === "lose" ? " lost" : ""}${s.result === "win" || s.result === "blackjack" ? " won" : ""}" data-seat="${i}" aria-label="${esc(label)}">
-      <div class="bj-cards">${s.cards.map((cd, k) => cardHtml(cd, `${t.round}:${i}:${k}`)).join("")}</div>
-      ${s.cards.length ? `<span class="bj-tot">${tot}${soft(s.cards) && tot < 21 && s.state === "playing" ? `<small>/${tot - 10}</small>` : ""}</span>` : ""}
+      : s.result && s.cards.length && settled ? `<span class="bj-tag res-${s.result}">${RESULT[s.result]}${s.character_id ? (s.payout > s.bet ? ` +${n(s.payout - s.bet)}` : s.result === "lose" ? ` -${n(s.bet)}` : "") : ""}</span>` : "";
+    const label = `${c.name}${isMe ? " (나)" : ""}${vc.length ? `, 카드 ${vc.map(cardName).join(", ")}, 합 ${tot}` : ""}${s.bet ? `, 베팅 ${s.bet}` : ""}${turn ? ", 지금 차례" : ""}`;
+    return `<div ${arc} class="bj-seat${isMe ? " mine" : ""}${turn ? " turn" : ""}${complete && (s.state === "bust" || (settled && s.result === "lose")) ? " lost" : ""}${settled && (s.result === "win" || s.result === "blackjack") ? " won" : ""}" data-seat="${i}" aria-label="${esc(label)}">
+      <div class="bj-cards">${vc.map((cd, k) => cardHtml(cd, SK(t.round, i, k))).join("")}</div>
+      ${vc.length ? `<span class="bj-tot">${tot}${soft(vc) && tot < 21 && s.state === "playing" ? `<small>/${tot - 10}</small>` : ""}</span>` : ""}
       ${tag}
       <span class="av">${src ? `<img src="${esc(src)}" alt="" decoding="async" draggable="false">` : `<span class="ph">${esc(c.name.slice(0, 1))}</span>`}${turn ? `<span class="tm" aria-hidden="true"></span>` : ""}</span>
       <span class="nm">${esc(c.name)}${isMe ? `<small>나</small>` : ""}${c.dummy ? `<small class="dm">더미</small>` : ""}</span>
@@ -261,19 +322,39 @@ function leftSec(){
 function renderStatus(){
   const t = BJ.t, el = $("#bj-status");
   let html;
-  if (t.status === "closed") html = `<b>닫힌 테이블</b>`;
+  const last = t.max_rounds && ((t.phase === "playing" && t.round >= t.max_rounds) || (t.phase === "betting" && t.round + 1 >= t.max_rounds));
+  if (BJ.anim) html = t.phase === "playing" && !(t.dealer_cards || []).length ? `<b>카드를 나누는 중…</b>` : t.phase === "playing" ? `<b>카드를 받는 중…</b>` : `<b>딜러 차례</b>`;
+  else if (t.status === "closed") html = `<b>게임 끝</b> · ${t.round}판`;
   else if (t.phase === "betting") html = t.bet_deadline ? `<b>베팅 중</b> · 카드 배분까지 <span class="left" id="bj-left"></span>` : `<b>베팅을 기다리는 중</b>`;
   else {
     const s = seatAt(t.turn_seat);
     html = isMyTurn() ? `<b class="mine">내 차례</b> · <span class="left" id="bj-left"></span>` : `<b>${esc(s ? seatChar(s).name : "—")}</b> 차례 · <span class="left" id="bj-left"></span>`;
   }
+  if (last && t.status !== "closed" && !BJ.anim) html = `<b class="mine">마지막 판</b> · ` + html;
   el.innerHTML = html;
+}
+
+/* 게임이 끝나면 테이블 위에 최종 결과 */
+async function loadResults(){
+  const { data, error } = await sb.rpc("bj_results", { p_table: BJ.id });
+  BJ.results = !error && Array.isArray(data) ? data : [];
+  renderFinal();
+}
+function renderFinal(){
+  const box = $("#bj-final"), t = BJ.t;
+  const on = t && t.status === "closed" && BJ.results && !BJ.anim;
+  box.hidden = !on;
+  if (!on) return;
+  box.innerHTML = `<h2>최종 결과</h2><p class="sub">${esc(t.title)} · ${t.round}판</p>
+    ${BJ.results.length ? `<ol>${BJ.results.map((r, i) => `<li><span class="no">${i + 1}</span><span class="nm">${esc(r.name)}</span>${chipAmt(r.net, t.currency, true)}</li>`).join("")}</ol>` : `<p class="sub">참가자가 없었습니다.</p>`}
+    <a class="btn small" href="#game">게임으로</a>`;
 }
 
 function renderBar(){
   const t = BJ.t, bar = $("#bj-bar"), me = mySeat(), chars = myChars(), c = cur();
   const keep = document.activeElement?.closest?.("#bj-bar")?.dataset?.act;
   if (document.activeElement?.id === "bj-amt") return;   // 금액 입력 중엔 다시 그리지 않음
+  if (BJ.anim){ bar.innerHTML = `<p class="rl-note">…</p>`; return; }
   let html = "";
   if (!state.session) html = `<p class="rl-note">구경 중입니다. 참여하려면 <a href="#login">로그인</a>해 주세요.</p>`;
   else if (t.status === "closed") html = `<p class="rl-note">닫힌 테이블입니다.</p><a class="btn" href="#game">게임으로</a>`;
@@ -345,24 +426,24 @@ function ingestChat(rows, animate){
   const fresh = rows.filter(m => m.id > BJ.lastChat).sort((a, b) => a.id - b.id);
   if (!fresh.length) return;
   BJ.lastChat = fresh.at(-1).id;
+  const now = [], later = [];
+  for (const m of fresh){
+    // 카드가 다 펼쳐지기 전에 결과가 먼저 보이지 않게, 진행 기록은 잠시 붙잡아 둠
+    if (animate && m.kind !== "chat") later.push(m); else now.push(m);
+    if (animate && m.data?.event === "bet" && Date.now() - Date.parse(m.created_at) < 10000) sfx("bet");
+  }
+  appendChat(now, animate === false);
+  BJ.held.push(...later);
+}
+function flushHeld(){ if (BJ.held.length){ const h = BJ.held; BJ.held = []; appendChat(h, false); } }
+function appendChat(list, toEnd){
+  if (!list.length) return;
   const box = $("#bj-chat"), atEnd = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
   let ul = $("ul", box);
   if (!ul){ box.innerHTML = `<ul class="rl-log"></ul>`; ul = $("ul", box); }
-  ul.insertAdjacentHTML("beforeend", fresh.map(chatLi).join(""));
+  ul.insertAdjacentHTML("beforeend", list.map(chatLi).join(""));
   while (ul.children.length > 200) ul.firstElementChild.remove();
-  if (atEnd || animate === false) box.scrollTop = box.scrollHeight;
-  if (!animate) return;
-  for (const m of fresh){
-    if (Date.now() - Date.parse(m.created_at) > 10000) continue;
-    const ev = m.data?.event;
-    if (ev === "deal") [0, 140, 280, 420].forEach(d => setTimeout(() => sfx("card"), d));
-    else if (ev === "bet") sfx("bet");
-    else if (ev === "bust") sfx("out");
-    else if (ev === "settle"){
-      const me = mySeat();
-      setTimeout(() => sfx(me && /win|blackjack/.test(seatAt(me.seat)?.result || "") ? "win" : "card"), 500);
-    }
-  }
+  if (atEnd || toEnd) box.scrollTop = box.scrollHeight;
 }
 $("#bj-say").addEventListener("submit", async e => {
   e.preventDefault();
@@ -398,7 +479,7 @@ async function act(btn){
       if (!(amt >= t.min_bet && amt <= t.max_bet)){ toast(`베팅은 ${n(t.min_bet)}~${n(t.max_bet)}입니다`); $("#bj-amt").focus(); return; }
       BJ.betAmt = amt;
       if (await call("bj_bet", { p_table: BJ.id, p_character: me.character_id, p_amount: amt })){
-        const { loadMine } = await import("./auth.js?v=20261027b"); loadMine();
+        const { loadMine } = await import("./auth.js?v=20261027c"); loadMine();
       }
     }
     else if (a === "hit"){ sfx("card"); await call("bj_hit", { p_table: BJ.id }); }

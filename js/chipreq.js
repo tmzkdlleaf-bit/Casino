@@ -2,11 +2,11 @@
    칩 정산 요청 — 멤버가 "칩 100개 추가" 같은 요청을 올리고 관리자가 승인 (supabase/update-9.sql)
    설정 화면의 '칩 정산 요청' 칸. 승인되면 서버가 칩 기록에 넣음
    ========================================================= */
-import { CURRENCY, USE_DB, fmtDate, fmtTime, sb } from "./data.js?v=20261027b";
-import { $, announce, chipAmt, esc, toast } from "./dom.js?v=20261027b";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261027b";
-import { state } from "./state.js?v=20261027b";
-import { myChars } from "./views.js?v=20261027b";
+import { CURRENCY, USE_DB, fmtDate, fmtTime, sb } from "./data.js?v=20261027c";
+import { $, announce, chipAmt, esc, toast } from "./dom.js?v=20261027c";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261027c";
+import { state } from "./state.js?v=20261027c";
+import { myChars } from "./views.js?v=20261027c";
 
 export const CREQ = { list: [], ok: true };
 const ST = { pending: "승인 대기", approved: "승인됨", rejected: "거절됨", cancelled: "취소함" };
