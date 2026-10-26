@@ -1537,3 +1537,19 @@ button.rl-seat:not([aria-disabled="true"]):hover .av{border-color:var(--gold)}
 .bj-final li:first-child .no{color:var(--gold)}
 .bj-final .nm{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 @keyframes pop-in{from{opacity:0; scale:.92}}
+
+/* 블랙잭: 몇 판째 (크게) · 빈 상태 표시 */
+.bj-round{position:absolute; left:clamp(.8rem, 2.5vw, 1.6rem); top:.9rem; z-index:3; display:grid; grid-template-columns:auto auto; align-items:baseline; column-gap:.15rem; font-family:var(--f-serif); line-height:1; color:var(--ivory); pointer-events:none}
+.bj-round b{font-size:clamp(2.2rem, 5vw, 3.4rem); text-shadow:3px 3px 0 #05081A}
+.bj-round span{font-size:clamp(1rem, 2vw, 1.4rem); color:var(--text-2)}
+.bj-round small{grid-column:1 / -1; margin-top:.25rem; font-size:.75rem; letter-spacing:.08em; color:var(--text-2)}
+.bj-round.last b, .bj-round.last small{color:#FF8FBE}
+.bj-round.last b{animation:last-pulse 1.6s var(--ease-io) infinite}
+@keyframes last-pulse{50%{text-shadow:3px 3px 0 #05081A, 0 0 18px rgba(239,26,114,.8)}}
+.bj-round.over b{font-size:clamp(1.6rem, 3.5vw, 2.4rem); color:var(--gold)}
+.rl-status.blank{visibility:hidden}
+.pc.slot{background:transparent; box-shadow:none; border:2px dashed rgba(173,207,234,.3)}
+.bj-bet.ready{padding:.05rem .4rem; border:1px solid var(--gold)}
+.bj-have{font-size:1rem}
+.bet-res{font-size:1rem}
+@media (max-width:700px){ .bj-round{top:.6rem} .bj-table{padding-top:3.4rem} }

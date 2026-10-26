@@ -4,8 +4,8 @@
    · 다음 접속 때: 마지막으로 본 뒤 처리된 요청 개수 안내
    마지막으로 본 시각은 이 브라우저에 계정별로 저장
    ========================================================= */
-import { CUR, curOf, toast } from "./dom.js?v=20261027c";
-import { state } from "./state.js?v=20261027c";
+import { CUR, curOf, toast } from "./dom.js?v=20261027d";
+import { state } from "./state.js?v=20261027d";
 
 const key = () => "comu-seen-dec:" + (state.session?.user.id || "");
 const n = v => Number(v || 0).toLocaleString("ko-KR");
