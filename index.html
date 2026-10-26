@@ -27,24 +27,24 @@
 <!-- 제목·버튼: 갈무리 도트 글꼴 (SIL OFL, 버전 고정 + SRI) / 본문: IBM Plex Sans KR — 실제 쓰는 굵기만 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.css" integrity="sha384-55uQGdclWjXwWY0yHikdtcfcat9pPBqMBCVFIeWjRhvPPUYbpJLhIJegzTcFoh/A" crossorigin="anonymous">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="css/site.css?v=20261025b">
+<link rel="stylesheet" href="css/site.css?v=20261027a">
 <!-- 파일 주소 끝의 ?v=날짜 는 버전 표시 — 바꿔 올릴 때마다 함께 바꾸면 브라우저가 옛 파일을 쓰지 않음 (js 안의 import 주소도 같은 값) -->
 <!-- 모듈 미리 받기: import 사슬을 따라 차례로 받는 대기 시간 제거 (관리 모듈은 제외 — 관리자만 필요할 때 받음) -->
-<link rel="modulepreload" href="js/main.js?v=20261025b">
-<link rel="modulepreload" href="js/config.js?v=20261025b">
-<link rel="modulepreload" href="js/state.js?v=20261025b">
-<link rel="modulepreload" href="js/dom.js?v=20261025b">
-<link rel="modulepreload" href="js/data.js?v=20261025b">
-<link rel="modulepreload" href="js/views.js?v=20261025b">
-<link rel="modulepreload" href="js/effects.js?v=20261025b">
-<link rel="modulepreload" href="js/router.js?v=20261025b">
-<link rel="modulepreload" href="js/auth.js?v=20261025b">
-<link rel="modulepreload" href="js/forms.js?v=20261025b">
-<link rel="modulepreload" href="js/markdown.js?v=20261025b">
-<link rel="modulepreload" href="js/ambience.js?v=20261025b">
-<link rel="modulepreload" href="js/navorder.js?v=20261025b">
-<link rel="modulepreload" href="js/charedit.js?v=20261025b">
-<link rel="modulepreload" href="js/shop.js?v=20261025b">
+<link rel="modulepreload" href="js/main.js?v=20261027a">
+<link rel="modulepreload" href="js/config.js?v=20261027a">
+<link rel="modulepreload" href="js/state.js?v=20261027a">
+<link rel="modulepreload" href="js/dom.js?v=20261027a">
+<link rel="modulepreload" href="js/data.js?v=20261027a">
+<link rel="modulepreload" href="js/views.js?v=20261027a">
+<link rel="modulepreload" href="js/effects.js?v=20261027a">
+<link rel="modulepreload" href="js/router.js?v=20261027a">
+<link rel="modulepreload" href="js/auth.js?v=20261027a">
+<link rel="modulepreload" href="js/forms.js?v=20261027a">
+<link rel="modulepreload" href="js/markdown.js?v=20261027a">
+<link rel="modulepreload" href="js/ambience.js?v=20261027a">
+<link rel="modulepreload" href="js/navorder.js?v=20261027a">
+<link rel="modulepreload" href="js/charedit.js?v=20261027a">
+<link rel="modulepreload" href="js/shop.js?v=20261027a">
 </head>
 <body class="intro-on loading">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -280,15 +280,29 @@
       <p class="page-lede">게임 페이지 안내 문구 자리입니다. 지난 게임 전적도 여기서 볼 수 있습니다.</p>
     </header>
     <div class="game-grid">
-      <!-- 러시안 룰렛 로비: 방 목록. 방은 관리자만 열고, 들어가면 #roulette/방ID -->
-      <section class="table game-stage rl-lobby" aria-labelledby="h-rl">
-        <div class="rl-lobby-head">
-          <span class="chip red rl-lobby-chip" aria-hidden="true"></span>
-          <div><h2 class="h" id="h-rl">러시안 룰렛</h2><p class="rl-lobby-sub">6칸 탄창에 1발 · 전기 충격기</p></div>
-          <button class="btn small primary" type="button" id="rl-new" data-admin-only hidden>방 만들기</button>
+      <!-- 게임 로비: 탭으로 러시안 룰렛(#roulette/방ID) · 블랙잭(#blackjack/테이블ID). 방·테이블은 관리자만 엶 -->
+      <div class="table game-stage rl-lobby lobby-wrap">
+        <div class="lobby-tabs" id="lobby-tabs" role="tablist" aria-label="게임 종류">
+          <button type="button" role="tab" id="lt-rl" data-lobby="rl" aria-selected="true" aria-controls="lobby-rl">러시안 룰렛</button>
+          <button type="button" role="tab" id="lt-bj" data-lobby="bj" aria-selected="false" aria-controls="lobby-bj">블랙잭</button>
         </div>
-        <ul class="rl-rooms" id="rl-rooms" aria-label="룰렛 방 목록"><li class="slot-note">불러오는 중…</li></ul>
-      </section>
+        <section class="lobby-pane" id="lobby-rl" role="tabpanel" aria-labelledby="lt-rl">
+          <div class="rl-lobby-head">
+            <span class="chip red rl-lobby-chip" aria-hidden="true"></span>
+            <div><h2 class="h" id="h-rl">러시안 룰렛</h2><p class="rl-lobby-sub">6칸 탄창에 1발 · 전기 충격기</p></div>
+            <button class="btn small primary" type="button" id="rl-new" data-admin-only hidden>방 만들기</button>
+          </div>
+          <ul class="rl-rooms" id="rl-rooms" aria-label="룰렛 방 목록"><li class="slot-note">불러오는 중…</li></ul>
+        </section>
+        <section class="lobby-pane" id="lobby-bj" role="tabpanel" aria-labelledby="lt-bj" hidden>
+          <div class="rl-lobby-head">
+            <span class="bj-lobby-card" aria-hidden="true"><b>A</b><i>♠</i></span>
+            <div><h2 class="h" id="h-bj">블랙잭</h2><p class="rl-lobby-sub">21에 가깝게 · 딜러는 17 이상에서 멈춤</p></div>
+            <button class="btn small primary" type="button" id="bj-new" data-admin-only hidden>테이블 만들기</button>
+          </div>
+          <ul class="rl-rooms" id="bj-rooms" aria-label="블랙잭 테이블 목록"><li class="slot-note">불러오는 중…</li></ul>
+        </section>
+      </div>
       <section class="g-panel pane-box rec-panel" aria-labelledby="h-records">
         <div class="g-head rec-head">
           <h2 id="h-records">전적</h2>
@@ -355,6 +369,40 @@
     </div>
   </section>
 
+  <!-- ===================== 블랙잭 테이블 =====================
+       위: 딜러 / 아래: 자리들 / 오른쪽: 채팅 / 맨 아래: 베팅·카드 더 받기·멈추기·두 배 -->
+  <section data-page="blackjack" class="page rl-page bj-page" hidden>
+    <header class="page-head rl-head">
+      <div class="rl-id">
+        <a class="link-back" href="#game">게임으로</a>
+        <h1 class="page-title rl-title" id="bj-title">블랙잭</h1>
+      </div>
+      <div class="head-side">
+        <p class="page-lede" id="bj-meta"></p>
+        <div class="rl-tools" id="bj-tools"></div>
+      </div>
+    </header>
+    <div class="rl-wrap">
+      <div class="rl-main">
+        <p class="rl-status" id="bj-status" aria-live="polite"></p>
+        <div class="table bj-table" id="bj-table">
+          <div class="bj-dealer" id="bj-dealer"></div>
+          <div class="bj-seats" id="bj-seats" role="group" aria-label="자리"></div>
+        </div>
+        <div class="rl-bar" id="bj-bar"></div>
+      </div>
+      <aside class="g-panel rl-side" aria-labelledby="bj-chat-h">
+        <div class="g-head"><h2 id="bj-chat-h">채팅</h2></div>
+        <div class="pane rl-chat" id="bj-chat" role="log" aria-live="polite" aria-label="채팅과 진행 기록" tabindex="0"></div>
+        <form class="rl-say" id="bj-say" novalidate>
+          <label class="sr" for="bj-say-in">채팅 입력</label>
+          <input class="input" id="bj-say-in" maxlength="300" autocomplete="off" placeholder="메시지">
+          <button class="btn small primary" type="submit" aria-label="보내기"><span aria-hidden="true">▲</span></button>
+        </form>
+      </aside>
+    </div>
+  </section>
+
   <!-- ===================== 설정 ===================== -->
   <section data-page="settings" class="page" hidden>
     <header class="page-head">
@@ -395,7 +443,11 @@
             <p class="form-error" id="creq-err" role="alert" hidden></p>
             <div class="field" id="creq-char-f"><label for="creq-char">캐릭터</label><select class="input" id="creq-char"></select></div>
             <div class="row2">
-              <div class="field"><label for="creq-amt">칩</label><input class="input" id="creq-amt" type="number" inputmode="numeric" step="1" placeholder="100 또는 -50" required></div>
+              <div class="field"><label for="creq-amt">칩</label>
+                <div class="amt-row"><fieldset class="cur-pick" aria-label="칩 종류">
+                  <label class="cur-opt cur-blue"><input type="radio" name="creq-cur" value="blue" checked><span class="chip green" aria-hidden="true"></span><span class="sr">블루 칩</span></label>
+                  <label class="cur-opt cur-pink"><input type="radio" name="creq-cur" value="pink"><span class="chip red" aria-hidden="true"></span><span class="sr">핑크 칩</span></label>
+                </fieldset><input class="input" id="creq-amt" type="number" inputmode="numeric" step="1" placeholder="100 또는 -50" required></div></div>
               <div class="field"><label for="creq-why">사유</label><input class="input" id="creq-why" maxlength="200" placeholder="예: 10월 1주 활동" required></div>
             </div>
             <div class="form-actions"><button class="btn primary" type="submit">요청 보내기</button></div>
@@ -595,12 +647,35 @@
     <div class="field"><label for="rl-new-title">방 이름</label><input class="input" id="rl-new-title" maxlength="40" value="러시안 룰렛"></div>
     <div class="row2">
       <div class="field"><label for="rl-new-seats">자리 수</label><select class="input" id="rl-new-seats"><option value="2">2자리</option><option value="3">3자리</option><option value="4">4자리</option><option value="5">5자리</option><option value="6" selected>6자리</option><option value="7">7자리</option><option value="8">8자리</option></select></div>
-      <div class="field"><label for="rl-new-fee">참가비 (칩)</label><input class="input" id="rl-new-fee" type="number" inputmode="numeric" min="0" step="1" value="0"><span class="hint">시작할 때 자리마다 걷어 우승자에게</span></div>
+      <div class="field"><label for="rl-new-fee">참가비</label><input class="input" id="rl-new-fee" type="number" inputmode="numeric" min="0" step="1" value="0"><span class="hint">시작할 때 자리마다 걷어 우승자에게</span></div>
     </div>
+    <fieldset class="field cur-field"><legend>칩 종류</legend><div class="cur-pick big">
+      <label class="cur-opt cur-blue"><input type="radio" name="rl-cur" value="blue" checked><span class="chip green" aria-hidden="true"></span>블루 칩</label>
+      <label class="cur-opt cur-pink"><input type="radio" name="rl-cur" value="pink"><span class="chip red" aria-hidden="true"></span>핑크 칩</label>
+    </div></fieldset>
     <fieldset class="field"><legend>넘기기</legend>
       <label class="check"><input type="radio" name="rl-pass" value="after_self" checked>나에게 한 번 쏘고 살아남은 뒤에만</label>
       <label class="check"><input type="radio" name="rl-pass" value="free">언제든 (쏘지 않고 넘길 수 있음)</label>
     </fieldset>
+    <div class="form-actions"><button class="btn primary" type="submit" value="create">만들기</button><button class="btn" type="button" data-close>닫기</button></div>
+  </form>
+</dialog>
+
+<!-- 블랙잭: 테이블 만들기 (관리자) -->
+<dialog class="dlg rl-dlg" id="bj-new-dlg" aria-labelledby="bj-new-h">
+  <form class="form" id="bj-new-form" method="dialog" novalidate>
+    <h2 class="card-h" id="bj-new-h">블랙잭 테이블 만들기</h2>
+    <p class="form-error" id="bj-new-err" role="alert" hidden></p>
+    <div class="field"><label for="bj-new-title">테이블 이름</label><input class="input" id="bj-new-title" maxlength="40" value="블랙잭"></div>
+    <fieldset class="field cur-field"><legend>칩 종류</legend><div class="cur-pick big">
+      <label class="cur-opt cur-blue"><input type="radio" name="bj-cur" value="blue" checked><span class="chip green" aria-hidden="true"></span>블루 칩</label>
+      <label class="cur-opt cur-pink"><input type="radio" name="bj-cur" value="pink"><span class="chip red" aria-hidden="true"></span>핑크 칩</label>
+    </div></fieldset>
+    <div class="row2">
+      <div class="field"><label for="bj-new-min">최소 베팅</label><input class="input" id="bj-new-min" type="number" inputmode="numeric" min="1" step="1" value="10"></div>
+      <div class="field"><label for="bj-new-max">최대 베팅</label><input class="input" id="bj-new-max" type="number" inputmode="numeric" min="1" step="1" value="500"></div>
+    </div>
+    <div class="field"><label for="bj-new-seats">자리 수</label><select class="input" id="bj-new-seats"><option value="1">1자리</option><option value="2">2자리</option><option value="3">3자리</option><option value="4">4자리</option><option value="5" selected>5자리</option><option value="6">6자리</option></select></div>
     <div class="form-actions"><button class="btn primary" type="submit" value="create">만들기</button><button class="btn" type="button" data-close>닫기</button></div>
   </form>
 </dialog>
@@ -623,6 +698,6 @@
 <!-- 버전 고정 + 무결성 해시(SRI): CDN 파일이 바뀌면 브라우저가 실행을 거부 -->
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"
         integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
-<script type="module" src="js/main.js?v=20261025b"></script>
+<script type="module" src="js/main.js?v=20261027a"></script>
 </body>
 </html>

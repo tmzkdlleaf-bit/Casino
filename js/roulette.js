@@ -5,12 +5,12 @@
    - 탄 위치는 서버만 앎. 화면은 서버가 돌려준 결과(채팅의 'shot' 기록)를 보고 효과만 그림
    - 실시간 연결이 끊겨도 5초마다 다시 불러와 따라감
    ========================================================= */
-import { USE_DB, publicUrl, sb } from "./data.js?v=20261025b";
-import { $, $$, announce, esc, setTitle, toast } from "./dom.js?v=20261025b";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261025b";
-import { motionOK, nav, state } from "./state.js?v=20261025b";
-import { ALL, myChars } from "./views.js?v=20261025b";
-import { sfx, sfxVol, setSfxVol } from "./sfx.js?v=20261025b";
+import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261027a";
+import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261027a";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261027a";
+import { motionOK, nav, state } from "./state.js?v=20261027a";
+import { ALL, balOf, myChars } from "./views.js?v=20261027a";
+import { sfx, sfxVol, setSfxVol } from "./sfx.js?v=20261027a";
 
 /* ---------- 전기 충격기 (도트 그림) — 오른쪽을 향함, 한 칸 = 1 ---------- */
 const GUN = ["........................................", "....KKKKKKKKKKKKKKKKKKKKKKKKK...........", "...KSSSSSSSSSSSSSSSSSSSSSSSSSK..........", "..KLLLLLLLLLLLLLLLLLLLLLLLLLLLKKKKKKKK..", "..KLBBYYBYYBYYBBBBBBBBBBBBBBBKPPPPPPPK..", "..KLBBBBBBBBBBBBBBBBBBBBBBBBBKPQQQQQPKWW", "..KDBBBBBBBBBBBBBBBBBBBBBBBBBKPPPPPPPK..", "..KDDDDDDDDDDDDDDDDDDDDDDDDDDKPQQQQQPKWW", "..KKKKKKDDDDDDDKKKKKKKKKKKKKKKPPPPPPPK..", ".......KGGGGGKDK....K.......KKKKKKKKK...", "......KGgGGGKKDK...K....................", "......KGGGGGK.KMK..K....................", ".....KGgGGGK...KMKK.....................", ".....KGGGGGK....KK......................", "....KGgGGGK.............................", "....KGGGGGK.............................", "....KKKKKKK............................."];
@@ -85,7 +85,7 @@ async function loadLobby(){
   const box = $("#rl-rooms");
   if (!USE_DB){ box.innerHTML = `<li class="slot-note">데이터베이스에 연결되면 방 목록이 보입니다.</li>`; return; }
   const { data, error } = await sb.from("roulette_rooms")
-    .select("id, title, status, max_seats, entry_fee, pot, created_at, roulette_seats(count)")
+    .select(`id, title, status, max_seats, entry_fee, pot, created_at, roulette_seats(count)${CURRENCY.ok ? ", currency" : ""}`)
     .order("created_at", { ascending: false }).limit(20);
   if (error){ RL.missing = missingTable(error); box.innerHTML = RL.missing ? `<li>${NEED_SQL}</li>` : `<li class="form-error" role="alert">${esc(errMsg(error))}</li>`; return; }
   RL.missing = false;
@@ -97,7 +97,7 @@ async function loadLobby(){
     return `<li><a class="rl-room st-${r.status}" href="#roulette/${esc(r.id)}">
       <span class="rl-dot" aria-hidden="true"></span>
       <span class="t">${esc(r.title)}</span>
-      <span class="m"><span class="st">${STATUS[r.status]}</span> · 자리 ${cnt}/${r.max_seats}${r.entry_fee ? ` · 참가비 ${n(r.entry_fee)}칩` : ""}${r.status === "playing" && r.pot ? ` · 판돈 ${n(r.pot)}` : ""}</span>
+      <span class="m"><span class="st">${STATUS[r.status]}</span> · 자리 ${cnt}/${r.max_seats}${r.entry_fee ? ` · 참가비 ${chipAmt(r.entry_fee, r.currency)}` : ` · ${CUR[curOf(r.currency)].name}`}${r.status === "playing" && r.pot ? ` · 판돈 ${chipAmt(r.pot, r.currency)}` : ""}</span>
       <span class="go" aria-hidden="true">${r.status === "waiting" ? "앉으러 가기" : r.status === "playing" ? "구경하기" : "결과 보기"}</span></a></li>`;
   }).join("") : `<li class="slot-note">${state.isAdmin ? "아직 방이 없습니다. ‘방 만들기’로 열어 주세요." : "열린 방이 없습니다. 관리자가 방을 열면 여기에 보입니다."}</li>`;
 }
@@ -111,7 +111,8 @@ $("#rl-new-form").addEventListener("submit", async e => {
   await withBusy($('button[type="submit"]', e.target), async () => {
     const { data, error } = await sb.rpc("admin_roulette_create", {
       p_title: $("#rl-new-title").value.trim(), p_max_seats: +$("#rl-new-seats").value, p_entry_fee: fee,
-      p_pass_rule: $('input[name="rl-pass"]:checked').value
+      p_pass_rule: $('input[name="rl-pass"]:checked').value,
+      ...(CURRENCY.ok ? { p_currency: $('input[name="rl-cur"]:checked').value } : {})
     });
     if (error){ showMsg($("#rl-new-err"), missingTable(error) ? "supabase/update-8.sql을 먼저 실행해 주세요." : errMsg(error)); return; }
     $("#rl-new-dlg").close();
@@ -163,7 +164,7 @@ async function load(quiet){
   const id = RL.id;
   RL.loading = (async () => {
     const [r, s, b, c] = await Promise.all([
-      sb.from("roulette_rooms").select("id, title, status, max_seats, entry_fee, pass_rule, pot, turn_seat, shots, round, self_survived, winner_seat, started_at, ended_at, last_action_at").eq("id", id).maybeSingle(),
+      sb.from("roulette_rooms").select(`id, title, status, max_seats, entry_fee, pass_rule, pot, turn_seat, shots, round, self_survived, winner_seat, started_at, ended_at, last_action_at${CURRENCY.ok ? ", currency" : ""}`).eq("id", id).maybeSingle(),
       sb.from("roulette_seats").select(`seat, character_id, alive, out_at${DUMMY.ok ? ", dummy_name" : ""}`).eq("room_id", id).order("seat"),
       sb.from("roulette_bets").select("id, seat, character_id, amount, payout").eq("room_id", id),
       sb.from("roulette_chat").select("id, name, body, kind, data, created_at").eq("room_id", id).gt("id", RL.lastChat).order("id", { ascending: false }).limit(120)
@@ -222,7 +223,7 @@ function render(){
   const t = $("#rl-title");
   if (t.textContent !== r.title) t.textContent = r.title;
   setTitle(r.title);
-  $("#rl-meta").innerHTML = [STATUS[r.status], `자리 ${RL.seats.length}/${r.max_seats}`, r.entry_fee ? `참가비 ${n(r.entry_fee)}칩` : "참가비 없음",
+  $("#rl-meta").innerHTML = [STATUS[r.status], `자리 ${RL.seats.length}/${r.max_seats}`, CUR[curOf(r.currency)].name, r.entry_fee ? `참가비 ${n(r.entry_fee)}` : "참가비 없음",
     r.pass_rule === "free" ? "넘기기 자유" : "넘기기는 나에게 쏜 뒤", r.status === "playing" && TURN.ok ? `차례당 ${TURN_SEC}초` : ""].filter(Boolean).map(x => `<span>${x}</span>`).join("");
   renderStatus(); renderRing(); renderCyl(); renderBar(); renderTools(); renderPool(); tick();
   aimGun(RL.target ?? r.turn_seat);
@@ -260,7 +261,7 @@ function renderStatus(){
     : isMyTurn()
     ? `<b class="mine">내 차례</b> · 쏠 사람을 고르세요`
     : `<b>${esc(turn ? seatChar(turn).name : "—")}</b> 차례 · 시계 방향 ↻`;
-  else if (r.status === "finished"){ const w = seatAt(r.winner_seat); html = `<b class="win">${esc(w ? seatChar(w).name : "—")} 우승</b>${r.pot ? ` · 판돈 ${n(r.pot)}칩` : ""}`; }
+  else if (r.status === "finished"){ const w = seatAt(r.winner_seat); html = `<b class="win">${esc(w ? seatChar(w).name : "—")} 우승</b>${r.pot ? ` · 판돈 ${chipAmt(r.pot, r.currency)}` : ""}`; }
   else html = `<b>취소된 게임</b> — 참가비와 베팅은 돌려드렸습니다`;
   if (r.status === "playing" && TURN.ok) html += `<span class="left" id="rl-left"></span>`;
   el.innerHTML = html;
@@ -339,7 +340,7 @@ function renderCyl(){
 
 function renderPool(){
   const total = RL.bets.reduce((s, b) => s + b.amount, 0), r = RL.room;
-  $("#rl-pool").textContent = [r.pot ? `판돈 ${n(r.pot)}` : "", total ? `베팅 ${n(total)}` : ""].filter(Boolean).join(" · ");
+  $("#rl-pool").innerHTML = [r.pot ? `판돈 ${chipAmt(r.pot, r.currency)}` : "", total ? `베팅 ${chipAmt(total, r.currency)}` : ""].filter(Boolean).join(" · ");
 }
 
 /* 아래 버튼 */
@@ -353,9 +354,9 @@ function renderBar(){
     if (me) html = `<p class="rl-note">${esc(seatChar(me).name)}(으)로 앉았습니다. 시작을 기다리는 중…</p><button class="btn" type="button" data-act="leave">일어나기</button>`;
     else if (!chars.length) html = `<p class="rl-note">연결된 캐릭터가 없어 구경만 할 수 있습니다.</p>`;
     else html = `${chars.length > 1 ? `<label class="sr" for="rl-join-char">앉을 캐릭터</label><select class="input rl-sel" id="rl-join-char">${chars.map(c =>
-      `<option value="${esc(c.uuid)}"${c.uuid === RL.myChar ? " selected" : ""}>${esc(c.name)} — ${n(c.balance)}칩</option>`).join("")}</select>` : ""}
+      `<option value="${esc(c.uuid)}"${c.uuid === RL.myChar ? " selected" : ""}>${esc(c.name)} — ${CUR[curOf(r.currency)].short} ${n(balOf(c, r.currency))}</option>`).join("")}</select>` : ""}
       <button class="btn primary" type="button" data-act="join"${RL.seats.length >= r.max_seats ? " disabled" : ""}>${chars.length > 1 ? "" : esc(chars[0].name) + "(으)로 "}자리에 앉기</button>
-      ${r.entry_fee ? `<p class="rl-note">참가비 ${n(r.entry_fee)}칩은 시작할 때 빠집니다.</p>` : ""}`;
+      ${r.entry_fee ? `<p class="rl-note">참가비 ${chipAmt(r.entry_fee, r.currency)}는 시작할 때 빠집니다.</p>` : ""}`;
   } else if (r.status === "playing"){
     const ctl = ctlSeat(), my = !!ctl, dummyTurn = my && !ctl.character_id, tg = RL.target != null ? seatAt(RL.target) : null;
     const canPass = my && (r.pass_rule === "free" || r.self_survived);
@@ -368,7 +369,7 @@ function renderBar(){
   } else {
     const myBets = RL.bets.filter(b => mineUuids().has(b.character_id));
     const got = myBets.reduce((s, b) => s + (b.payout || 0), 0), put = myBets.reduce((s, b) => s + b.amount, 0);
-    html = `<p class="rl-note">${r.status === "finished" ? "게임이 끝났습니다." : "취소된 게임입니다."}${put ? ` 내 베팅 ${n(put)}칩 → ${n(got)}칩` : ""}</p><a class="btn" href="#game">방 목록으로</a>`;
+    html = `<p class="rl-note">${r.status === "finished" ? "게임이 끝났습니다." : "취소된 게임입니다."}${put ? ` 내 베팅 ${chipAmt(put, r.currency)} → ${chipAmt(got, r.currency)}` : ""}</p><a class="btn" href="#game">방 목록으로</a>`;
   }
   bar.innerHTML = html;
   if (keep) $(`[data-act="${keep}"]`, bar)?.focus();
@@ -568,7 +569,7 @@ async function act(btn){
   if (a === "avatar") return openAvatar();
   if (a === "cancel" && !confirm("게임을 취소할까요? 참가비와 베팅은 모두 돌려줍니다.")) return;
   if (a === "delete" && !confirm("이 방을 지울까요? 채팅과 베팅 기록도 함께 지워집니다. (칩 기록과 전적은 남습니다)")) return;
-  if (a === "start" && r.entry_fee && !confirm(`시작하면 자리마다 참가비 ${n(r.entry_fee)}칩을 걷습니다. 시작할까요?`)) return;
+  if (a === "start" && r.entry_fee && !confirm(`시작하면 자리마다 참가비 ${CUR[curOf(r.currency)].name} ${n(r.entry_fee)}을 걷습니다. 시작할까요?`)) return;
   await withBusy(btn, async () => {
     let res = null;
     if (a === "join"){
@@ -608,7 +609,7 @@ function betEstimate(){
   const total = RL.bets.reduce((s, b) => s + b.amount, 0), on = RL.bets.filter(b => b.seat === seat).reduce((s, b) => s + b.amount, 0);
   const c = myChars().find(x => x.uuid === $("#rl-bet-char").value);
   $("#rl-bet-est").textContent = seat < 0 || amt < 1 ? "" :
-    `지금 그대로 끝나면 맞혔을 때 약 ${n(Math.floor(amt * (total + amt) / (on + amt)))}칩을 받습니다.${c ? ` (보유 ${n(c.balance)}칩)` : ""}`;
+    `지금 그대로 끝나면 맞혔을 때 약 ${n(Math.floor(amt * (total + amt) / (on + amt)))}을 받습니다.${c ? ` (보유 ${CUR[curOf(RL.room?.currency)].name} ${n(balOf(c, RL.room?.currency))})` : ""}`;
 }
 function openBet(){
   if (!betOpen()){ toast("베팅이 마감되었습니다"); return; }
@@ -618,7 +619,7 @@ function openBet(){
     const on = RL.bets.filter(b => b.seat === s.seat).reduce((x, b) => x + b.amount, 0);
     return `<label class="check"><input type="radio" name="rl-bet-seat" value="${s.seat}"${k === 0 ? " checked" : ""}>${esc(seatChar(s).name)} <span class="hint" style="display:inline; margin:0">— ${n(on)}칩 걸림${total ? ` (${Math.round(on / total * 100)}%)` : ""}</span></label>`;
   }).join("");
-  $("#rl-bet-char").innerHTML = chars.map(c => `<option value="${esc(c.uuid)}"${c.uuid === RL.myChar ? " selected" : ""}>${esc(c.name)} — ${n(c.balance)}칩</option>`).join("");
+  $("#rl-bet-char").innerHTML = chars.map(c => `<option value="${esc(c.uuid)}"${c.uuid === RL.myChar ? " selected" : ""}>${esc(c.name)} — ${CUR[curOf(RL.room?.currency)].short} ${n(balOf(c, RL.room?.currency))}</option>`).join("");
   betEstimate();
   $("#rl-bet-dlg").showModal();
 }
@@ -670,7 +671,7 @@ $("#rl-ava-form").addEventListener("submit", async e => {
   const cid = $("#rl-ava-char").value, old = RL.avatars.get(cid)?.path;
   await withBusy($('button[type="submit"]', e.target), async () => {
     try {
-      const { toWebP, extOf } = await import("./img.js?v=20261025b");
+      const { toWebP, extOf } = await import("./img.js?v=20261027a");
       const blob = await toWebP(avaFile, 512), path = `${cid}/${Date.now()}.${extOf(blob)}`;
       const up = await sb.storage.from("roulette").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
       if (up.error) throw up.error;

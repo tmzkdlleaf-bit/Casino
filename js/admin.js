@@ -1,12 +1,12 @@
-import { loadMine } from "./auth.js?v=20261025b";
-import { CONFIG, idOf } from "./config.js?v=20261025b";
-import { FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261025b";
-import { $, $$, announce, esc, toast } from "./dom.js?v=20261025b";
-import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261025b";
-import { renderMarkdown } from "./markdown.js?v=20261025b";
-import { extOf, toWebP } from "./img.js?v=20261025b";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
-import { state } from "./state.js?v=20261025b";
-import { ALL, renderAccount } from "./views.js?v=20261025b";
+import { loadMine } from "./auth.js?v=20261027a";
+import { CONFIG, idOf } from "./config.js?v=20261027a";
+import { FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261027a";
+import { $, $$, CUR, announce, chipAmt, esc, toast } from "./dom.js?v=20261027a";
+import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261027a";
+import { renderMarkdown } from "./markdown.js?v=20261027a";
+import { extOf, toWebP } from "./img.js?v=20261027a";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
+import { state } from "./state.js?v=20261027a";
+import { ALL, renderAccount } from "./views.js?v=20261027a";
 
 /* =========================================================
    ADMIN — 관리 페이지. 화면만 관리자에게 보이고, 실제 차단은 RLS + RPC가 담당
@@ -26,7 +26,8 @@ ADM.badge = { shop: 0, chipreq: 0 };
 export const OPT = {
   kind: [["dealer", "직원"], ["player", "참가자"]],
   suit: [["spade", "♠ 스페이드"], ["heart", "♥ 하트"], ["club", "♣ 클럽"], ["diamond", "♦ 다이아"]],
-  chip: [["green", "남색"], ["red", "분홍"]]
+  chip: [["green", "남색"], ["red", "분홍"]],
+  currency: [["blue", "블루 칩"], ["pink", "핑크 칩"]]
 };
 
 /* 캐릭터 입력 칸 — 이미지 초점(image_focus)은 update-4.sql을 실행한 DB에서만 보임 */
@@ -75,15 +76,16 @@ export const SCHEMAS = {
       </section>`
   },
   items: {
-    label: "아이템", key: "id", touch: true, select: "id, name, description, image_path, price, stock, is_for_sale, sort_order", order: [["sort_order"]],
-    title: r => r.name, meta: r => [r.is_for_sale ? `판매 ${r.price ?? 0}칩` : "비매품", r.stock != null ? `재고 ${r.stock}` : ""].filter(Boolean).join(" · "),
+    label: "아이템", key: "id", touch: true, select: "id, name, description, image_path, price, stock, is_for_sale, sort_order, currency", order: [["sort_order"]],
+    title: r => r.name, meta: r => [r.is_for_sale ? `판매 ${r.currency === "pink" ? "핑크" : "블루"} ${r.price ?? 0}` : "비매품", r.stock != null ? `재고 ${r.stock}` : ""].filter(Boolean).join(" · "),
     fields: [
       { k: "name", label: "이름", type: "text", required: true, max: 40 },
       { k: "description", label: "설명", type: "textarea" },
       { row: [
         { k: "price", label: "가격", type: "number", min: 0, nullable: true, ph: "칩", suffix: "칩" },
-        { k: "stock", label: "재고", type: "number", min: 0, nullable: true, ph: "무제한" }
+        { k: "currency", label: "칩 종류", type: "select", required: true, options: () => OPT.currency }
       ] },
+      { k: "stock", label: "재고", type: "number", min: 0, nullable: true, ph: "무제한" },
       { row: [
         { k: "is_for_sale", label: "상점에 표시", type: "check" },
         { k: "sort_order", label: "표시 순서", type: "number", min: 0 }
@@ -181,7 +183,7 @@ export async function admLoad(table){
 function ensureAdminCss(){
   if (document.getElementById("admin-css")) return;
   const l = document.createElement("link");
-  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261025b";
+  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261027a";
   document.head.append(l);
 }
 
@@ -485,10 +487,11 @@ export async function admSaveInventory(btn){
    ========================================================= */
 const BACKUP_TABLES = ["profiles", "characters", "inventory", "items", "chapters", "logs", "notices", "notice_categories",
   "chip_ledger", "shop_requests", "chip_requests", "game_slots", "game_records",
-  "roulette_rooms", "roulette_seats", "roulette_bets", "roulette_chat", "roulette_avatars"];
+  "roulette_rooms", "roulette_seats", "roulette_bets", "roulette_chat", "roulette_avatars", "bj_tables", "bj_seats", "bj_chat"];
 const BACKUP_LABEL = { profiles: "멤버", characters: "캐릭터", inventory: "소지품", items: "상점 아이템", chapters: "지난 이야기", logs: "로그", notices: "공지", notice_categories: "공지 분류",
   chip_ledger: "칩 기록", shop_requests: "구매 요청", chip_requests: "칩 정산 요청", game_slots: "게임 일정", game_records: "전적",
-  roulette_rooms: "룰렛 방", roulette_seats: "룰렛 자리", roulette_bets: "룰렛 베팅", roulette_chat: "룰렛 채팅", roulette_avatars: "룰렛 자리 이미지" };
+  roulette_rooms: "룰렛 방", roulette_seats: "룰렛 자리", roulette_bets: "룰렛 베팅", roulette_chat: "룰렛 채팅", roulette_avatars: "룰렛 자리 이미지",
+  bj_tables: "블랙잭 테이블", bj_seats: "블랙잭 자리", bj_chat: "블랙잭 채팅" };
 function admBackup(){
   let last = null; try { last = localStorage.getItem("comu-backup-at"); } catch (_) {}
   admPanel().innerHTML = `<section class="card adm-backup">
@@ -533,11 +536,11 @@ export async function admMembers(){
   const [pr, ch, bl] = await Promise.all([
     sb.from("profiles").select("id, email, display_name, role, created_at").order("created_at"),
     sb.from("characters").select("id, owner_id"),
-    sb.from("chip_balances").select("character_id, balance")
+    sb.from("chip_balances").select("character_id, balance, pink")
   ]);
   const failed = [pr, ch, bl].find(r => r.error);
   if (failed) throw failed.error;
-  const members = pr.data, owner = new Map(ch.data.map(c => [c.id, c.owner_id])), bal = new Map(bl.data.map(b => [b.character_id, b.balance ?? 0]));
+  const members = pr.data, owner = new Map(ch.data.map(c => [c.id, c.owner_id])), bal = new Map(bl.data.map(b => [b.character_id, b]));
   const chars = ALL();
   const nameOf = m => m.display_name || (m.email || "").split("@")[0] || "이름 없음";
   admPanel().innerHTML = `
@@ -575,8 +578,10 @@ export async function admMembers(){
                   <option value="">없음</option>
                   ${members.map(m => `<option value="${m.id}"${m.id === cur ? " selected" : ""}>${esc(nameOf(m))}</option>`).join("")}
                 </select></td>
-              <td id="chips-${c.uuid}">${(bal.get(c.uuid) ?? 0).toLocaleString("ko-KR")}</td>
+              <td class="chips2" id="chips-${c.uuid}">${chipAmt(bal.get(c.uuid)?.balance, "blue")}${chipAmt(bal.get(c.uuid)?.pink, "pink")}</td>
               <td><form class="chip-form" data-chips="${c.uuid}" data-name="${nm}" novalidate>
+                <label class="sr" for="cc-${c.uuid}">칩 종류</label>
+                <select class="input small-sel cur-sel" id="cc-${c.uuid}" name="currency"><option value="blue">블루</option><option value="pink">핑크</option></select>
                 <label class="sr" for="cd-${c.uuid}">${nm} 칩 증감 (차감은 음수)</label>
                 <input class="input" type="number" inputmode="numeric" step="1" id="cd-${c.uuid}" name="delta" placeholder="+100 / -50" required aria-describedby="cd-${c.uuid}-err">
                 <label class="sr" for="cr-${c.uuid}">사유</label>
@@ -636,7 +641,7 @@ async function admInvite(){
 const SHOP_ST = { pending: "승인 대기", approved: "승인", rejected: "거절", cancelled: "본인 취소" };
 ADM.shopFilter = "pending";
 export async function admShop(){
-  let q = sb.from("shop_requests").select("id, character_id, item_name, unit_price, quantity, total, status, memo, admin_note, requested_by, decided_by, created_at, decided_at")
+  let q = sb.from("shop_requests").select("id, character_id, item_name, unit_price, quantity, total, status, memo, admin_note, requested_by, decided_by, created_at, decided_at, currency")
     .order("created_at", { ascending: ADM.shopFilter === "pending" }).limit(300);
   if (ADM.shopFilter === "pending") q = q.eq("status", "pending");
   const [rq, pc] = await Promise.all([q, sb.from("shop_requests").select("id", { count: "exact", head: true }).eq("status", "pending")]);
@@ -644,10 +649,11 @@ export async function admShop(){
   const rows = rq.data || [], pend = pc.count ?? 0;
   const charIds = [...new Set(rows.map(r => r.character_id))], userIds = [...new Set(rows.flatMap(r => [r.requested_by, r.decided_by]).filter(Boolean))];
   const [bl, pr] = await Promise.all([
-    charIds.length ? sb.from("chip_balances").select("character_id, balance").in("character_id", charIds) : { data: [] },
+    charIds.length ? sb.from("chip_balances").select("character_id, balance, pink").in("character_id", charIds) : { data: [] },
     userIds.length ? sb.from("profiles").select("id, display_name, email").in("id", userIds) : { data: [] }
   ]);
-  const bal = new Map((bl.data || []).map(b => [b.character_id, b.balance ?? 0]));
+  const bal = new Map((bl.data || []).map(b => [b.character_id, b]));
+  const balIn = (id, cur) => (cur === "pink" ? bal.get(id)?.pink : bal.get(id)?.balance) ?? 0;
   const who = new Map((pr.data || []).map(p => [p.id, p.display_name || (p.email || "").split("@")[0] || "?"]));
   const chars = new Map(ALL().map(c => [c.uuid, c]));
   ADM.badge.shop = pend; admDrawTabs();
@@ -663,12 +669,12 @@ export async function admShop(){
         <caption class="sr">구매 요청 — 요청 시각, 캐릭터, 상품, 합계, 남긴 말, 처리</caption>
         <thead><tr><th scope="col">요청</th><th scope="col">캐릭터</th><th scope="col">상품</th><th scope="col">합계</th><th scope="col">남긴 말</th><th scope="col">처리</th></tr></thead>
         <tbody>${rows.map(r => {
-          const c = chars.get(r.character_id), b = bal.get(r.character_id) ?? 0, short = r.status === "pending" && b < r.total;
+          const c = chars.get(r.character_id), b = balIn(r.character_id, r.currency), short = r.status === "pending" && b < r.total;
           return `<tr class="st-${r.status}">
             <td class="when">${esc(when(r.created_at))}<small>${esc(who.get(r.requested_by) || "")}</small></td>
-            <th scope="row" class="who" style="font-weight:400">${esc(c?.name || "(삭제된 캐릭터)")}<small${short ? ` class="warn"` : ""}>보유 ${b.toLocaleString("ko-KR")}칩${short ? " · 부족" : ""}</small></th>
-            <td>${esc(r.item_name)} ×${r.quantity}<small>${r.unit_price.toLocaleString("ko-KR")}칩씩</small></td>
-            <td class="num">${r.total.toLocaleString("ko-KR")}</td>
+            <th scope="row" class="who" style="font-weight:400">${esc(c?.name || "(삭제된 캐릭터)")}<small${short ? ` class="warn"` : ""}>보유 ${chipAmt(b, r.currency)}${short ? " · 부족" : ""}</small></th>
+            <td>${esc(r.item_name)} ×${r.quantity}<small>${r.unit_price.toLocaleString("ko-KR")}씩</small></td>
+            <td class="num">${chipAmt(r.total, r.currency)}</td>
             <td class="memo">${esc(r.memo || "")}</td>
             <td class="act">${r.status === "pending" ? `<div class="shop-act" data-shop-row="${esc(r.id)}">
                 <label class="sr" for="sn-${esc(r.id)}">관리자 메모</label><input class="input" id="sn-${esc(r.id)}" placeholder="메모" maxlength="200">
@@ -707,7 +713,7 @@ document.addEventListener("comu:shop-req", () => {
 /* ----- 칩 정산 요청 (update-9.sql) — 승인하면 칩 기록에 바로 들어감 ----- */
 ADM.creqFilter = "pending";
 export async function admChipReq(){
-  let q = sb.from("chip_requests").select("id, character_id, amount, reason, status, admin_note, requested_by, decided_by, created_at, decided_at")
+  let q = sb.from("chip_requests").select("id, character_id, amount, reason, status, admin_note, requested_by, decided_by, created_at, decided_at, currency")
     .order("created_at", { ascending: ADM.creqFilter === "pending" }).limit(300);
   if (ADM.creqFilter === "pending") q = q.eq("status", "pending");
   const [rq, pc] = await Promise.all([q, sb.from("chip_requests").select("id", { count: "exact", head: true }).eq("status", "pending")]);
@@ -715,10 +721,11 @@ export async function admChipReq(){
   const rows = rq.data || [], pend = pc.count ?? 0;
   const charIds = [...new Set(rows.map(r => r.character_id))], userIds = [...new Set(rows.flatMap(r => [r.requested_by, r.decided_by]).filter(Boolean))];
   const [bl, pr] = await Promise.all([
-    charIds.length ? sb.from("chip_balances").select("character_id, balance").in("character_id", charIds) : { data: [] },
+    charIds.length ? sb.from("chip_balances").select("character_id, balance, pink").in("character_id", charIds) : { data: [] },
     userIds.length ? sb.from("profiles").select("id, display_name, email").in("id", userIds) : { data: [] }
   ]);
-  const bal = new Map((bl.data || []).map(b => [b.character_id, b.balance ?? 0]));
+  const bal = new Map((bl.data || []).map(b => [b.character_id, b]));
+  const balIn = (id, cur) => (cur === "pink" ? bal.get(id)?.pink : bal.get(id)?.balance) ?? 0;
   const who = new Map((pr.data || []).map(p => [p.id, p.display_name || (p.email || "").split("@")[0] || "?"]));
   const chars = new Map(ALL().map(c => [c.uuid, c]));
   ADM.badge.chipreq = pend; admDrawTabs();
@@ -736,11 +743,11 @@ export async function admChipReq(){
         <caption class="sr">칩 정산 요청 — 요청 시각, 캐릭터, 칩, 사유, 처리</caption>
         <thead><tr><th scope="col">요청</th><th scope="col">캐릭터</th><th scope="col">칩</th><th scope="col">사유</th><th scope="col">처리</th></tr></thead>
         <tbody>${rows.map(r => {
-          const c = chars.get(r.character_id), b = bal.get(r.character_id) ?? 0, short = r.status === "pending" && b + r.amount < 0;
+          const c = chars.get(r.character_id), b = balIn(r.character_id, r.currency), short = r.status === "pending" && b + r.amount < 0;
           return `<tr class="st-${r.status}">
             <td class="when">${esc(when(r.created_at))}<small>${esc(who.get(r.requested_by) || "")}</small></td>
-            <th scope="row" class="who" style="font-weight:400">${esc(c?.name || "(삭제된 캐릭터)")}<small${short ? ` class="warn"` : ""}>보유 ${b.toLocaleString("ko-KR")}칩${short ? " · 부족" : ""}</small></th>
-            <td class="num${r.amount < 0 ? " minus" : ""}">${sign(r.amount)}</td>
+            <th scope="row" class="who" style="font-weight:400">${esc(c?.name || "(삭제된 캐릭터)")}<small${short ? ` class="warn"` : ""}>보유 ${chipAmt(b, r.currency)}${short ? " · 부족" : ""}</small></th>
+            <td class="num${r.amount < 0 ? " minus" : ""}">${chipAmt(r.amount, r.currency, true)}</td>
             <td class="memo">${esc(r.reason)}</td>
             <td class="act">${r.status === "pending" ? `<div class="shop-act" data-creq-row="${esc(r.id)}">
                 <label class="sr" for="cn-${esc(r.id)}">관리자 메모</label><input class="input" id="cn-${esc(r.id)}" placeholder="메모" maxlength="200">
@@ -878,7 +885,7 @@ admPanel().addEventListener("click", async e => {
   if (t.closest(".bm-link")){ e.preventDefault(); toast("이 버튼은 누르지 말고 즐겨찾기 막대로 끌어다 놓으세요"); return; }
   if (t.closest("[data-log-room]")) return withBusy(t.closest("[data-log-room]"), logRoom);
   if (t.closest("[data-log-lib]")) return logLibPaste();
-  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261025b"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
+  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261027a"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
   const logSave = t.closest("[data-log-save]");
   if (logSave) return withBusy(logSave, () => logSaveNow(logSave.dataset.id));
   const logDel = t.closest("[data-log-del]");
@@ -894,12 +901,15 @@ admPanel().addEventListener("submit", async e => {
     if (!checkField(input)) return input.focus();
     if (!delta){ fieldError(input, "0이 아닌 정수를 입력해 주세요."); return input.focus(); }
     await withBusy($("button", f), async () => {
-      const { data, error } = await sb.rpc("admin_adjust_chips", { p_character: f.dataset.chips, p_amount: delta, p_reason: f.reason.value.trim() });
+      const cur = f.currency.value;
+      const { data, error } = await sb.rpc("admin_adjust_chips", { p_character: f.dataset.chips, p_amount: delta, p_reason: f.reason.value.trim(), p_currency: cur });
       if (error){ fieldError(input, errMsg(error)); input.focus(); return; }
-      $("#chips-" + f.dataset.chips).textContent = data.toLocaleString("ko-KR");
-      f.reset(); fieldError(input, "");
-      announce(`${f.dataset.name} 칩 ${delta > 0 ? "+" : ""}${delta}, 잔액 ${data}`);
-      toast(`${f.dataset.name} 칩 ${delta > 0 ? "+" : ""}${delta} → 잔액 ${data.toLocaleString("ko-KR")}`);
+      const cell = $("#chips-" + f.dataset.chips), idx = cur === "pink" ? 1 : 0;
+      cell.children[idx].outerHTML = chipAmt(data, cur);
+      f.delta.value = ""; f.reason.value = ""; fieldError(input, "");
+      const what = `${f.dataset.name} ${CUR[cur].name} ${delta > 0 ? "+" : ""}${delta}`;
+      announce(`${what}, 잔액 ${data}`);
+      toast(`${what} → 잔액 ${data.toLocaleString("ko-KR")}`);
       if (state.mine.some(m => m.uuid === f.dataset.chips)){ await loadMine(); renderAccount(); }
     });
   }
@@ -971,7 +981,7 @@ async function logRead(input){
   if (!f) return;
   if (f.size > 60 * 1024 * 1024){ fieldError(input, "60MB 이하 파일만 올릴 수 있습니다."); return; }
   $("#log-status").textContent = "읽는 중…";
-  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261025b");
+  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261027a");
   const messages = parseLog(await f.text());
   $("#log-status").textContent = "";
   if (!messages.length){ fieldError(input, "대사를 찾지 못했습니다. 코코포리아에서 내보낸 로그 파일이 맞는지 확인해 주세요."); return; }
@@ -1017,7 +1027,7 @@ function libSummary(extra = ""){
 }
 
 async function logRoom(){
-  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261025b");
+  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261027a");
   const id = roomIdFrom($("#log-room").value);
   if (!id){ $("#log-lib-status").textContent = "코코포리아 룸 링크 형식이 아닙니다. (https://ccfolia.com/rooms/…)"; $("#log-room").focus(); return; }
   try {
@@ -1033,7 +1043,7 @@ async function logRoom(){
 }
 
 async function logLibPaste(){
-  const { parseLibrary } = await import("./logparse.js?v=20261025b");
+  const { parseLibrary } = await import("./logparse.js?v=20261027a");
   try {
     const lib = parseLibrary($("#log-lib-text").value);
     if (!lib.length){ $("#log-lib-status").textContent = "캐릭터를 찾지 못했습니다."; return; }
@@ -1077,7 +1087,7 @@ export async function backupFaces(urls, onProgress = () => {}){
 
 async function logSaveNow(id){
   if (!LOG.messages) return;
-  const { pack } = await import("./logparse.js?v=20261025b");
+  const { pack } = await import("./logparse.js?v=20261027a");
   const include = new Set($$('input[name="log-tab"]:checked').map(i => LOG.info.tabs[+i.value].name));
   const narrators = new Set($$('input[name="log-narr"]:checked').map(i => LOG.info.speakers[+i.value].name));
   if (!include.size){ $("#log-status").textContent = "저장할 탭을 하나 이상 골라 주세요."; return; }

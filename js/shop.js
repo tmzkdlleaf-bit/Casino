@@ -2,11 +2,11 @@
    상점 구매 — 요청 → 관리자 승인 → 칩 차감·소지품 지급 (supabase/update-7.sql)
    요청할 때는 칩이 빠지지 않고, 승인되는 순간 서버에서 한 번에 처리됨
    ========================================================= */
-import { USE_DB, publicUrl, sb, fmtDate, fmtTime } from "./data.js?v=20261025b";
-import { $, esc, toast, announce } from "./dom.js?v=20261025b";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261025b";
-import { DATA, state } from "./state.js?v=20261025b";
-import { myChars, renderShop } from "./views.js?v=20261025b";
+import { CURRENCY, USE_DB, publicUrl, sb, fmtDate, fmtTime } from "./data.js?v=20261027a";
+import { $, CUR, chipAmt, curOf, esc, toast, announce } from "./dom.js?v=20261027a";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261027a";
+import { DATA, state } from "./state.js?v=20261027a";
+import { balOf, myChars, renderShop } from "./views.js?v=20261027a";
 
 export const SHOP = { reqs: [], ok: true, loaded: false };
 export const STATUS = { pending: "승인 대기", approved: "승인됨", rejected: "거절됨", cancelled: "취소함" };
@@ -18,7 +18,7 @@ export async function loadMyRequests(){
   const ids = state.mine.map(m => m.uuid);
   if (!USE_DB || !state.session || !ids.length){ SHOP.reqs = []; SHOP.loaded = true; return; }
   const { data, error } = await sb.from("shop_requests")
-    .select("id, character_id, item_id, item_name, unit_price, quantity, total, status, memo, admin_note, created_at, decided_at")
+    .select(`id, character_id, item_id, item_name, unit_price, quantity, total, status, memo, admin_note, created_at, decided_at${CURRENCY.ok ? ", currency" : ""}`)
     .in("character_id", ids).order("created_at", { ascending: false }).limit(30);
   SHOP.loaded = true;
   if (error){ SHOP.ok = !missingTable(error); SHOP.reqs = []; if (SHOP.ok) console.warn("[shop]", error.message); return; }
@@ -27,7 +27,7 @@ export async function loadMyRequests(){
 }
 
 /* 대기 중인 요청 합계 — 이만큼은 승인되면 빠질 칩 */
-export const pendingOf = uuid => SHOP.reqs.filter(r => r.character_id === uuid && r.status === "pending").reduce((s, r) => s + r.total, 0);
+export const pendingOf = (uuid, cur = "blue") => SHOP.reqs.filter(r => r.character_id === uuid && r.status === "pending" && curOf(r.currency) === curOf(cur)).reduce((s, r) => s + r.total, 0);
 
 /* 기본으로 고를 캐릭터: 참가자 우선 */
 export const buyers = () => myChars().sort((a, b) => (a.role === "참가자" ? 0 : 1) - (b.role === "참가자" ? 0 : 1));
@@ -46,21 +46,21 @@ export function buyHtml(it){
   const c = list.find(x => x.uuid === buyer), max = Math.min(99, it.stock ?? 99);
   return `<form class="buy" id="buy-form" novalidate>
     ${list.length > 1 ? `<div class="field"><label for="buy-char">어느 캐릭터로</label><select class="input" id="buy-char">${list.map(x =>
-      `<option value="${esc(x.uuid)}"${x.uuid === buyer ? " selected" : ""}>${esc(x.name)} — ${n(x.balance)}칩</option>`).join("")}</select></div>` : ""}
+      `<option value="${esc(x.uuid)}"${x.uuid === buyer ? " selected" : ""}>${esc(x.name)} — ${CUR[curOf(it.currency)].short} ${n(balOf(x, it.currency))}</option>`).join("")}</select></div>` : ""}
     <div class="buy-row">
       <div class="field"><label for="buy-qty">수량</label><input class="input" id="buy-qty" type="number" inputmode="numeric" min="1" max="${max}" step="1" value="1"></div>
-      <p class="buy-total" aria-live="polite"><span>합계</span><strong id="buy-total">${n(it.price)}</strong><span>칩</span></p>
+      <p class="buy-total" aria-live="polite"><span>합계</span><strong id="buy-total">${chipAmt(it.price, it.currency)}</strong></p>
     </div>
     <div class="field"><label for="buy-memo">남길 말 <span class="hint" style="display:inline">(선택)</span></label><input class="input" id="buy-memo" maxlength="200" autocomplete="off"></div>
-    <p class="hint" id="buy-bal">${buyBalText(c, it.price)}</p>
+    <p class="hint" id="buy-bal">${buyBalText(c, it.price, it.currency)}</p>
     <p class="form-error" id="buy-err" role="alert" hidden></p>
     <button class="btn primary" type="submit" data-item-id="${esc(it.id)}">구매 요청</button>
   </form>`;
 }
 
-function buyBalText(c, total){
-  const pend = pendingOf(c.uuid), free = c.balance - pend;
-  return `${esc(c.name)} 보유 ${n(c.balance)}칩${pend ? ` · 승인 대기 ${n(pend)}칩` : ""} → 쓸 수 있는 칩 ${n(free)}` + (free < total ? ` <b class="warn">(부족)</b>` : "");
+function buyBalText(c, total, cur){
+  const have = balOf(c, cur), pend = pendingOf(c.uuid, cur), free = have - pend;
+  return `${esc(c.name)} ${CUR[curOf(cur)].name} ${n(have)}${pend ? ` · 승인 대기 ${n(pend)}` : ""} → 쓸 수 있는 ${n(free)}` + (free < total ? ` <b class="warn">(부족)</b>` : "");
 }
 
 /* 내 구매 요청 목록 */
@@ -71,7 +71,7 @@ export function myReqHtml(){
   return `<section class="my-reqs" aria-labelledby="my-reqs-h">
     <h3 id="my-reqs-h">내 구매 요청</h3>
     ${SHOP.reqs.length ? `<ul>${SHOP.reqs.map(r => `<li class="st-${r.status}">
-      <div class="t"><strong>${esc(r.item_name)}</strong> ×${r.quantity}<span class="m">${n(r.total)}칩${multi ? ` · ${esc(names[r.character_id] || "")}` : ""} · ${esc(fmtDate(r.created_at))} ${esc(fmtTime(r.created_at))}</span>
+      <div class="t"><strong>${esc(r.item_name)}</strong> ×${r.quantity}<span class="m">${chipAmt(r.total, r.currency)}${multi ? ` · ${esc(names[r.character_id] || "")}` : ""} · ${esc(fmtDate(r.created_at))} ${esc(fmtTime(r.created_at))}</span>
         ${r.admin_note ? `<span class="m note">관리자: ${esc(r.admin_note)}</span>` : ""}</div>
       <span class="st">${STATUS[r.status] || r.status}</span>
       ${r.status === "pending" ? `<button class="btn small" type="button" data-req-cancel="${esc(r.id)}">취소<span class="sr"> — ${esc(r.item_name)}</span></button>` : ""}
@@ -86,9 +86,9 @@ document.addEventListener("input", e => {
     const it = curItem(); if (!it) return;
     if (e.target.id === "buy-char") buyer = e.target.value;
     const q = Math.max(1, Math.min(99, parseInt($("#buy-qty").value, 10) || 1));
-    $("#buy-total").textContent = n(it.price * q);
+    $("#buy-total").innerHTML = chipAmt(it.price * q, it.currency);
     const c = buyers().find(x => x.uuid === buyer);
-    if (c) $("#buy-bal").innerHTML = buyBalText(c, it.price * q);
+    if (c) $("#buy-bal").innerHTML = buyBalText(c, it.price * q, it.currency);
   }
 });
 document.addEventListener("change", e => { if (e.target.id === "buy-char"){ buyer = e.target.value; } });
@@ -100,7 +100,7 @@ document.addEventListener("submit", async e => {
   showMsg(err, "");
   const qty = parseInt(qtyEl.value, 10);
   if (!(qty >= 1 && qty <= +qtyEl.max)){ showMsg(err, `수량은 1~${qtyEl.max}개입니다.`); qtyEl.focus(); return; }
-  if (!confirm(`${it.name} ${qty}개 (${n(it.price * qty)}칩)를 구매 요청할까요?\n관리자가 승인하면 칩이 빠집니다.`)) return;
+  if (!confirm(`${it.name} ${qty}개 (${CUR[curOf(it.currency)].name} ${n(it.price * qty)})를 구매 요청할까요?\n관리자가 승인하면 칩이 빠집니다.`)) return;
   await withBusy($('button[type="submit"]', f), async () => {
     const { error } = await sb.rpc("shop_request", { p_character: buyer, p_item: it.id, p_quantity: qty, p_memo: $("#buy-memo").value.trim() });
     if (error){ showMsg(err, missingTable(error) ? "구매 기능이 아직 준비되지 않았습니다. (관리자: update-7.sql 실행 필요)" : errMsg(error)); return; }
@@ -130,14 +130,14 @@ export async function onRequestChange(row){
   const prev = SHOP.reqs.find(r => r.id === row?.id);
   if (mine && prev?.status === "pending" && (row.status === "approved" || row.status === "rejected")){
     const msg = `구매 요청 ${row.status === "approved" ? "승인" : "거절"}: ${row.item_name} ×${row.quantity}${row.admin_note ? ` — ${row.admin_note}` : ""}`;
-    toast(msg); announce(msg);
+    announce(msg);   // 화면 알림은 notify.js
   }
   if (mine){ await loadMyRequests(); if (row.status === "approved") await reloadItems(); renderShop(); }
 }
 
 /* 승인으로 재고가 바뀌었을 수 있으니 상품만 다시 불러옴 */
 export async function reloadItems(){
-  const { data, error } = await sb.from("items").select("id, name, description, image_path, price, stock, sort_order").eq("is_for_sale", true).order("sort_order");
+  const { data, error } = await sb.from("items").select(`id, name, description, image_path, price, stock, sort_order${CURRENCY.ok ? ", currency" : ""}`).eq("is_for_sale", true).order("sort_order");
   if (error) return;
-  DATA.items = data.map(it => ({ id: it.id, name: it.name, description: it.description, price: it.price, stock: it.stock, img: publicUrl("items", it.image_path) }));
+  DATA.items = data.map(it => ({ id: it.id, name: it.name, description: it.description, price: it.price, stock: it.stock, currency: curOf(it.currency), img: publicUrl("items", it.image_path) }));
 }

@@ -1,9 +1,9 @@
-import { loadMine } from "./auth.js?v=20261025b";
-import { CONFIG } from "./config.js?v=20261025b";
-import { $, toast } from "./dom.js?v=20261025b";
-import { route } from "./router.js?v=20261025b";
-import { DATA, nav, state } from "./state.js?v=20261025b";
-import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261025b";
+import { loadMine } from "./auth.js?v=20261027a";
+import { CONFIG } from "./config.js?v=20261027a";
+import { $, toast } from "./dom.js?v=20261027a";
+import { route } from "./router.js?v=20261027a";
+import { DATA, nav, state } from "./state.js?v=20261027a";
+import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261027a";
 
 /* =========================================================
    DATA LAYER — Supabase 조회 → 화면용 DATA 모양으로 변환
@@ -114,19 +114,24 @@ export async function loadSlots(){
   return (data || []).filter(s => s.status !== "cancelled" && s.status !== "canceled");
 }
 
+/* 칩 두 종류 (update-12.sql) — 그 전이면 상품은 모두 블루 칩으로 */
+export const CURRENCY = { ok: true };
+const itemQuery = () => sb.from("items").select(`id, name, description, image_path, price, stock, sort_order${CURRENCY.ok ? ", currency" : ""}`)
+  .eq("is_for_sale", true).order("sort_order");
+
 export async function loadAll(){
   let q = await withTimeout(Promise.all([
     // 필요한 컬럼만 명시 — 나중에 비공개 컬럼을 추가해도 노출되지 않게
     charQuery(),
     chapterQuery(),
-    sb.from("items").select("id, name, description, image_path, price, stock, sort_order")
-      .eq("is_for_sale", true).order("sort_order"),
+    itemQuery(),
     loadSlots().then(data => ({ data, error: null }))
   ]));
   if (FOCUS.ok && missingCol(q[0].error, "image_focus")){ FOCUS.ok = false; q = [...q]; q[0] = await charQuery(); }
   if (EXTRA.ok && missingCol(q[0].error, "links|bgm_url")){ EXTRA.ok = false; q = [...q]; q[0] = await charQuery(); }
   if (ROLE.ok && missingCol(q[0].error, "role_title")){ ROLE.ok = false; q = [...q]; q[0] = await charQuery(); }
   if (LOGS.ok && missingCol(q[1].error, "log_path")){ LOGS.ok = false; q = [...q]; q[1] = await chapterQuery(); }
+  if (CURRENCY.ok && missingCol(q[2].error, "currency")){ CURRENCY.ok = false; q = [...q]; q[2] = await itemQuery(); }
   const failed = q.find(r => r.error);
   if (failed) throw failed.error;
   const [chars, chapters, items, slots] = q.map(r => r.data);
@@ -138,7 +143,7 @@ export async function loadAll(){
     dealers: all.filter(c => c.role === "직원"),
     players: all.filter(c => c.role === "참가자"),
     chapters: chapters.map(c => ({ id: c.id, number: c.number, title: c.title, summary: c.summary, date: fmtDate(c.played_on), iso: c.played_on, log: publicUrl("logs", c.log_path) })),
-    items: items.map(it => ({ id: it.id, name: it.name, description: it.description, price: it.price, stock: it.stock, img: publicUrl("items", it.image_path) })),
+    items: items.map(it => ({ id: it.id, name: it.name, description: it.description, price: it.price, stock: it.stock, currency: it.currency === "pink" ? "pink" : "blue", img: publicUrl("items", it.image_path) })),
     slots: slots.map(s => ({ id: s.id, game: s.game || "", start: s.starts_at, end: s.ends_at, dealer: byUuid[s.dealer_character_id] || null })),
     records
   };
@@ -188,16 +193,16 @@ export function subscribeProfile(){
     })
     // 구매 요청: 멤버는 자기 것만, 관리자는 전부 도착 (update-7.sql)
     .on("postgres_changes", { event: "*", schema: "public", table: "shop_requests" }, ({ eventType, new: row }) => {
-      import("./shop.js?v=20261025b").then(m => m.onRequestChange(row));
-      import("./notify.js?v=20261025b").then(m => m.notifyDecision(row, "shop"));
+      import("./shop.js?v=20261027a").then(m => m.onRequestChange(row));
+      import("./notify.js?v=20261027a").then(m => m.notifyDecision(row, "shop"));
       if (!state.isAdmin) return;
       if (eventType === "INSERT" && !state.mine.some(m => m.uuid === row.character_id)) toast(`새 구매 요청: ${row.item_name} ×${row.quantity}`);
       document.dispatchEvent(new CustomEvent("comu:shop-req", { detail: row }));
     })
     // 칩 정산 요청 (update-9.sql)
     .on("postgres_changes", { event: "*", schema: "public", table: "chip_requests" }, ({ eventType, new: row }) => {
-      import("./chipreq.js?v=20261025b").then(m => m.onChipRequestChange(row));
-      import("./notify.js?v=20261025b").then(m => m.notifyDecision(row, "chip"));
+      import("./chipreq.js?v=20261027a").then(m => m.onChipRequestChange(row));
+      import("./notify.js?v=20261027a").then(m => m.notifyDecision(row, "chip"));
       if (!state.isAdmin) return;
       if (eventType === "INSERT" && !state.mine.some(m => m.uuid === row.character_id)) toast(`새 칩 정산 요청: ${row.amount > 0 ? "+" : ""}${row.amount}칩`);
       document.dispatchEvent(new CustomEvent("comu:chip-req", { detail: row }));

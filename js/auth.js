@@ -1,14 +1,14 @@
-import { CALM_KEY, isIdAccount, loginEmail } from "./config.js?v=20261025b";
-import { sb, subscribeProfile } from "./data.js?v=20261025b";
-import { $, toast } from "./dom.js?v=20261025b";
-import { applyCalm } from "./effects.js?v=20261025b";
-import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261025b";
-import { route } from "./router.js?v=20261025b";
-import { state } from "./state.js?v=20261025b";
-import { renderAccount, renderShop } from "./views.js?v=20261025b";
-import { SHOP, loadMyRequests } from "./shop.js?v=20261025b";
-import { notifyUnseen } from "./notify.js?v=20261025b";
-import { CREQ, loadChipRequests, renderChipRequests } from "./chipreq.js?v=20261025b";
+import { CALM_KEY, isIdAccount, loginEmail } from "./config.js?v=20261027a";
+import { sb, subscribeProfile } from "./data.js?v=20261027a";
+import { $, toast } from "./dom.js?v=20261027a";
+import { applyCalm } from "./effects.js?v=20261027a";
+import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261027a";
+import { route } from "./router.js?v=20261027a";
+import { state } from "./state.js?v=20261027a";
+import { renderAccount, renderShop } from "./views.js?v=20261027a";
+import { SHOP, loadMyRequests } from "./shop.js?v=20261027a";
+import { notifyUnseen } from "./notify.js?v=20261027a";
+import { CREQ, loadChipRequests, renderChipRequests } from "./chipreq.js?v=20261027a";
 
 /* =========================================================
    AUTH — 이메일 + 비밀번호, 초대제
@@ -45,8 +45,13 @@ export async function loadMine(){
   const { data: chars, error } = await sb.from("characters").select("id").eq("owner_id", uid);
   if (error){ state.mine = []; return; }
   const ids = chars.map(c => c.id);
-  const bal = ids.length ? (await sb.from("chip_balances").select("character_id, balance").in("character_id", ids)).data || [] : [];
-  state.mine = ids.map(id => ({ uuid: id, balance: bal.find(b => b.character_id === id)?.balance ?? 0 }));
+  let bal = [];
+  if (ids.length){
+    let r = await sb.from("chip_balances").select("character_id, balance, pink").in("character_id", ids);
+    if (r.error) r = await sb.from("chip_balances").select("character_id, balance").in("character_id", ids);   // update-12.sql 전
+    bal = r.data || [];
+  }
+  state.mine = ids.map(id => { const b = bal.find(x => x.character_id === id); return { uuid: id, balance: b?.balance ?? 0, pink: b?.pink ?? 0 }; });
 }
 
 export function showLoginNotice(){

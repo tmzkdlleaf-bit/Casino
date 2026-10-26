@@ -1,9 +1,9 @@
-import { CONFIG, SUITS, idOf } from "./config.js?v=20261025b";
-import { EXTRA, RECORDS, USE_DB, sb } from "./data.js?v=20261025b";
-import { $, $$, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261025b";
-import { initShow, layoutCast } from "./effects.js?v=20261025b";
-import { buyHtml, myReqHtml } from "./shop.js?v=20261025b";
-import { DATA, nav, state } from "./state.js?v=20261025b";
+import { CONFIG, SUITS, idOf } from "./config.js?v=20261027a";
+import { EXTRA, RECORDS, USE_DB, sb } from "./data.js?v=20261027a";
+import { $, $$, chipAmt, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261027a";
+import { initShow, layoutCast } from "./effects.js?v=20261027a";
+import { buyHtml, myReqHtml } from "./shop.js?v=20261027a";
+import { DATA, nav, state } from "./state.js?v=20261027a";
 
 /* ---------- render ---------- */
 export const timeTag = (label, iso) => `<time${iso ? ` datetime="${esc(iso)}"` : ""}>${esc(label)}</time>`;
@@ -247,7 +247,7 @@ export function renderShop(sel){
     <button class="item${it.stock === 0 ? " sold" : ""}" type="button" data-item="${i}" aria-pressed="${i === sel}" aria-controls="shop-detail">
       <span class="thumb">${it.img ? `<img src="${esc(it.img)}" alt="" loading="lazy" decoding="async">` : ph()}</span>
       <span class="row"><span class="nm">${esc(it.name)}</span>
-        <span class="price"><span class="chip red" aria-hidden="true"></span>${esc(it.price)}<span class="sr">칩</span></span></span>
+        <span class="price">${it.price == null ? "—" : chipAmt(it.price, it.currency)}</span></span>
       ${it.stock === 0 ? `<span class="sold-tag">품절</span>` : ""}
     </button>`).join("");
   const it = DATA.items[sel], st = stockText(it);
@@ -255,7 +255,7 @@ export function renderShop(sel){
     <div class="sd-img">${it.img ? `<img src="${esc(it.img)}" alt="" decoding="async">` : ph()}</div>
     <div class="sd-body">
       <h2 class="sd-name">${esc(it.name)}</h2>
-      <p class="sd-price"><span class="chip red" aria-hidden="true"></span><strong>${esc(it.price)}</strong><span>칩</span></p>
+      <p class="sd-price"><strong>${it.price == null ? "가격 미정" : chipAmt(it.price, it.currency)}</strong></p>
       ${st ? `<p class="sd-stock${it.stock === 0 ? " out" : ""}">${st}</p>` : ""}
       <p class="sd-desc">${esc(it.description || "설명이 없습니다.")}</p>
       ${buyHtml(it)}
@@ -264,7 +264,9 @@ export function renderShop(sel){
 }
 
 /* 내 소유 캐릭터 + 잔액 (공개 캐릭터 데이터와 합침) */
-export const myChars = () => state.mine.map(m => ({ ...ALL().find(c => c.uuid === m.uuid), balance: m.balance })).filter(c => c.name);
+export const myChars = () => state.mine.map(m => ({ ...ALL().find(c => c.uuid === m.uuid), balance: m.balance, pink: m.pink || 0 })).filter(c => c.name);
+/* 칩 종류별 잔액 */
+export const balOf = (c, cur) => (cur === "pink" ? c?.pink : c?.balance) ?? 0;
 
 /* 계정 영역(설정 페이지) + 상점 보유 칩 */
 export function renderAccount(){
@@ -278,19 +280,19 @@ export function renderAccount(){
     const mine = myChars();
     $("#acct-email").textContent = idOf(state.session.user.email) || "—";
     $("#acct-char").textContent = mine.length ? mine.map(c => `${c.name} (${c.roleTitle || c.role})`).join(", ") : "연결 안 됨";
-    $("#acct-chips").textContent = mine.length ? mine.map(c => `${mine.length > 1 ? c.name + " " : ""}${c.balance.toLocaleString("ko-KR")}칩`).join(", ") : "—";
+    $("#acct-chips").innerHTML = mine.length ? mine.map(c => `${mine.length > 1 ? esc(c.name) + " " : ""}${chipAmt(c.balance, "blue")} ${chipAmt(c.pink, "pink")}`).join("<br>") : "—";
     if (document.activeElement !== $("#set-name")) $("#set-name").value = p?.display_name || "";
     $("#pw-user").value = idOf(state.session.user.email);
   }
   updateEditBtn();
   // 칩은 캐릭터별. 상점에는 대표 캐릭터(참가자 우선)의 잔액을 표시
   const main = myChars().sort((a, b) => (a.role === "참가자" ? 0 : 1) - (b.role === "참가자" ? 0 : 1))[0];
-  $("#wallet").textContent = main ? main.balance.toLocaleString("ko-KR") : "—";
+  $("#wallet").innerHTML = main ? `${chipAmt(main.balance, "blue")}${chipAmt(main.pink, "pink")}` : "—";
   $("#wallet-label").textContent = !on ? "보유 칩 (로그인 필요)" : main ? `보유 칩 · ${main.name}` : "보유 칩 (연결된 캐릭터 없음)";
   // 독: 대표 캐릭터 이름 + 칩 (캐릭터가 없으면 표시 이름)
   if (on){
     $("#me-name").textContent = main?.name || p?.display_name || "내 계정";
-    $("#me-bal").textContent = main ? `${main.balance.toLocaleString("ko-KR")}칩` : "";
+    $("#me-bal").innerHTML = main ? `${chipAmt(main.balance, "blue")} ${chipAmt(main.pink, "pink")}` : "";
     $("#me-chip").className = `chip ${main?.chip || "green"} me-chip`;
   }
 }
@@ -367,7 +369,7 @@ export function renderRecords(){
       const mx = Math.max(1, ...list.map(v => v.x.wins));
       $("#rec-rank").innerHTML = list.length ? list.slice(0, 8).map(({ x, c }, i) => `<li>
           <span class="no">${String(i + 1).padStart(2, "0")}</span>${winName(c)}<span class="w">${x.wins}승 <small>/ ${x.played}판</small></span>
-          <span class="rl-net${x.net < 0 ? " minus" : ""}">칩 ${chipText(x.net)} · 생존율 ${Math.round(x.wins / x.played * 100)}%</span>
+          <span class="rl-net">${x.net ? chipAmt(x.net, "blue", true) : ""}${x.net_pink ? chipAmt(x.net_pink, "pink", true) : ""}${!x.net && !x.net_pink ? "칩 —" : ""} · 생존율 ${Math.round(x.wins / x.played * 100)}%</span>
           <span class="bar" aria-hidden="true"><i style="--p:${(x.wins / mx * 100).toFixed(1)}%"></i></span></li>`).join("")
         : `<li class="slot-note">기록이 쌓이면 순위가 보입니다.</li>`;
       return;

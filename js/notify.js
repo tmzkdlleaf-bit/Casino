@@ -4,8 +4,8 @@
    · 다음 접속 때: 마지막으로 본 뒤 처리된 요청 개수 안내
    마지막으로 본 시각은 이 브라우저에 계정별로 저장
    ========================================================= */
-import { toast } from "./dom.js?v=20261025b";
-import { state } from "./state.js?v=20261025b";
+import { CUR, curOf, toast } from "./dom.js?v=20261027a";
+import { state } from "./state.js?v=20261027a";
 
 const key = () => "comu-seen-dec:" + (state.session?.user.id || "");
 const n = v => Number(v || 0).toLocaleString("ko-KR");
@@ -28,7 +28,7 @@ export function notifyDecision(row, kind){
   if (told.has(id)) return;
   told.add(id);
   const ok = row.status === "approved";
-  const what = kind === "shop" ? `구매 ${row.item_name} ×${row.quantity}` : `칩 정산 ${row.amount > 0 ? "+" : ""}${n(row.amount)}칩`;
+  const what = kind === "shop" ? `구매 ${row.item_name} ×${row.quantity}` : `${CUR[curOf(row.currency)].name} 정산 ${row.amount > 0 ? "+" : ""}${n(row.amount)}`;
   toast(`${what} — ${ok ? "승인됨" : "거절됨"}${!ok && row.admin_note ? ` (${row.admin_note})` : ""}`, 4500);
   markSeen(row.decided_at);
 }
