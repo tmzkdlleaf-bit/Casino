@@ -1553,3 +1553,19 @@ button.rl-seat:not([aria-disabled="true"]):hover .av{border-color:var(--gold)}
 .bj-have{font-size:1rem}
 .bet-res{font-size:1rem}
 @media (max-width:700px){ .bj-round{top:.6rem} .bj-table{padding-top:3.4rem} }
+
+/* 블랙잭 딜러 캐릭터 */
+.bj-hand.dealer.has-char{grid-template-columns:auto auto; grid-template-areas:"av who" "av cards"; column-gap:.8rem; align-items:center}
+.bj-hand.dealer.has-char .bj-dealer-av{grid-area:av}
+.bj-hand.dealer.has-char .bj-who{grid-area:who; justify-self:start; font-size:.9375rem; color:var(--ivory)}
+.bj-hand.dealer.has-char .bj-cards{grid-area:cards; justify-content:flex-start}
+.bj-dealer-av{position:relative; display:grid; place-items:center; width:clamp(3rem, 6vw, 4.2rem); aspect-ratio:1; border-radius:50%; background:var(--black-2); border:2px solid var(--gold); overflow:visible}
+.bj-dealer-av img{position:absolute; inset:0; width:100%; height:100%; border-radius:50%; object-fit:cover; object-position:50% 20%}
+.bj-dealer-av .ph{font-family:var(--f-serif); color:var(--smoke)}
+.bj-dealer-av .tm{position:absolute; top:-.3rem; right:-.5rem; min-width:1.5rem; padding:0 .25rem; background:var(--velvet); color:#fff; font-family:var(--f-serif); font-size:.6875rem; line-height:1.5; text-align:center}
+.bj-dealer-av .tm:empty{display:none}
+.bj-hand.dealer.turn .bj-dealer-av{border-color:var(--velvet); box-shadow:0 0 0 4px rgba(239,26,114,.35), 0 0 24px rgba(239,26,114,.6); animation:turn 1.4s var(--ease-io) infinite}
+.bj-hide-opt{align-self:end; min-height:2.75rem}
+.cur-field{border:0; padding:0; margin:0; min-width:0}
+.cur-field legend{padding:0; font-size:var(--s-1)}
+.cur-opt{white-space:nowrap}
