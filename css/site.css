@@ -1522,3 +1522,4 @@ button.rl-seat:not([aria-disabled="true"]):hover .av{border-color:var(--gold)}
   .bj-cards{min-height:3.8rem; padding-left:1.4rem}
   .bj-betbox{flex-basis:100%; justify-content:center}
 }
+.bj-seat .nm small.dm{color:var(--gold)}
