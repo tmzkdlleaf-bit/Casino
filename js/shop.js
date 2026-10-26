@@ -17,9 +17,10 @@ const n = v => Number(v || 0).toLocaleString("ko-KR");
 export async function loadMyRequests(){
   const ids = state.mine.map(m => m.uuid);
   if (!USE_DB || !state.session || !ids.length){ SHOP.reqs = []; SHOP.loaded = true; return; }
-  const { data, error } = await sb.from("shop_requests")
+  let { data, error } = await sb.from("shop_requests")
     .select(`id, character_id, item_id, item_name, unit_price, quantity, total, status, memo, admin_note, created_at, decided_at${CURRENCY.ok ? ", currency" : ""}`)
     .in("character_id", ids).order("created_at", { ascending: false }).limit(30);
+  if (error && CURRENCY.ok && /currency/.test(error.message || "")){ CURRENCY.ok = false; return loadMyRequests(); }   // update-12.sql 전
   SHOP.loaded = true;
   if (error){ SHOP.ok = !missingTable(error); SHOP.reqs = []; if (SHOP.ok) console.warn("[shop]", error.message); return; }
   SHOP.ok = true;

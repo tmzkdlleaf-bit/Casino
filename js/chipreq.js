@@ -16,8 +16,9 @@ const missing = e => /42P01|PGRST205|PGRST202|chip_request/.test(`${e?.code} ${e
 export async function loadChipRequests(){
   const ids = state.mine.map(m => m.uuid);
   if (!USE_DB || !state.session || !ids.length){ CREQ.list = []; return; }
-  const { data, error } = await sb.from("chip_requests").select(`id, character_id, amount, reason, status, admin_note, created_at, decided_at${CURRENCY.ok ? ", currency" : ""}`)
+  let { data, error } = await sb.from("chip_requests").select(`id, character_id, amount, reason, status, admin_note, created_at, decided_at${CURRENCY.ok ? ", currency" : ""}`)
     .in("character_id", ids).order("created_at", { ascending: false }).limit(20);
+  if (error && CURRENCY.ok && /currency/.test(error.message || "")){ CURRENCY.ok = false; return loadChipRequests(); }   // update-12.sql 전
   if (error){ CREQ.ok = !missing(error); CREQ.list = []; return; }
   CREQ.ok = true; CREQ.list = data || [];
 }

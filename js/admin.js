@@ -1,6 +1,6 @@
 import { loadMine } from "./auth.js?v=20261027a";
 import { CONFIG, idOf } from "./config.js?v=20261027a";
-import { FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261027a";
+import { CURRENCY, FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261027a";
 import { $, $$, CUR, announce, chipAmt, esc, toast } from "./dom.js?v=20261027a";
 import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261027a";
 import { renderMarkdown } from "./markdown.js?v=20261027a";
@@ -76,7 +76,7 @@ export const SCHEMAS = {
       </section>`
   },
   items: {
-    label: "아이템", key: "id", touch: true, select: "id, name, description, image_path, price, stock, is_for_sale, sort_order, currency", order: [["sort_order"]],
+    label: "아이템", key: "id", touch: true, get select(){ return `id, name, description, image_path, price, stock, is_for_sale, sort_order${CURRENCY.ok ? ", currency" : ""}`; }, order: [["sort_order"]],
     title: r => r.name, meta: r => [r.is_for_sale ? `판매 ${r.currency === "pink" ? "핑크" : "블루"} ${r.price ?? 0}` : "비매품", r.stock != null ? `재고 ${r.stock}` : ""].filter(Boolean).join(" · "),
     fields: [
       { k: "name", label: "이름", type: "text", required: true, max: 40 },
@@ -536,7 +536,7 @@ export async function admMembers(){
   const [pr, ch, bl] = await Promise.all([
     sb.from("profiles").select("id, email, display_name, role, created_at").order("created_at"),
     sb.from("characters").select("id, owner_id"),
-    sb.from("chip_balances").select("character_id, balance, pink")
+    sb.from("chip_balances").select(CURRENCY.ok ? "character_id, balance, pink" : "character_id, balance")
   ]);
   const failed = [pr, ch, bl].find(r => r.error);
   if (failed) throw failed.error;
@@ -641,7 +641,7 @@ async function admInvite(){
 const SHOP_ST = { pending: "승인 대기", approved: "승인", rejected: "거절", cancelled: "본인 취소" };
 ADM.shopFilter = "pending";
 export async function admShop(){
-  let q = sb.from("shop_requests").select("id, character_id, item_name, unit_price, quantity, total, status, memo, admin_note, requested_by, decided_by, created_at, decided_at, currency")
+  let q = sb.from("shop_requests").select(`id, character_id, item_name, unit_price, quantity, total, status, memo, admin_note, requested_by, decided_by, created_at, decided_at${CURRENCY.ok ? ", currency" : ""}`)
     .order("created_at", { ascending: ADM.shopFilter === "pending" }).limit(300);
   if (ADM.shopFilter === "pending") q = q.eq("status", "pending");
   const [rq, pc] = await Promise.all([q, sb.from("shop_requests").select("id", { count: "exact", head: true }).eq("status", "pending")]);
@@ -649,7 +649,7 @@ export async function admShop(){
   const rows = rq.data || [], pend = pc.count ?? 0;
   const charIds = [...new Set(rows.map(r => r.character_id))], userIds = [...new Set(rows.flatMap(r => [r.requested_by, r.decided_by]).filter(Boolean))];
   const [bl, pr] = await Promise.all([
-    charIds.length ? sb.from("chip_balances").select("character_id, balance, pink").in("character_id", charIds) : { data: [] },
+    charIds.length ? sb.from("chip_balances").select(CURRENCY.ok ? "character_id, balance, pink" : "character_id, balance").in("character_id", charIds) : { data: [] },
     userIds.length ? sb.from("profiles").select("id, display_name, email").in("id", userIds) : { data: [] }
   ]);
   const bal = new Map((bl.data || []).map(b => [b.character_id, b]));
@@ -713,7 +713,7 @@ document.addEventListener("comu:shop-req", () => {
 /* ----- 칩 정산 요청 (update-9.sql) — 승인하면 칩 기록에 바로 들어감 ----- */
 ADM.creqFilter = "pending";
 export async function admChipReq(){
-  let q = sb.from("chip_requests").select("id, character_id, amount, reason, status, admin_note, requested_by, decided_by, created_at, decided_at, currency")
+  let q = sb.from("chip_requests").select(`id, character_id, amount, reason, status, admin_note, requested_by, decided_by, created_at, decided_at${CURRENCY.ok ? ", currency" : ""}`)
     .order("created_at", { ascending: ADM.creqFilter === "pending" }).limit(300);
   if (ADM.creqFilter === "pending") q = q.eq("status", "pending");
   const [rq, pc] = await Promise.all([q, sb.from("chip_requests").select("id", { count: "exact", head: true }).eq("status", "pending")]);
@@ -721,7 +721,7 @@ export async function admChipReq(){
   const rows = rq.data || [], pend = pc.count ?? 0;
   const charIds = [...new Set(rows.map(r => r.character_id))], userIds = [...new Set(rows.flatMap(r => [r.requested_by, r.decided_by]).filter(Boolean))];
   const [bl, pr] = await Promise.all([
-    charIds.length ? sb.from("chip_balances").select("character_id, balance, pink").in("character_id", charIds) : { data: [] },
+    charIds.length ? sb.from("chip_balances").select(CURRENCY.ok ? "character_id, balance, pink" : "character_id, balance").in("character_id", charIds) : { data: [] },
     userIds.length ? sb.from("profiles").select("id, display_name, email").in("id", userIds) : { data: [] }
   ]);
   const bal = new Map((bl.data || []).map(b => [b.character_id, b]));
@@ -902,7 +902,7 @@ admPanel().addEventListener("submit", async e => {
     if (!delta){ fieldError(input, "0이 아닌 정수를 입력해 주세요."); return input.focus(); }
     await withBusy($("button", f), async () => {
       const cur = f.currency.value;
-      const { data, error } = await sb.rpc("admin_adjust_chips", { p_character: f.dataset.chips, p_amount: delta, p_reason: f.reason.value.trim(), p_currency: cur });
+      const { data, error } = await sb.rpc("admin_adjust_chips", CURRENCY.ok ? { p_character: f.dataset.chips, p_amount: delta, p_reason: f.reason.value.trim(), p_currency: cur } : { p_character: f.dataset.chips, p_amount: delta, p_reason: f.reason.value.trim() });
       if (error){ fieldError(input, errMsg(error)); input.focus(); return; }
       const cell = $("#chips-" + f.dataset.chips), idx = cur === "pink" ? 1 : 0;
       cell.children[idx].outerHTML = chipAmt(data, cur);
