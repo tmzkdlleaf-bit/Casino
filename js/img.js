@@ -6,6 +6,8 @@ export async function toWebP(file, max){
   if (!/^image\//.test(file.type)) throw new Error("이미지 파일만 올릴 수 있습니다.");
   if (file.size > 25 * 1024 * 1024) throw new Error("25MB 이하 이미지만 올릴 수 있습니다.");
   const bmp = await createImageBitmap(file);
+  // 작은 도트 그림(PNG·GIF)은 다시 압축하면 번지므로 그대로 올림
+  if (/image\/(png|gif)/.test(file.type) && bmp.width <= 256 && bmp.height <= 256 && file.size <= 512 * 1024){ bmp.close?.(); return file; }
   const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
   const w = Math.max(1, Math.round(bmp.width * k)), h = Math.max(1, Math.round(bmp.height * k));
   const c = document.createElement("canvas"); c.width = w; c.height = h;
@@ -17,5 +19,5 @@ export async function toWebP(file, max){
   return file.type === "image/png" ? enc("image/png") : enc("image/jpeg", .88);
 }
 
-export const extOf = blob => ({ "image/webp": "webp", "image/png": "png", "image/jpeg": "jpg" })[blob.type] || "bin";
+export const extOf = blob => ({ "image/webp": "webp", "image/png": "png", "image/jpeg": "jpg", "image/gif": "gif" })[blob.type] || "bin";
 

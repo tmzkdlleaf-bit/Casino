@@ -1,6 +1,6 @@
 /* =========================================================
    Titfortat777 — 사이트 스타일
-   디자인 언어: 첫 버전의 구성(칩 · 트럼프 카드 · 유리 패널) + 드림코어 배경(원근 타일 바닥 · 작은 흰 별)
+   디자인 언어: 첫 버전의 구성(코인 · 트럼프 카드 · 유리 패널) + 드림코어 배경(원근 타일 바닥 · 작은 흰 별)
    팔레트: #EF1A72 분홍 · #ADCFEA 하늘 · #5D97D9 파랑 · #1D367B 남색 · #000000 검정
    색 이름은 첫 버전 그대로 둠: --felt=남색, --velvet=분홍, --gold=하늘색, --green-hi=파랑, --ivory=푸른 흰색
    화면 구성: 페이지 자체는 스크롤하지 않음. 각 화면의 창(.pane) 안에서만 스크롤 — 게임 화면처럼
@@ -89,7 +89,7 @@ body.calm *, body.calm *::before, body.calm *::after{animation:none !important; 
 .suit-ico{display:inline-block; width:1em; height:1em; fill:currentColor; vertical-align:-.12em; flex:none}
 .ico{width:1.3rem; height:1.3rem; flex:none; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round}
 
-/* 칩 */
+/* 코인 */
 .chip{
   --size:4rem; --c:var(--black); --e:var(--ivory);
   position:relative; display:grid; place-items:center; flex:none;
@@ -335,7 +335,7 @@ main{position:fixed; inset:0 0 calc(var(--dock) + env(safe-area-inset-bottom)); 
 .hero .actions{display:flex; gap:.75rem; flex-wrap:wrap}
 @media (max-height:760px){ .hero .intro{font-size:var(--s0)} }
 
-/* 떨어지는 칩 — 기울어진 원근 */
+/* 떨어지는 코인 — 기울어진 원근 */
 .hero-chips{position:absolute; inset:0; z-index:-1; pointer-events:none; overflow:hidden}
 .hero-chips .fall{position:absolute; animation:drop 1.9s cubic-bezier(.3,.75,.3,1) both; animation-delay:calc(var(--d) * 1.8 + .2s)}
 .hero-chips .chip{transform:perspective(40rem) rotateX(var(--tx,45deg)) rotate(var(--r1,0deg))}
@@ -447,7 +447,7 @@ body.intro-on .hero-chips .fall{animation-play-state:paused}
   .board > .latest.on{flex:none; margin-top:.6rem}
   .hero-chips .chip{--size:2.2rem !important}
   .hero-chips .fall:nth-child(n+4){display:none}
-  /* 오른쪽 위는 배경음악 버튼 자리 — 칩은 그 아래·왼쪽으로 */
+  /* 오른쪽 위는 배경음악 버튼 자리 — 코인은 그 아래·왼쪽으로 */
   .hero-chips .fall:nth-child(1){left:auto !important; right:24% !important; top:1.5% !important}
   .hero-chips .fall:nth-child(2){left:auto !important; right:6% !important; top:9% !important}
   .hero-chips .fall:nth-child(3){left:auto !important; right:16% !important; top:12.5% !important}
@@ -928,7 +928,7 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
 
 /* =========================================================
    14. 인트로 — 첫 접속
-   칩 착지·고리 파동 → 카드가 사방에서 날아와 부채꼴 → 칩 폭발·섬광 → 이름 + 금빛 훑기 → 막이 열림
+   코인 착지·고리 파동 → 카드가 사방에서 날아와 부채꼴 → 코인 폭발·섬광 → 이름 + 금빛 훑기 → 막이 열림
    ========================================================= */
 .opening{--k:1.6; position:fixed; inset:0; z-index:150; overflow:hidden; cursor:pointer}   /* --k: 인트로 전체 속도 배율 (클수록 느림) */
 .opening .curtain{position:absolute; left:0; right:0; height:50.5%; background:#000000; z-index:0}
@@ -949,7 +949,7 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
 /* 금빛 고리 파동 */
 .intro-stage .ring{position:absolute; left:50%; top:50%; width:12rem; aspect-ratio:1; margin:-6rem 0 0 -6rem; border-radius:50%; border:2px solid var(--gold); opacity:0; animation:ring calc(1.1s * var(--k)) var(--ease) calc(var(--t) * var(--k)) forwards}
 @keyframes ring{0%{opacity:.9; transform:scale(.2)} 100%{opacity:0; transform:scale(var(--s, 4))}}
-/* 가운데 큰 칩: 떨어져 착지하며 회전 → 사라짐 */
+/* 가운데 큰 코인: 떨어져 착지하며 회전 → 사라짐 */
 .intro-stage .big-chip{position:absolute; left:50%; top:50%; --size:7rem; margin:-3.5rem 0 0 -3.5rem;
   animation:chip-land calc(.85s * var(--k)) cubic-bezier(.3,1.4,.5,1) calc(.15s * var(--k)) both, chip-spin calc(1.6s * var(--k)) linear calc(.15s * var(--k)), chip-away calc(.45s * var(--k)) var(--ease-io) calc(1.1s * var(--k)) forwards}
 @keyframes chip-land{from{transform:translateY(-70vh) rotateX(60deg) scale(.6); opacity:0}}
@@ -968,7 +968,7 @@ table.members td{padding:.7rem 0; border-bottom:1px solid var(--line-2)}
 .icard .card-back{transform:rotateY(180deg); box-shadow:0 16px 34px rgba(0,0,0,.6)}
 .icard .pcard{display:grid; place-items:center}
 .icard .pcard .big{display:flex; font-size:clamp(1.75rem, 3.6vw, 2.75rem); line-height:1}
-/* 칩 폭발 + 불티 + 섬광 */
+/* 코인 폭발 + 불티 + 섬광 */
 .burst{position:absolute; left:50%; top:50%; width:0; height:0; transform-style:preserve-3d}
 .burst .bchip{position:absolute; left:0; top:0; --size:var(--sz); margin:calc(var(--sz) / -2) 0 0 calc(var(--sz) / -2); opacity:0; animation:burst calc(1.4s * var(--k)) cubic-bezier(.12,.7,.3,1) calc(var(--t) * var(--k)) forwards}
 @keyframes burst{
@@ -1369,7 +1369,7 @@ button.rl-seat:not([aria-disabled="true"]):hover .av{border-color:var(--gold)}
   .rl-head{padding-bottom:.6rem}
 }
 
-/* 칩 정산 요청 (설정) */
+/* 코인 정산 요청 (설정) */
 .creq-list{margin-top:1rem; padding-top:.9rem}
 .creq-list strong{color:var(--gold)} .creq-list strong.minus{color:var(--red-text)}
 #creq-form[hidden]{display:none}
@@ -1407,7 +1407,7 @@ button.rl-seat:not([aria-disabled="true"]):hover .av{border-color:var(--gold)}
 .join-bad p{margin:0}
 
 /* =========================================================
-   24. 칩 두 종류 — 블루(남색 칩) · 핑크(분홍 칩)
+   24. 코인 두 종류 — 블루(남색 코인) · 핑크(분홍 코인)
    ========================================================= */
 .amt{display:inline-flex; align-items:center; gap:.3em; font-variant-numeric:tabular-nums; white-space:nowrap}
 .amt + .amt{margin-left:.6em}
@@ -1423,7 +1423,7 @@ button.rl-seat:not([aria-disabled="true"]):hover .av{border-color:var(--gold)}
 .sd-price .amt{font-size:1.4rem}
 .sd-price .amt .chip{--size:1.25rem}
 .chips2{white-space:nowrap}
-/* 칩 종류 고르기 */
+/* 코인 종류 고르기 */
 .cur-pick{display:inline-flex; gap:.35rem; margin:0; padding:0; border:0}
 .cur-opt{position:relative; display:inline-flex; align-items:center; gap:.4rem; min-height:2.5rem; padding:.3rem .55rem; border:1px solid var(--line); cursor:pointer; font-size:.875rem; color:var(--text-2)}
 .cur-opt input{position:absolute; opacity:0; pointer-events:none}
@@ -1569,3 +1569,11 @@ button.rl-seat:not([aria-disabled="true"]):hover .av{border-color:var(--gold)}
 .cur-field{border:0; padding:0; margin:0; min-width:0}
 .cur-field legend{padding:0; font-size:var(--s-1)}
 .cur-opt{white-space:nowrap}
+
+/* 상점 분류 탭 */
+.shop-cats{display:flex; flex-wrap:wrap; gap:.3rem; margin:0 0 .8rem}
+.shop-cats[hidden]{display:none}
+.shop-cats button{min-height:2.2rem; padding:.25rem .9rem; border:1px solid var(--line); background:none; color:var(--text-2); font:inherit; font-size:.875rem; cursor:pointer}
+.shop-cats button[aria-pressed="true"]{border-color:var(--velvet); background:rgba(239,26,114,.15); color:var(--ivory)}
+/* 도트 그림은 또렷하게 (작은 이미지만) */
+img.px{image-rendering:pixelated; image-rendering:crisp-edges; object-fit:contain !important}

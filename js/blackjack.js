@@ -5,12 +5,12 @@
    - 흐름: 앉기 → 베팅(첫 베팅 20초 뒤 또는 모두 걸면 바로) → 자리 순서대로 카드 받기/멈추기/두 배 → 딜러 → 정산
    - 카드 더미와 딜러의 엎은 카드는 서버만 앎. 화면은 받은 카드만 그림
    ========================================================= */
-import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261027e";
-import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261027e";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261027e";
-import { nav, state } from "./state.js?v=20261027e";
-import { ALL, balOf, myChars, renderAccount } from "./views.js?v=20261027e";
-import { sfx, sfxVol, setSfxVol } from "./sfx.js?v=20261027e";
+import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261028a";
+import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261028a";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261028a";
+import { nav, state } from "./state.js?v=20261028a";
+import { ALL, balOf, myChars, renderAccount } from "./views.js?v=20261028a";
+import { sfx, sfxVol, setSfxVol } from "./sfx.js?v=20261028a";
 
 const BJ = {
   id: null, t: null, seats: [], avatars: new Map(), chan: null, live: false, poll: 0, tickT: 0, loading: null,
@@ -50,7 +50,7 @@ function cardHtml(c, key, back = false){
 
 /* ---------- 도우미 ---------- */
 const charOf = uuid => ALL().find(c => c.uuid === uuid) || { uuid, name: "(알 수 없음)", role: "", chip: "green" };
-// 자리의 주인: 캐릭터 또는 더미 (더미는 칩 없이 자동 진행)
+// 자리의 주인: 캐릭터 또는 더미 (더미는 코인 없이 자동 진행)
 const seatChar = s => s.character_id ? charOf(s.character_id) : { uuid: null, name: s.dummy_name || "더미", dummy: true };
 const avatarOf = c => { const a = BJ.avatars.get(c.uuid); return a ? publicUrl("roulette", a.path) : (c.thumb || c.img || ""); };
 const mineSet = () => new Set(state.mine.map(m => m.uuid));
@@ -257,7 +257,7 @@ function finishAnim(){
   flushHeld();
   if (!BJ.t) return;
   render();
-  if (BJ.t.phase === "betting" && mySeat()?.result) import("./auth.js?v=20261027e").then(m => m.loadMine()).then(renderAccount);   // 정산 뒤 내 칩
+  if (BJ.t.phase === "betting" && mySeat()?.result) import("./auth.js?v=20261028a").then(m => m.loadMine()).then(renderAccount);   // 정산 뒤 내 코인
   const t = BJ.t, me = mySeat();
   if (t.phase === "betting" && me?.result && me.cards.length && BJ.soundRound !== t.round){
     BJ.soundRound = t.round;
@@ -505,7 +505,7 @@ async function act(btn){
   const a = btn.dataset.act, t = BJ.t, me = mySeat();
   if (!t) return;
   if (a === "close" && !confirm("테이블을 닫을까요? 진행 중인 판의 베팅은 모두 돌려줍니다.")) return;
-  if (a === "delete" && !confirm("이 테이블을 지울까요? 채팅 기록도 함께 지워집니다. (칩 기록은 남습니다)")) return;
+  if (a === "delete" && !confirm("이 테이블을 지울까요? 채팅 기록도 함께 지워집니다. (코인 기록은 남습니다)")) return;
   await withBusy(btn, async () => {
     if (a === "join"){
       const cid = $("#bj-join-char")?.value || myChars()[0]?.uuid;
@@ -516,7 +516,7 @@ async function act(btn){
       if (!(amt >= t.min_bet && amt <= t.max_bet)){ toast(`베팅은 ${n(t.min_bet)}~${n(t.max_bet)}입니다`); $("#bj-amt").focus(); return; }
       BJ.betAmt = amt;
       if (await call("bj_bet", { p_table: BJ.id, p_character: me.character_id, p_amount: amt })){
-        const { loadMine } = await import("./auth.js?v=20261027e"); loadMine().then(renderAccount);
+        const { loadMine } = await import("./auth.js?v=20261028a"); loadMine().then(renderAccount);
       }
     }
     else if (a === "hit"){ sfx("card"); await call("bj_hit", { p_table: BJ.id }); }
@@ -550,7 +550,7 @@ $("#bj-bar").addEventListener("focusout", e => { if (e.target.id === "bj-amt") s
 $("#bj-tools").addEventListener("click", e => { const b = e.target.closest("[data-act]"); if (b) act(b); });
 $("#bj-seats").addEventListener("click", async e => {
   const b = e.target.closest("[data-kick]"); if (!b) return;
-  if (!confirm("이 자리를 비울까요? 이번 판에 건 칩은 돌려줍니다.")) return;
+  if (!confirm("이 자리를 비울까요? 이번 판에 건 코인은 돌려줍니다.")) return;
   await withBusy(b, async () => { await call("admin_bj_kick", { p_table: BJ.id, p_seat: +b.dataset.kick }); load(true); });
 });
 $("#bj-tools").addEventListener("input", e => {

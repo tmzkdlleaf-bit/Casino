@@ -2,10 +2,10 @@
    가입 — 관리자가 공유한 링크(#join/코드)로만
    코드 확인과 계정 만들기는 서버 함수(supabase/functions/signup)가 함. 사이트 자체 가입은 막혀 있음
    ========================================================= */
-import { loginEmail } from "./config.js?v=20261027e";
-import { sb } from "./data.js?v=20261027e";
-import { $, toast } from "./dom.js?v=20261027e";
-import { fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261027e";
+import { loginEmail } from "./config.js?v=20261028a";
+import { sb } from "./data.js?v=20261028a";
+import { $, toast } from "./dom.js?v=20261028a";
+import { fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261028a";
 
 let code = "";
 
@@ -41,7 +41,7 @@ $("#join-form").addEventListener("submit", async e => {
     const { error: le } = await sb.auth.signInWithPassword({ email: loginEmail(id), password });
     f.reset();
     if (le){ toast("가입했습니다. 로그인해 주세요"); location.hash = "#login"; return; }
-    toast("가입했습니다. 관리자가 캐릭터를 연결하면 칩과 상점을 쓸 수 있어요", 5000);
+    toast("가입했습니다. 관리자가 캐릭터를 연결하면 코인과 상점을 쓸 수 있어요", 5000);
     location.hash = "#home";
   });
 });

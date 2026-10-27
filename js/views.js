@@ -1,9 +1,9 @@
-import { CONFIG, SUITS, idOf } from "./config.js?v=20261027e";
-import { EXTRA, RECORDS, USE_DB, sb } from "./data.js?v=20261027e";
-import { $, $$, chipAmt, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261027e";
-import { initShow, layoutCast } from "./effects.js?v=20261027e";
-import { buyHtml, myReqHtml } from "./shop.js?v=20261027e";
-import { DATA, nav, state } from "./state.js?v=20261027e";
+import { CONFIG, SUITS, idOf } from "./config.js?v=20261028a";
+import { EXTRA, RECORDS, USE_DB, sb } from "./data.js?v=20261028a";
+import { $, $$, chipAmt, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261028a";
+import { initShow, layoutCast } from "./effects.js?v=20261028a";
+import { buyHtml, myReqHtml } from "./shop.js?v=20261028a";
+import { DATA, nav, state } from "./state.js?v=20261028a";
 
 /* ---------- render ---------- */
 export const timeTag = (label, iso) => `<time${iso ? ` datetime="${esc(iso)}"` : ""}>${esc(label)}</time>`;
@@ -240,10 +240,17 @@ export function renderShop(sel){
     detail.innerHTML = `<div class="sd-empty"><span class="chip red" aria-hidden="true"></span><p>진열된 상품이 없습니다.</p></div>${myReqHtml()}`;
     return;
   }
-  if (sel == null) sel = state.shopSel ?? 0;
-  sel = Math.min(sel, DATA.items.length - 1);
+  // 분류 탭: 분류가 하나라도 있으면 [전체 · 분류들]
+  const cats = [...new Set(DATA.items.map(it => it.category).filter(Boolean))];
+  if (!cats.includes(state.shopCat)) state.shopCat = "";
+  const tabs = $("#shop-cats");
+  tabs.hidden = !cats.length;
+  tabs.innerHTML = ["", ...cats].map(c => `<button type="button" data-cat="${esc(c)}" aria-pressed="${c === state.shopCat}">${esc(c || "전체")}</button>`).join("");
+  const shown = DATA.items.map((it, i) => [it, i]).filter(([it]) => !state.shopCat || it.category === state.shopCat);
+  if (sel == null) sel = state.shopSel ?? shown[0]?.[1] ?? 0;
+  if (!shown.some(([, i]) => i === sel)) sel = shown[0]?.[1] ?? 0;
   state.shopSel = sel;
-  $("#shop").innerHTML = DATA.items.map((it, i) => `
+  $("#shop").innerHTML = shown.map(([it, i]) => `
     <button class="item${it.stock === 0 ? " sold" : ""}" type="button" data-item="${i}" aria-pressed="${i === sel}" aria-controls="shop-detail">
       <span class="thumb">${it.img ? `<img src="${esc(it.img)}" alt="" loading="lazy" decoding="async">` : ph()}</span>
       <span class="row"><span class="nm">${esc(it.name)}</span>
@@ -265,10 +272,10 @@ export function renderShop(sel){
 
 /* 내 소유 캐릭터 + 잔액 (공개 캐릭터 데이터와 합침) */
 export const myChars = () => state.mine.map(m => ({ ...ALL().find(c => c.uuid === m.uuid), balance: m.balance, pink: m.pink || 0 })).filter(c => c.name);
-/* 칩 종류별 잔액 */
+/* 코인 종류별 잔액 */
 export const balOf = (c, cur) => (cur === "pink" ? c?.pink : c?.balance) ?? 0;
 
-/* 계정 영역(설정 페이지) + 상점 보유 칩 */
+/* 계정 영역(설정 페이지) + 상점 보유 코인 */
 export function renderAccount(){
   const p = state.profile, on = !!state.session;
   $("#acct-guest").hidden = on;
@@ -285,11 +292,11 @@ export function renderAccount(){
     $("#pw-user").value = idOf(state.session.user.email);
   }
   updateEditBtn();
-  // 칩은 캐릭터별. 상점에는 대표 캐릭터(참가자 우선)의 잔액을 표시
+  // 코인은 캐릭터별. 상점에는 대표 캐릭터(참가자 우선)의 잔액을 표시
   const main = myChars().sort((a, b) => (a.role === "참가자" ? 0 : 1) - (b.role === "참가자" ? 0 : 1))[0];
   $("#wallet").innerHTML = main ? `${chipAmt(main.balance, "blue")}${chipAmt(main.pink, "pink")}` : "—";
-  $("#wallet-label").textContent = !on ? "보유 칩 (로그인 필요)" : main ? `보유 칩 · ${main.name}` : "보유 칩 (연결된 캐릭터 없음)";
-  // 독: 대표 캐릭터 이름 + 칩 (캐릭터가 없으면 표시 이름)
+  $("#wallet-label").textContent = !on ? "보유 코인 (로그인 필요)" : main ? `보유 코인 · ${main.name}` : "보유 코인 (연결된 캐릭터 없음)";
+  // 독: 대표 캐릭터 이름 + 코인 (캐릭터가 없으면 표시 이름)
   if (on){
     $("#me-name").textContent = main?.name || p?.display_name || "내 계정";
     $("#me-bal").innerHTML = main ? `${chipAmt(main.balance, "blue")} ${chipAmt(main.pink, "pink")}` : "";
@@ -312,7 +319,7 @@ export function winCounts(recs){
   return [...m.values()].sort((a, b) => b.w - a.w);
 }
 
-/* 룰렛 전적 (update-10.sql roulette_stats): 판 수 · 우승 · 룰렛으로 늘거나 준 칩 */
+/* 룰렛 전적 (update-10.sql roulette_stats): 판 수 · 우승 · 룰렛으로 늘거나 준 코인 */
 const RLS = { rows: null, at: 0, busy: false, ok: true };
 const RL_GAME = "러시안 룰렛";
 async function loadRlStats(){
@@ -358,7 +365,7 @@ export function renderRecords(){
     </tr>`).join("") : `<tr><td colspan="6" class="empty-note">${empty}</td></tr>`;
   $("#rec-more").hidden = recs.length <= state.recLimit;
 
-  // 룰렛만 볼 때: 판 수와 칩까지 보여 주는 순위
+  // 룰렛만 볼 때: 판 수와 코인까지 보여 주는 순위
   const rl = state.recFilter === RL_GAME || (state.recFilter === "전체" && games.length === 1 && games[0] === RL_GAME);
   $("#h-rank").textContent = rl ? "룰렛 순위" : "승리 순위";
   if (rl){
@@ -369,7 +376,7 @@ export function renderRecords(){
       const mx = Math.max(1, ...list.map(v => v.x.wins));
       $("#rec-rank").innerHTML = list.length ? list.slice(0, 8).map(({ x, c }, i) => `<li>
           <span class="no">${String(i + 1).padStart(2, "0")}</span>${winName(c)}<span class="w">${x.wins}승 <small>/ ${x.played}판</small></span>
-          <span class="rl-net">${x.net ? chipAmt(x.net, "blue", true) : ""}${x.net_pink ? chipAmt(x.net_pink, "pink", true) : ""}${!x.net && !x.net_pink ? "칩 —" : ""} · 생존율 ${Math.round(x.wins / x.played * 100)}%</span>
+          <span class="rl-net">${x.net ? chipAmt(x.net, "blue", true) : ""}${x.net_pink ? chipAmt(x.net_pink, "pink", true) : ""}${!x.net && !x.net_pink ? "코인 —" : ""} · 생존율 ${Math.round(x.wins / x.played * 100)}%</span>
           <span class="bar" aria-hidden="true"><i style="--p:${(x.wins / mx * 100).toFixed(1)}%"></i></span></li>`).join("")
         : `<li class="slot-note">기록이 쌓이면 순위가 보입니다.</li>`;
       return;

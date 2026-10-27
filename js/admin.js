@@ -1,12 +1,12 @@
-import { loadMine } from "./auth.js?v=20261027e";
-import { CONFIG, idOf } from "./config.js?v=20261027e";
-import { CURRENCY, FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261027e";
-import { $, $$, CUR, announce, chipAmt, esc, toast } from "./dom.js?v=20261027e";
-import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261027e";
-import { renderMarkdown } from "./markdown.js?v=20261027e";
-import { extOf, toWebP } from "./img.js?v=20261027e";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
-import { state } from "./state.js?v=20261027e";
-import { ALL, renderAccount } from "./views.js?v=20261027e";
+import { loadMine } from "./auth.js?v=20261028a";
+import { CONFIG, idOf } from "./config.js?v=20261028a";
+import { CAT, CURRENCY, FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261028a";
+import { $, $$, CUR, announce, chipAmt, esc, toast } from "./dom.js?v=20261028a";
+import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261028a";
+import { renderMarkdown } from "./markdown.js?v=20261028a";
+import { extOf, toWebP } from "./img.js?v=20261028a";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
+import { state } from "./state.js?v=20261028a";
+import { ALL, renderAccount } from "./views.js?v=20261028a";
 
 /* =========================================================
    ADMIN — 관리 페이지. 화면만 관리자에게 보이고, 실제 차단은 RLS + RPC가 담당
@@ -15,7 +15,7 @@ export const ADM = { tab: "characters", rows: {}, sel: null, dirty: false, tabsD
 
 /* 탭은 묶음별로: 승인 대기 · 내용 · 게임 · 멤버 (묶음 사이는 간격으로만 나눔) */
 export const ADMIN_GROUPS = [
-  [["shop", "구매 요청"], ["chipreq", "칩 정산"]],
+  [["shop", "구매 요청"], ["chipreq", "코인 정산"]],
   [["characters", "캐릭터"], ["items", "아이템"], ["chapters", "지난 이야기"]],
   [["game_slots", "게임 일정"], ["game_records", "전적"]],
   [["members", "멤버"], ["backup", "백업"]]
@@ -27,7 +27,7 @@ export const OPT = {
   kind: [["dealer", "직원"], ["player", "참가자"]],
   suit: [["spade", "♠ 스페이드"], ["heart", "♥ 하트"], ["club", "♣ 클럽"], ["diamond", "♦ 다이아"]],
   chip: [["green", "남색"], ["red", "분홍"]],
-  currency: [["blue", "블루 칩"], ["pink", "핑크 칩"]]
+  currency: [["blue", "블루 코인"], ["pink", "핑크 코인"]]
 };
 
 /* 캐릭터 입력 칸 — 이미지 초점(image_focus)은 update-4.sql을 실행한 DB에서만 보임 */
@@ -45,7 +45,7 @@ const CHAR_FIELDS = [
   ] },
   { row: [
     { k: "suit", label: "카드 무늬 (직원)", type: "select", options: () => [["", "없음"], ...OPT.suit] },
-    { k: "chip_color", label: "칩 색 (참가자)", type: "select", options: () => [["", "없음"], ...OPT.chip] }
+    { k: "chip_color", label: "표시 색 (참가자)", type: "select", options: () => [["", "없음"], ...OPT.chip] }
   ] },
   { row: [
     { k: "age", label: "나이", type: "text", max: 20 },
@@ -76,14 +76,17 @@ export const SCHEMAS = {
       </section>`
   },
   items: {
-    label: "아이템", key: "id", touch: true, get select(){ return `id, name, description, image_path, price, stock, is_for_sale, sort_order${CURRENCY.ok ? ", currency" : ""}`; }, order: [["sort_order"]],
-    title: r => r.name, meta: r => [r.is_for_sale ? `판매 ${r.currency === "pink" ? "핑크" : "블루"} ${r.price ?? 0}` : "비매품", r.stock != null ? `재고 ${r.stock}` : ""].filter(Boolean).join(" · "),
+    label: "아이템", key: "id", touch: true, get select(){ return `id, name, description, image_path, price, stock, is_for_sale, sort_order${CURRENCY.ok ? ", currency" : ""}${CAT.ok ? ", category" : ""}`; }, order: [["sort_order"]],
+    title: r => r.name, meta: r => [r.category, r.is_for_sale ? `판매 ${r.currency === "pink" ? "핑크" : "블루"} ${r.price ?? 0}` : "비매품", r.stock != null ? `재고 ${r.stock}` : ""].filter(Boolean).join(" · "),
     fields: [
-      { k: "name", label: "이름", type: "text", required: true, max: 40 },
+      { row: [
+        { k: "name", label: "이름", type: "text", required: true, max: 40 },
+        { k: "category", label: "분류", type: "text", max: 20, ph: "예: 파츠" }
+      ] },
       { k: "description", label: "설명", type: "textarea" },
       { row: [
-        { k: "price", label: "가격", type: "number", min: 0, nullable: true, ph: "칩", suffix: "칩" },
-        { k: "currency", label: "칩 종류", type: "select", required: true, options: () => OPT.currency }
+        { k: "price", label: "가격", type: "number", min: 0, nullable: true, ph: "코인", suffix: "코인" },
+        { k: "currency", label: "코인 종류", type: "select", required: true, options: () => OPT.currency }
       ] },
       { k: "stock", label: "재고", type: "number", min: 0, nullable: true, ph: "무제한" },
       { row: [
@@ -122,7 +125,7 @@ export const SCHEMAS = {
       ] },
       { row: [
         { k: "winner_id", label: "승자", type: "select", options: () => [["", "없음 (무승부 등)"], ...(ADM.rows.characters || []).map(c => [c.id, `${c.name} (${c.kind === "dealer" ? "직원" : "참가자"})`])] },
-        { k: "chips", label: "칩 (표시용)", type: "number" }
+        { k: "chips", label: "코인 (표시용)", type: "number" }
       ] },
       { k: "participant_ids", label: "참가한 캐릭터", type: "multi", options: () => (ADM.rows.characters || []).map(c => [c.id, c.name]) },
       { k: "note", label: "메모", type: "text", max: 120 }
@@ -183,7 +186,7 @@ export async function admLoad(table){
 function ensureAdminCss(){
   if (document.getElementById("admin-css")) return;
   const l = document.createElement("link");
-  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261027e";
+  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261028a";
   document.head.append(l);
 }
 
@@ -233,7 +236,7 @@ export function admRenderCrud(table){
   admPanel().innerHTML = `
     <div class="adm">
       <div class="adm-list">
-        <button class="btn primary" type="button" data-adm-new>새 ${s.label} 추가</button>
+        <div class="adm-new-row"><button class="btn primary" type="button" data-adm-new>새 ${s.label} 추가</button>${table === "items" ? `<button class="btn" type="button" data-adm-bulk>여러 장</button>` : ""}</div>
         <ul aria-label="${s.label} 목록">
           ${rows.length ? rows.map(r => `<li><button type="button" data-adm-sel="${esc(String(r[s.key]))}" aria-current="${sel === String(r[s.key])}">
             <span class="t">${esc(s.title(r) || "(제목 없음)")}</span>${s.meta ? `<span class="m">${esc(s.meta(r) || "")}</span>` : ""}</button></li>`).join("")
@@ -481,7 +484,7 @@ export async function admSaveInventory(btn){
   });
 }
 
-/* ----- 멤버 · 캐릭터별 칩 ----- */
+/* ----- 멤버 · 캐릭터별 코인 ----- */
 /* =========================================================
    백업: 모든 표를 JSON 파일 하나로 내려받음 (이미지 파일 자체는 빠지고 경로만 들어감)
    ========================================================= */
@@ -489,14 +492,14 @@ const BACKUP_TABLES = ["profiles", "characters", "inventory", "items", "chapters
   "chip_ledger", "shop_requests", "chip_requests", "game_slots", "game_records",
   "roulette_rooms", "roulette_seats", "roulette_bets", "roulette_chat", "roulette_avatars", "bj_tables", "bj_chat"];
 const BACKUP_LABEL = { profiles: "멤버", characters: "캐릭터", inventory: "소지품", items: "상점 아이템", chapters: "지난 이야기", logs: "로그", notices: "공지", notice_categories: "공지 분류",
-  chip_ledger: "칩 기록", shop_requests: "구매 요청", chip_requests: "칩 정산 요청", game_slots: "게임 일정", game_records: "전적",
+  chip_ledger: "코인 기록", shop_requests: "구매 요청", chip_requests: "코인 정산 요청", game_slots: "게임 일정", game_records: "전적",
   roulette_rooms: "룰렛 방", roulette_seats: "룰렛 자리", roulette_bets: "룰렛 베팅", roulette_chat: "룰렛 채팅", roulette_avatars: "룰렛 자리 이미지",
   bj_tables: "블랙잭 테이블", bj_seats: "블랙잭 자리", bj_chat: "블랙잭 채팅" };
 function admBackup(){
   let last = null; try { last = localStorage.getItem("comu-backup-at"); } catch (_) {}
   admPanel().innerHTML = `<section class="card adm-backup">
     <h3 class="card-h">백업</h3>
-    <p class="hint">캐릭터 · 칩 기록 · 구매 기록 · 게임 기록 전부를 파일 하나로 받습니다. 이미지는 빠집니다.</p>
+    <p class="hint">캐릭터 · 코인 기록 · 구매 기록 · 게임 기록 전부를 파일 하나로 받습니다. 이미지는 빠집니다.</p>
     <div class="adm-backup-row"><button class="btn primary" type="button" id="bk-go">백업 받기</button>
       <span class="hint" id="bk-last">${last ? `마지막: ${esc(new Date(last).toLocaleString("ko-KR"))}` : ""}</span></div>
     <ul class="bk-list" id="bk-list" hidden></ul>
@@ -564,11 +567,11 @@ export async function admMembers(){
       </div>
     </div>
     <div class="card" style="margin-top:1.5rem">
-      <h2 class="card-h">캐릭터 · 칩</h2>
+      <h2 class="card-h">캐릭터 · 코인</h2>
       <div class="table-scroll">
         <table class="members">
-          <caption class="sr">캐릭터별 소유 멤버, 보유 칩, 칩 지급·차감</caption>
-          <thead><tr><th scope="col">캐릭터</th><th scope="col">주인</th><th scope="col">칩</th><th scope="col"><span class="sr">칩 지급·차감</span></th></tr></thead>
+          <caption class="sr">캐릭터별 소유 멤버, 보유 코인, 코인 지급·차감</caption>
+          <thead><tr><th scope="col">캐릭터</th><th scope="col">주인</th><th scope="col">코인</th><th scope="col"><span class="sr">코인 지급·차감</span></th></tr></thead>
           <tbody>${chars.map(c => {
             const nm = esc(c.name), cur = owner.get(c.uuid) || "";
             return `<tr>
@@ -580,9 +583,9 @@ export async function admMembers(){
                 </select></td>
               <td class="chips2" id="chips-${c.uuid}">${chipAmt(bal.get(c.uuid)?.balance, "blue")}${chipAmt(bal.get(c.uuid)?.pink, "pink")}</td>
               <td><form class="chip-form" data-chips="${c.uuid}" data-name="${nm}" novalidate>
-                <label class="sr" for="cc-${c.uuid}">칩 종류</label>
+                <label class="sr" for="cc-${c.uuid}">코인 종류</label>
                 <select class="input small-sel cur-sel" id="cc-${c.uuid}" name="currency"><option value="blue">블루</option><option value="pink">핑크</option></select>
-                <label class="sr" for="cd-${c.uuid}">${nm} 칩 증감 (차감은 음수)</label>
+                <label class="sr" for="cd-${c.uuid}">${nm} 코인 증감 (차감은 음수)</label>
                 <input class="input" type="number" inputmode="numeric" step="1" id="cd-${c.uuid}" name="delta" placeholder="+100 / -50" required aria-describedby="cd-${c.uuid}-err">
                 <label class="sr" for="cr-${c.uuid}">사유</label>
                 <input class="input" type="text" id="cr-${c.uuid}" name="reason" placeholder="사유" maxlength="60">
@@ -637,7 +640,7 @@ async function admInvite(){
   });
 }
 
-/* ----- 구매 요청 (update-7.sql) — 승인하면 서버가 칩 차감 + 재고 감소 + 소지품 지급을 한 번에 ----- */
+/* ----- 구매 요청 (update-7.sql) — 승인하면 서버가 코인 차감 + 재고 감소 + 소지품 지급을 한 번에 ----- */
 const SHOP_ST = { pending: "승인 대기", approved: "승인", rejected: "거절", cancelled: "본인 취소" };
 ADM.shopFilter = "pending";
 export async function admShop(){
@@ -694,7 +697,7 @@ async function admShopDecide(btn, approve){
   await withBusy(btn, async () => {
     const { error } = await sb.rpc("admin_shop_decide", { p_request: id, p_approve: approve, p_note: note });
     if (error){ toast(errMsg(error)); admStatus(errMsg(error)); return; }
-    toast(approve ? "승인했습니다 — 칩 차감·지급 완료" : "거절했습니다");
+    toast(approve ? "승인했습니다 — 코인 차감·지급 완료" : "거절했습니다");
     await admShop();
     if (approve) refreshPublic();   // 재고·소지품이 바뀜
   });
@@ -710,7 +713,7 @@ document.addEventListener("comu:shop-req", () => {
   clearTimeout(shopT); shopT = setTimeout(() => admShop().catch(() => {}), 300);
 });
 
-/* ----- 칩 정산 요청 (update-9.sql) — 승인하면 칩 기록에 바로 들어감 ----- */
+/* ----- 코인 정산 요청 (update-9.sql) — 승인하면 코인 기록에 바로 들어감 ----- */
 ADM.creqFilter = "pending";
 export async function admChipReq(){
   let q = sb.from("chip_requests").select(`id, character_id, amount, reason, status, admin_note, requested_by, decided_by, created_at, decided_at${CURRENCY.ok ? ", currency" : ""}`)
@@ -733,15 +736,15 @@ export async function admChipReq(){
   const sign = v => (v > 0 ? "+" : "") + v.toLocaleString("ko-KR");
   admPanel().innerHTML = `
     <div class="card adm-shop">
-      <div class="g-head"><h2 class="card-h" style="margin:0">칩 정산 요청</h2>
+      <div class="g-head"><h2 class="card-h" style="margin:0">코인 정산 요청</h2>
         <div class="seg" role="group" aria-label="보기" id="creq-filter" style="margin-left:auto">
           <button type="button" data-creq-filter="pending" aria-pressed="${ADM.creqFilter === "pending"}">대기 ${pend}</button>
           <button type="button" data-creq-filter="all" aria-pressed="${ADM.creqFilter === "all"}">기록</button>
           <span class="seg-ink" aria-hidden="true"></span>
         </div></div>
       ${rows.length ? `<div class="table-scroll"><table class="members shop-log">
-        <caption class="sr">칩 정산 요청 — 요청 시각, 캐릭터, 칩, 사유, 처리</caption>
-        <thead><tr><th scope="col">요청</th><th scope="col">캐릭터</th><th scope="col">칩</th><th scope="col">사유</th><th scope="col">처리</th></tr></thead>
+        <caption class="sr">코인 정산 요청 — 요청 시각, 캐릭터, 코인, 사유, 처리</caption>
+        <thead><tr><th scope="col">요청</th><th scope="col">캐릭터</th><th scope="col">코인</th><th scope="col">사유</th><th scope="col">처리</th></tr></thead>
         <tbody>${rows.map(r => {
           const c = chars.get(r.character_id), b = balIn(r.character_id, r.currency), short = r.status === "pending" && b + r.amount < 0;
           return `<tr class="st-${r.status}">
@@ -764,7 +767,7 @@ async function admChipDecide(btn, approve){
   await withBusy(btn, async () => {
     const { error } = await sb.rpc("admin_chip_decide", { p_request: box.dataset.creqRow, p_approve: approve, p_note: note });
     if (error){ toast(errMsg(error)); return; }
-    toast(approve ? "승인했습니다 — 칩 반영 완료" : "거절했습니다");
+    toast(approve ? "승인했습니다 — 코인 반영 완료" : "거절했습니다");
     await admChipReq();
   });
 }
@@ -885,7 +888,7 @@ admPanel().addEventListener("click", async e => {
   if (t.closest(".bm-link")){ e.preventDefault(); toast("이 버튼은 누르지 말고 즐겨찾기 막대로 끌어다 놓으세요"); return; }
   if (t.closest("[data-log-room]")) return withBusy(t.closest("[data-log-room]"), logRoom);
   if (t.closest("[data-log-lib]")) return logLibPaste();
-  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261027e"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
+  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261028a"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
   const logSave = t.closest("[data-log-save]");
   if (logSave) return withBusy(logSave, () => logSaveNow(logSave.dataset.id));
   const logDel = t.closest("[data-log-del]");
@@ -981,7 +984,7 @@ async function logRead(input){
   if (!f) return;
   if (f.size > 60 * 1024 * 1024){ fieldError(input, "60MB 이하 파일만 올릴 수 있습니다."); return; }
   $("#log-status").textContent = "읽는 중…";
-  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261027e");
+  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261028a");
   const messages = parseLog(await f.text());
   $("#log-status").textContent = "";
   if (!messages.length){ fieldError(input, "대사를 찾지 못했습니다. 코코포리아에서 내보낸 로그 파일이 맞는지 확인해 주세요."); return; }
@@ -1027,7 +1030,7 @@ function libSummary(extra = ""){
 }
 
 async function logRoom(){
-  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261027e");
+  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261028a");
   const id = roomIdFrom($("#log-room").value);
   if (!id){ $("#log-lib-status").textContent = "코코포리아 룸 링크 형식이 아닙니다. (https://ccfolia.com/rooms/…)"; $("#log-room").focus(); return; }
   try {
@@ -1043,7 +1046,7 @@ async function logRoom(){
 }
 
 async function logLibPaste(){
-  const { parseLibrary } = await import("./logparse.js?v=20261027e");
+  const { parseLibrary } = await import("./logparse.js?v=20261028a");
   try {
     const lib = parseLibrary($("#log-lib-text").value);
     if (!lib.length){ $("#log-lib-status").textContent = "캐릭터를 찾지 못했습니다."; return; }
@@ -1087,7 +1090,7 @@ export async function backupFaces(urls, onProgress = () => {}){
 
 async function logSaveNow(id){
   if (!LOG.messages) return;
-  const { pack } = await import("./logparse.js?v=20261027e");
+  const { pack } = await import("./logparse.js?v=20261028a");
   const include = new Set($$('input[name="log-tab"]:checked').map(i => LOG.info.tabs[+i.value].name));
   const narrators = new Set($$('input[name="log-narr"]:checked').map(i => LOG.info.speakers[+i.value].name));
   if (!include.size){ $("#log-status").textContent = "저장할 탭을 하나 이상 골라 주세요."; return; }
@@ -1146,3 +1149,72 @@ admPanel().addEventListener("click", async e => {
     toast(`${b.dataset.name}에게 임시 비밀번호를 전달해 주세요`, 4000);
   });
 });
+
+/* =========================================================
+   아이템 여러 장 한 번에: 이미지마다 상품 하나 (이름 = 파일 이름). 분류·가격·코인 종류는 한꺼번에
+   ========================================================= */
+function bulkDlg(){
+  let d = $("#bulk-dlg");
+  if (d) return d;
+  document.body.insertAdjacentHTML("beforeend", `<dialog class="dlg" id="bulk-dlg" aria-labelledby="bulk-h">
+    <form class="form" id="bulk-form" method="dialog" novalidate>
+      <h2 class="card-h" id="bulk-h">아이템 여러 장 추가</h2>
+      <p class="form-error" id="bulk-err" role="alert" hidden></p>
+      <label class="img-drop bulk-drop"><input type="file" id="bulk-files" accept="image/*" multiple hidden><span id="bulk-pick">이미지 고르기</span></label>
+      <ul class="bulk-prev" id="bulk-prev"></ul>
+      <div class="row2">
+        <div class="field"><label for="bulk-cat">분류</label><input class="input" id="bulk-cat" maxlength="20" placeholder="예: 파츠"></div>
+        <div class="field"><label for="bulk-stock">재고</label><input class="input" id="bulk-stock" type="number" min="0" step="1" placeholder="무제한"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="bulk-price">가격</label><input class="input" id="bulk-price" type="number" min="0" step="1" placeholder="비우면 가격 미정"></div>
+        <div class="field"><label for="bulk-cur">코인 종류</label><select class="input" id="bulk-cur">${OPT.currency.map(([v, l]) => `<option value="${v}">${l}</option>`).join("")}</select></div>
+      </div>
+      <label class="check"><input type="checkbox" id="bulk-sale" checked>상점에 표시</label>
+      <p class="adm-status" id="bulk-status" role="status"></p>
+      <div class="form-actions"><button class="btn primary" type="submit">추가</button><button class="btn" type="button" data-close>닫기</button></div>
+    </form></dialog>`);
+  d = $("#bulk-dlg");
+  $("[data-close]", d).addEventListener("click", () => d.close());
+  $("#bulk-files").addEventListener("change", e => {
+    const files = [...e.target.files];
+    $("#bulk-pick").textContent = files.length ? `${files.length}장 선택됨` : "이미지 고르기";
+    $("#bulk-prev").innerHTML = files.slice(0, 60).map(f => `<li><img src="${URL.createObjectURL(f)}" alt=""><span>${esc(f.name.replace(/\.[^.]+$/, ""))}</span></li>`).join("");
+  });
+  $("#bulk-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    const files = [...$("#bulk-files").files], err = $("#bulk-err"), st = $("#bulk-status");
+    showMsg(err, "");
+    if (!files.length){ showMsg(err, "이미지를 골라 주세요."); return; }
+    const price = $("#bulk-price").value === "" ? null : parseInt($("#bulk-price").value, 10), stock = $("#bulk-stock").value === "" ? null : parseInt($("#bulk-stock").value, 10);
+    if ((price != null && !(price >= 0)) || (stock != null && !(stock >= 0))){ showMsg(err, "가격과 재고는 0 이상의 정수입니다."); return; }
+    await withBusy($('button[type="submit"]', e.target), async () => {
+      const base = Math.max(-1, ...(ADM.rows.items || []).map(r => r.sort_order ?? 0)) + 1;
+      let ok = 0;
+      for (const [i, f] of files.entries()){
+        st.textContent = `${i + 1} / ${files.length} 올리는 중…`;
+        let path = null;
+        try {
+          const blob = await toWebP(f, CONFIG.IMG.item);
+          path = `item-${Date.now()}-${i}.${extOf(blob)}`;
+          const up = await sb.storage.from("items").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
+          if (up.error) throw up.error;
+          const row = { name: f.name.replace(/\.[^.]+$/, "").slice(0, 40) || "아이템", description: "", price, stock, is_for_sale: $("#bulk-sale").checked,
+            sort_order: base + i, image_path: path, currency: $("#bulk-cur").value };
+          if (CAT.ok) row.category = $("#bulk-cat").value.trim();
+          const { error } = await sb.from("items").insert(row);
+          if (error) throw error;
+          ok++;
+        } catch (x){
+          if (path) sb.storage.from("items").remove([path]);
+          showMsg(err, `${f.name}: ${errMsg(x)}`); break;
+        }
+      }
+      st.textContent = `${ok}개 추가했습니다.`;
+      if (ok){ toast(`아이템 ${ok}개를 추가했습니다`); await admLoad("items"); admRenderCrud("items"); refreshPublic(); }
+      if (ok === files.length){ d.close(); e.target.reset(); $("#bulk-prev").innerHTML = ""; $("#bulk-pick").textContent = "이미지 고르기"; st.textContent = ""; }
+    });
+  });
+  return d;
+}
+admPanel().addEventListener("click", e => { if (e.target.closest("[data-adm-bulk]")) bulkDlg().showModal(); });

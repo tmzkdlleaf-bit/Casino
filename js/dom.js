@@ -1,4 +1,4 @@
-import { SITE_NAME } from "./config.js?v=20261027e";
+import { SITE_NAME } from "./config.js?v=20261028a";
 
 export const setTitle = t => { document.title = t ? `${t} | ${SITE_NAME}` : SITE_NAME; };
 
@@ -42,11 +42,11 @@ export function splitText(el){
 export const ph = (t = "이미지") => `<span aria-hidden="true">${t}</span>`;
 
 /* =========================================================
-   칩 두 종류 (update-12.sql): blue = 블루 칩, pink = 핑크 칩 — 서로 바꿀 수 없음
+   코인 두 종류 (update-12.sql): blue = 블루 코인, pink = 핑크 코인 — 서로 바꿀 수 없음
    ========================================================= */
-export const CUR = { blue: { name: "블루 칩", short: "블루", chip: "green" }, pink: { name: "핑크 칩", short: "핑크", chip: "red" } };
+export const CUR = { blue: { name: "블루 코인", short: "블루", chip: "green" }, pink: { name: "핑크 코인", short: "핑크", chip: "red" } };
 export const curOf = c => (c === "pink" ? "pink" : "blue");
-/* 칩 수 + 색 동그라미 (화면 읽기 프로그램에는 칩 이름도 읽어 줌) */
+/* 코인 수 + 색 동그라미 (화면 읽기 프로그램에는 코인 이름도 읽어 줌) */
 export function chipAmt(amount, cur = "blue", sign = false){
   const k = curOf(cur), v = Number(amount || 0);
   return `<span class="amt amt-${k}" title="${CUR[k].name}"><i class="chip ${CUR[k].chip}" aria-hidden="true"></i>${sign && v > 0 ? "+" : ""}${v.toLocaleString("ko-KR")}<span class="sr"> ${CUR[k].name}</span></span>`;

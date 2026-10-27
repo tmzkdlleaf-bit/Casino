@@ -1,12 +1,12 @@
 /* =========================================================
-   상점 구매 — 요청 → 관리자 승인 → 칩 차감·소지품 지급 (supabase/update-7.sql)
-   요청할 때는 칩이 빠지지 않고, 승인되는 순간 서버에서 한 번에 처리됨
+   상점 구매 — 요청 → 관리자 승인 → 코인 차감·소지품 지급 (supabase/update-7.sql)
+   요청할 때는 코인이 빠지지 않고, 승인되는 순간 서버에서 한 번에 처리됨
    ========================================================= */
-import { CURRENCY, USE_DB, publicUrl, sb, fmtDate, fmtTime } from "./data.js?v=20261027e";
-import { $, CUR, chipAmt, curOf, esc, toast, announce } from "./dom.js?v=20261027e";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261027e";
-import { DATA, state } from "./state.js?v=20261027e";
-import { balOf, myChars, renderShop } from "./views.js?v=20261027e";
+import { CURRENCY, USE_DB, itemCols, mapItem, publicUrl, sb, fmtDate, fmtTime } from "./data.js?v=20261028a";
+import { $, CUR, chipAmt, curOf, esc, toast, announce } from "./dom.js?v=20261028a";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261028a";
+import { DATA, state } from "./state.js?v=20261028a";
+import { balOf, myChars, renderShop } from "./views.js?v=20261028a";
 
 export const SHOP = { reqs: [], ok: true, loaded: false };
 export const STATUS = { pending: "승인 대기", approved: "승인됨", rejected: "거절됨", cancelled: "취소함" };
@@ -27,7 +27,7 @@ export async function loadMyRequests(){
   SHOP.reqs = data || [];
 }
 
-/* 대기 중인 요청 합계 — 이만큼은 승인되면 빠질 칩 */
+/* 대기 중인 요청 합계 — 이만큼은 승인되면 빠질 코인 */
 export const pendingOf = (uuid, cur = "blue") => SHOP.reqs.filter(r => r.character_id === uuid && r.status === "pending" && curOf(r.currency) === curOf(cur)).reduce((s, r) => s + r.total, 0);
 
 /* 기본으로 고를 캐릭터: 참가자 우선 */
@@ -101,7 +101,7 @@ document.addEventListener("submit", async e => {
   showMsg(err, "");
   const qty = parseInt(qtyEl.value, 10);
   if (!(qty >= 1 && qty <= +qtyEl.max)){ showMsg(err, `수량은 1~${qtyEl.max}개입니다.`); qtyEl.focus(); return; }
-  if (!confirm(`${it.name} ${qty}개 (${CUR[curOf(it.currency)].name} ${n(it.price * qty)})를 구매 요청할까요?\n관리자가 승인하면 칩이 빠집니다.`)) return;
+  if (!confirm(`${it.name} ${qty}개 (${CUR[curOf(it.currency)].name} ${n(it.price * qty)})를 구매 요청할까요?\n관리자가 승인하면 코인이 빠집니다.`)) return;
   await withBusy($('button[type="submit"]', f), async () => {
     const { error } = await sb.rpc("shop_request", { p_character: buyer, p_item: it.id, p_quantity: qty, p_memo: $("#buy-memo").value.trim() });
     if (error){ showMsg(err, missingTable(error) ? "구매 기능이 아직 준비되지 않았습니다. (관리자: update-7.sql 실행 필요)" : errMsg(error)); return; }
@@ -138,7 +138,16 @@ export async function onRequestChange(row){
 
 /* 승인으로 재고가 바뀌었을 수 있으니 상품만 다시 불러옴 */
 export async function reloadItems(){
-  const { data, error } = await sb.from("items").select(`id, name, description, image_path, price, stock, sort_order${CURRENCY.ok ? ", currency" : ""}`).eq("is_for_sale", true).order("sort_order");
+  const { data, error } = await sb.from("items").select(itemCols()).eq("is_for_sale", true).order("sort_order");
   if (error) return;
-  DATA.items = data.map(it => ({ id: it.id, name: it.name, description: it.description, price: it.price, stock: it.stock, currency: curOf(it.currency), img: publicUrl("items", it.image_path) }));
+  DATA.items = data.map(mapItem);
 }
+
+/* 상점 분류 탭 */
+document.addEventListener("click", e => {
+  const b = e.target.closest("#shop-cats [data-cat]");
+  if (!b) return;
+  state.shopCat = b.dataset.cat;
+  state.shopSel = null;
+  renderShop();
+});

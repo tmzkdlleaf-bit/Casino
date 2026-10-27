@@ -180,3 +180,12 @@ table.shop-log .st-cancelled{opacity:.6}
 .pw-cell{text-align:right; white-space:nowrap}
 .pw-temp{font-size:.8125rem; color:var(--text-2)}
 .pw-temp code{padding:.1rem .4rem; background:var(--black); color:var(--ivory); font-family:inherit; letter-spacing:.04em; user-select:all}
+
+/* 아이템 여러 장 */
+.adm-new-row{display:flex; gap:.5rem}
+.adm-new-row .btn:first-child{flex:1}
+.bulk-drop{display:grid; place-items:center; min-height:4rem; border:2px dashed var(--line-strong); cursor:pointer; color:var(--text-2)}
+.bulk-prev{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill, minmax(4.2rem, 1fr)); gap:.4rem; max-height:14rem; overflow:auto}
+.bulk-prev li{display:grid; gap:.2rem; justify-items:center; font-size:.6875rem; color:var(--text-2)}
+.bulk-prev img{width:3.6rem; height:3.6rem; object-fit:contain; image-rendering:pixelated; background:var(--black)}
+.bulk-prev span{max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}

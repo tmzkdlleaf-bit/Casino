@@ -1,9 +1,9 @@
-import { loadMine } from "./auth.js?v=20261027e";
-import { CONFIG } from "./config.js?v=20261027e";
-import { $, toast } from "./dom.js?v=20261027e";
-import { route } from "./router.js?v=20261027e";
-import { DATA, nav, state } from "./state.js?v=20261027e";
-import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261027e";
+import { loadMine } from "./auth.js?v=20261028a";
+import { CONFIG } from "./config.js?v=20261028a";
+import { $, toast } from "./dom.js?v=20261028a";
+import { route } from "./router.js?v=20261028a";
+import { DATA, nav, state } from "./state.js?v=20261028a";
+import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261028a";
 
 /* =========================================================
    DATA LAYER — Supabase 조회 → 화면용 DATA 모양으로 변환
@@ -114,9 +114,12 @@ export async function loadSlots(){
   return (data || []).filter(s => s.status !== "cancelled" && s.status !== "canceled");
 }
 
-/* 칩 두 종류 (update-12.sql) — 그 전이면 상품은 모두 블루 칩으로 */
+/* 코인 두 종류 (update-12.sql) — 그 전이면 상품은 모두 블루 코인으로 */
 export const CURRENCY = { ok: true };
-const itemQuery = () => sb.from("items").select(`id, name, description, image_path, price, stock, sort_order${CURRENCY.ok ? ", currency" : ""}`)
+export const CAT = { ok: true };   // items.category (update-17.sql)
+export const itemCols = () => `id, name, description, image_path, price, stock, sort_order${CURRENCY.ok ? ", currency" : ""}${CAT.ok ? ", category" : ""}`;
+export const mapItem = it => ({ id: it.id, name: it.name, description: it.description, price: it.price, stock: it.stock, currency: it.currency === "pink" ? "pink" : "blue", category: (it.category || "").trim(), img: publicUrl("items", it.image_path) });
+const itemQuery = () => sb.from("items").select(itemCols())
   .eq("is_for_sale", true).order("sort_order");
 
 export async function loadAll(){
@@ -131,6 +134,7 @@ export async function loadAll(){
   if (EXTRA.ok && missingCol(q[0].error, "links|bgm_url")){ EXTRA.ok = false; q = [...q]; q[0] = await charQuery(); }
   if (ROLE.ok && missingCol(q[0].error, "role_title")){ ROLE.ok = false; q = [...q]; q[0] = await charQuery(); }
   if (LOGS.ok && missingCol(q[1].error, "log_path")){ LOGS.ok = false; q = [...q]; q[1] = await chapterQuery(); }
+  if (CAT.ok && missingCol(q[2].error, "category")){ CAT.ok = false; q = [...q]; q[2] = await itemQuery(); }
   if (CURRENCY.ok && missingCol(q[2].error, "currency")){ CURRENCY.ok = false; q = [...q]; q[2] = await itemQuery(); }
   const failed = q.find(r => r.error);
   if (failed) throw failed.error;
@@ -143,7 +147,7 @@ export async function loadAll(){
     dealers: all.filter(c => c.role === "직원"),
     players: all.filter(c => c.role === "참가자"),
     chapters: chapters.map(c => ({ id: c.id, number: c.number, title: c.title, summary: c.summary, date: fmtDate(c.played_on), iso: c.played_on, log: publicUrl("logs", c.log_path) })),
-    items: items.map(it => ({ id: it.id, name: it.name, description: it.description, price: it.price, stock: it.stock, currency: it.currency === "pink" ? "pink" : "blue", img: publicUrl("items", it.image_path) })),
+    items: items.map(mapItem),
     slots: slots.map(s => ({ id: s.id, game: s.game || "", start: s.starts_at, end: s.ends_at, dealer: byUuid[s.dealer_character_id] || null })),
     records
   };
@@ -166,7 +170,7 @@ export function showBootError(err){
 }
 
 /* =========================================================
-   REALTIME — 내 칩이 새로고침 없이 갱신됨
+   REALTIME — 내 코인이 새로고침 없이 갱신됨
    ========================================================= */
 export let chanProfile = null;
 let ledgerT = 0;
@@ -185,7 +189,7 @@ export function subscribeProfile(){
       renderAccount();
       if (wasAdmin !== state.isAdmin) route();
     })
-    // 칩 기록은 RLS 때문에 내 캐릭터 것(관리자는 전부)만 도착함 → 잔액 다시 조회
+    // 코인 기록은 RLS 때문에 내 캐릭터 것(관리자는 전부)만 도착함 → 잔액 다시 조회
     //   룰렛 정산처럼 한 번에 여러 줄이 들어오면 묶어서 한 번만 (0.4초)
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "chip_ledger" }, () => {
       clearTimeout(ledgerT);
@@ -193,18 +197,18 @@ export function subscribeProfile(){
     })
     // 구매 요청: 멤버는 자기 것만, 관리자는 전부 도착 (update-7.sql)
     .on("postgres_changes", { event: "*", schema: "public", table: "shop_requests" }, ({ eventType, new: row }) => {
-      import("./shop.js?v=20261027e").then(m => m.onRequestChange(row));
-      import("./notify.js?v=20261027e").then(m => m.notifyDecision(row, "shop"));
+      import("./shop.js?v=20261028a").then(m => m.onRequestChange(row));
+      import("./notify.js?v=20261028a").then(m => m.notifyDecision(row, "shop"));
       if (!state.isAdmin) return;
       if (eventType === "INSERT" && !state.mine.some(m => m.uuid === row.character_id)) toast(`새 구매 요청: ${row.item_name} ×${row.quantity}`);
       document.dispatchEvent(new CustomEvent("comu:shop-req", { detail: row }));
     })
-    // 칩 정산 요청 (update-9.sql)
+    // 코인 정산 요청 (update-9.sql)
     .on("postgres_changes", { event: "*", schema: "public", table: "chip_requests" }, ({ eventType, new: row }) => {
-      import("./chipreq.js?v=20261027e").then(m => m.onChipRequestChange(row));
-      import("./notify.js?v=20261027e").then(m => m.notifyDecision(row, "chip"));
+      import("./chipreq.js?v=20261028a").then(m => m.onChipRequestChange(row));
+      import("./notify.js?v=20261028a").then(m => m.notifyDecision(row, "chip"));
       if (!state.isAdmin) return;
-      if (eventType === "INSERT" && !state.mine.some(m => m.uuid === row.character_id)) toast(`새 칩 정산 요청: ${row.amount > 0 ? "+" : ""}${row.amount}칩`);
+      if (eventType === "INSERT" && !state.mine.some(m => m.uuid === row.character_id)) toast(`새 코인 정산 요청: ${row.amount > 0 ? "+" : ""}${row.amount}코인`);
       document.dispatchEvent(new CustomEvent("comu:chip-req", { detail: row }));
     })
     .subscribe();

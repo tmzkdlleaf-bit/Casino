@@ -1,7 +1,7 @@
 /* =========================================================
    효과음 — 파일 없이 브라우저(Web Audio)에서 바로 합성
    저작권·용량 걱정 없음. 브라우저 규칙상 방문자가 화면을 한 번 누른 뒤부터 소리가 남
-   card 카드 · click 빈 칸 철컥 · charge 충전 · zap 파지직 · spin 탄창 돌리기 · turn 내 차례 · bet 칩 · win 우승 · out 탈락
+   card 카드 · click 빈 칸 철컥 · charge 충전 · zap 파지직 · spin 탄창 돌리기 · turn 내 차례 · bet 코인 · win 우승 · out 탈락
    ========================================================= */
 const KEY = "comu-sfx", VKEY = "comu-sfx-vol";
 let ctx = null, master = null, noiseBuf = null;
@@ -127,7 +127,7 @@ const SOUNDS = {
     tone("triangle", 880, t, .005, .25, .16);
     tone("triangle", 1320, t + .11, .005, .25, .24);
   },
-  /* 칩 놓기: 높은 짤랑 두 번 */
+  /* 코인 놓기: 높은 짤랑 두 번 */
   bet(){
     const t = now();
     [0, .06].forEach((d, i) => { tone("sine", 3100 + i * 420, t + d, .001, .22, .14); tone("sine", 4700 + i * 300, t + d, .001, .1, .08); noise(t + d, .02, .2, "highpass", 6000, 1); });

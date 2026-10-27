@@ -1,7 +1,7 @@
-import { HERO_CHIPS, SUITS } from "./config.js?v=20261027e";
-import { $, $$, esc, isRed, splitText, suitIcon } from "./dom.js?v=20261027e";
-import { DATA, motionOK, state } from "./state.js?v=20261027e";
-import { ALL, placeSegInk, renderCast } from "./views.js?v=20261027e";
+import { HERO_CHIPS, SUITS } from "./config.js?v=20261028a";
+import { $, $$, esc, isRed, splitText, suitIcon } from "./dom.js?v=20261028a";
+import { DATA, motionOK, state } from "./state.js?v=20261028a";
+import { ALL, placeSegInk, renderCast } from "./views.js?v=20261028a";
 
 /* ---------- effects ---------- */
 
@@ -12,7 +12,7 @@ export function moveInk(container, active, ink){
   ink.style.width = active.offsetWidth + "px";
 }
 
-/* 홈에 떨어지는 칩 */
+/* 홈에 떨어지는 코인 */
 export function renderHeroChips(){
   $("#hero-chips").innerHTML = HERO_CHIPS.map(([l, t, size, c, r, tx, d]) =>
     `<span class="fall" style="left:${l}%;top:${t}%;--d:${d}s"><span class="chip ${c}" style="--size:${size}rem;--tx:${tx}deg;--r1:${r}deg"></span></span>`).join("");
@@ -171,8 +171,8 @@ export function applyShow(){
 }
 
 /* ---------- intro ----------
-   0.15s 칩 착지 + 고리 파동 → 0.95s 카드가 사방에서 날아와 모임 → 1.75s 부채꼴
-   → 2.05s 뒤집힘 → 2.2s 칩 폭발·불티·섬광 → 2.3s 이름 → 2.95s 금빛 훑기 → 3.7s 막이 열림 */
+   0.15s 코인 착지 + 고리 파동 → 0.95s 카드가 사방에서 날아와 모임 → 1.75s 부채꼴
+   → 2.05s 뒤집힘 → 2.2s 코인 폭발·불티·섬광 → 2.3s 이름 → 2.95s 금빛 훑기 → 3.7s 막이 열림 */
 const R = (a, b) => a + Math.random() * (b - a);
 const K = 1.6;   // 인트로 속도 배율 — CSS .opening의 --k와 같은 값
 
@@ -233,7 +233,7 @@ export function runIntro({ force = false } = {}){
   }
   function open(){
     intro.classList.add("out");
-    document.body.classList.remove("intro-on");                      // 막이 열리는 순간 홈의 칩·제목이 움직이기 시작
+    document.body.classList.remove("intro-on");                      // 막이 열리는 순간 홈의 코인·제목이 움직이기 시작
   }
   function skip(){
     if (done) return; done = true;

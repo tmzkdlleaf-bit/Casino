@@ -5,12 +5,12 @@
    - 탄 위치는 서버만 앎. 화면은 서버가 돌려준 결과(채팅의 'shot' 기록)를 보고 효과만 그림
    - 실시간 연결이 끊겨도 5초마다 다시 불러와 따라감
    ========================================================= */
-import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261027e";
-import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261027e";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261027e";
-import { motionOK, nav, state } from "./state.js?v=20261027e";
-import { ALL, balOf, myChars } from "./views.js?v=20261027e";
-import { sfx, sfxVol, setSfxVol } from "./sfx.js?v=20261027e";
+import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261028a";
+import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261028a";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261028a";
+import { motionOK, nav, state } from "./state.js?v=20261028a";
+import { ALL, balOf, myChars } from "./views.js?v=20261028a";
+import { sfx, sfxVol, setSfxVol } from "./sfx.js?v=20261028a";
 
 /* ---------- 전기 충격기 (도트 그림) — 오른쪽을 향함, 한 칸 = 1 ---------- */
 const GUN = ["........................................", "....KKKKKKKKKKKKKKKKKKKKKKKKK...........", "...KSSSSSSSSSSSSSSSSSSSSSSSSSK..........", "..KLLLLLLLLLLLLLLLLLLLLLLLLLLLKKKKKKKK..", "..KLBBYYBYYBYYBBBBBBBBBBBBBBBKPPPPPPPK..", "..KLBBBBBBBBBBBBBBBBBBBBBBBBBKPQQQQQPKWW", "..KDBBBBBBBBBBBBBBBBBBBBBBBBBKPPPPPPPK..", "..KDDDDDDDDDDDDDDDDDDDDDDDDDDKPQQQQQPKWW", "..KKKKKKDDDDDDDKKKKKKKKKKKKKKKPPPPPPPK..", ".......KGGGGGKDK....K.......KKKKKKKKK...", "......KGgGGGKKDK...K....................", "......KGGGGGK.KMK..K....................", ".....KGgGGGK...KMKK.....................", ".....KGGGGGK....KK......................", "....KGgGGGK.............................", "....KGGGGGK.............................", "....KKKKKKK............................."];
@@ -568,7 +568,7 @@ async function act(btn){
   if (a === "auto"){ RL.autoDummy = !RL.autoDummy; try { sessionStorage.setItem("rl-auto:" + RL.id, RL.autoDummy ? "1" : ""); } catch (_) {} renderTools(); renderBar(); autoDummy(); toast(RL.autoDummy ? "더미 차례를 자동으로 진행합니다" : "더미 자동 진행을 껐습니다"); return; }
   if (a === "avatar") return openAvatar();
   if (a === "cancel" && !confirm("게임을 취소할까요? 참가비와 베팅은 모두 돌려줍니다.")) return;
-  if (a === "delete" && !confirm("이 방을 지울까요? 채팅과 베팅 기록도 함께 지워집니다. (칩 기록과 전적은 남습니다)")) return;
+  if (a === "delete" && !confirm("이 방을 지울까요? 채팅과 베팅 기록도 함께 지워집니다. (코인 기록과 전적은 남습니다)")) return;
   if (a === "start" && r.entry_fee && !confirm(`시작하면 자리마다 참가비 ${CUR[curOf(r.currency)].name} ${n(r.entry_fee)}을 걷습니다. 시작할까요?`)) return;
   await withBusy(btn, async () => {
     let res = null;
@@ -617,7 +617,7 @@ function openBet(){
   showMsg($("#rl-bet-err"), "");
   $("#rl-bet-seats").innerHTML = RL.seats.filter(s => s.alive).map((s, k) => {
     const on = RL.bets.filter(b => b.seat === s.seat).reduce((x, b) => x + b.amount, 0);
-    return `<label class="check"><input type="radio" name="rl-bet-seat" value="${s.seat}"${k === 0 ? " checked" : ""}>${esc(seatChar(s).name)} <span class="hint" style="display:inline; margin:0">— ${n(on)}칩 걸림${total ? ` (${Math.round(on / total * 100)}%)` : ""}</span></label>`;
+    return `<label class="check"><input type="radio" name="rl-bet-seat" value="${s.seat}"${k === 0 ? " checked" : ""}>${esc(seatChar(s).name)} <span class="hint" style="display:inline; margin:0">— ${n(on)}코인 걸림${total ? ` (${Math.round(on / total * 100)}%)` : ""}</span></label>`;
   }).join("");
   $("#rl-bet-char").innerHTML = chars.map(c => `<option value="${esc(c.uuid)}"${c.uuid === RL.myChar ? " selected" : ""}>${esc(c.name)} — ${CUR[curOf(RL.room?.currency)].short} ${n(balOf(c, RL.room?.currency))}</option>`).join("");
   betEstimate();
@@ -628,12 +628,12 @@ $("#rl-bet-form").addEventListener("submit", async e => {
   e.preventDefault();
   const seat = $('input[name="rl-bet-seat"]:checked'), amt = parseInt($("#rl-bet-amt").value, 10);
   if (!seat){ showMsg($("#rl-bet-err"), "걸 사람을 골라 주세요."); return; }
-  if (!(amt >= 1)){ showMsg($("#rl-bet-err"), "1칩 이상 걸어 주세요."); $("#rl-bet-amt").focus(); return; }
+  if (!(amt >= 1)){ showMsg($("#rl-bet-err"), "1코인 이상 걸어 주세요."); $("#rl-bet-amt").focus(); return; }
   await withBusy($('button[type="submit"]', e.target), async () => {
     const { error } = await sb.rpc("roulette_bet", { p_room: RL.id, p_seat: +seat.value, p_character: $("#rl-bet-char").value, p_amount: amt });
     if (error){ showMsg($("#rl-bet-err"), errMsg(error)); return; }
     $("#rl-bet-dlg").close();
-    toast(`${n(amt)}칩을 걸었습니다`);
+    toast(`${n(amt)}코인을 걸었습니다`);
     load(true);
   });
 });
@@ -671,7 +671,7 @@ $("#rl-ava-form").addEventListener("submit", async e => {
   const cid = $("#rl-ava-char").value, old = RL.avatars.get(cid)?.path;
   await withBusy($('button[type="submit"]', e.target), async () => {
     try {
-      const { toWebP, extOf } = await import("./img.js?v=20261027e");
+      const { toWebP, extOf } = await import("./img.js?v=20261028a");
       const blob = await toWebP(avaFile, 512), path = `${cid}/${Date.now()}.${extOf(blob)}`;
       const up = await sb.storage.from("roulette").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
       if (up.error) throw up.error;
@@ -693,7 +693,7 @@ $("#rl-ava-del").addEventListener("click", async e => {
   });
 });
 
-/* 로그인·로그아웃, 칩 변화, 창 크기 */
+/* 로그인·로그아웃, 코인 변화, 창 크기 */
 document.addEventListener("comu:auth", () => { if (nav.current === "roulette" && RL.room) render(); if (nav.current === "game") loadLobby(); });
 addEventListener("resize", () => { if (nav.current === "roulette" && RL.room) aimGun(RL.target ?? RL.room.turn_seat); });
 

@@ -1,11 +1,11 @@
 /* =========================================================
-   요청 처리 결과 알림 — 구매 요청 · 칩 정산 요청
+   요청 처리 결과 알림 — 구매 요청 · 코인 정산 요청
    · 접속 중: 관리자가 승인/거절하는 순간 알림
    · 다음 접속 때: 마지막으로 본 뒤 처리된 요청 개수 안내
    마지막으로 본 시각은 이 브라우저에 계정별로 저장
    ========================================================= */
-import { CUR, curOf, toast } from "./dom.js?v=20261027e";
-import { state } from "./state.js?v=20261027e";
+import { CUR, curOf, toast } from "./dom.js?v=20261028a";
+import { state } from "./state.js?v=20261028a";
 
 const key = () => "comu-seen-dec:" + (state.session?.user.id || "");
 const n = v => Number(v || 0).toLocaleString("ko-KR");

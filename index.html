@@ -27,24 +27,24 @@
 <!-- 제목·버튼: 갈무리 도트 글꼴 (SIL OFL, 버전 고정 + SRI) / 본문: IBM Plex Sans KR — 실제 쓰는 굵기만 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.css" integrity="sha384-55uQGdclWjXwWY0yHikdtcfcat9pPBqMBCVFIeWjRhvPPUYbpJLhIJegzTcFoh/A" crossorigin="anonymous">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="css/site.css?v=20261027e">
+<link rel="stylesheet" href="css/site.css?v=20261028a">
 <!-- 파일 주소 끝의 ?v=날짜 는 버전 표시 — 바꿔 올릴 때마다 함께 바꾸면 브라우저가 옛 파일을 쓰지 않음 (js 안의 import 주소도 같은 값) -->
 <!-- 모듈 미리 받기: import 사슬을 따라 차례로 받는 대기 시간 제거 (관리 모듈은 제외 — 관리자만 필요할 때 받음) -->
-<link rel="modulepreload" href="js/main.js?v=20261027e">
-<link rel="modulepreload" href="js/config.js?v=20261027e">
-<link rel="modulepreload" href="js/state.js?v=20261027e">
-<link rel="modulepreload" href="js/dom.js?v=20261027e">
-<link rel="modulepreload" href="js/data.js?v=20261027e">
-<link rel="modulepreload" href="js/views.js?v=20261027e">
-<link rel="modulepreload" href="js/effects.js?v=20261027e">
-<link rel="modulepreload" href="js/router.js?v=20261027e">
-<link rel="modulepreload" href="js/auth.js?v=20261027e">
-<link rel="modulepreload" href="js/forms.js?v=20261027e">
-<link rel="modulepreload" href="js/markdown.js?v=20261027e">
-<link rel="modulepreload" href="js/ambience.js?v=20261027e">
-<link rel="modulepreload" href="js/navorder.js?v=20261027e">
-<link rel="modulepreload" href="js/charedit.js?v=20261027e">
-<link rel="modulepreload" href="js/shop.js?v=20261027e">
+<link rel="modulepreload" href="js/main.js?v=20261028a">
+<link rel="modulepreload" href="js/config.js?v=20261028a">
+<link rel="modulepreload" href="js/state.js?v=20261028a">
+<link rel="modulepreload" href="js/dom.js?v=20261028a">
+<link rel="modulepreload" href="js/data.js?v=20261028a">
+<link rel="modulepreload" href="js/views.js?v=20261028a">
+<link rel="modulepreload" href="js/effects.js?v=20261028a">
+<link rel="modulepreload" href="js/router.js?v=20261028a">
+<link rel="modulepreload" href="js/auth.js?v=20261028a">
+<link rel="modulepreload" href="js/forms.js?v=20261028a">
+<link rel="modulepreload" href="js/markdown.js?v=20261028a">
+<link rel="modulepreload" href="js/ambience.js?v=20261028a">
+<link rel="modulepreload" href="js/navorder.js?v=20261028a">
+<link rel="modulepreload" href="js/charedit.js?v=20261028a">
+<link rel="modulepreload" href="js/shop.js?v=20261028a">
 </head>
 <body class="intro-on loading">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -259,7 +259,7 @@
       <div class="head-side">
         <p class="page-lede">상점 안내 문구 자리입니다.</p>
         <div class="wallet-pill">
-          <span id="wallet-label">보유 칩</span>
+          <span id="wallet-label">보유 코인</span>
           <span class="wallet"><span class="chip red" aria-hidden="true"></span><strong id="wallet" aria-describedby="wallet-label">—</strong></span>
         </div>
       </div>
@@ -267,6 +267,7 @@
     <div class="shop-wrap">
       <div class="pane shop-pane" tabindex="0" role="region" aria-labelledby="shop-h">
         <h2 class="sr" id="shop-h">상품 목록</h2>
+        <div class="shop-cats" id="shop-cats" role="group" aria-label="분류" hidden></div>
         <div class="shop" id="shop"></div>
       </div>
       <aside class="g-panel shop-detail" id="shop-detail" aria-label="선택한 상품" aria-live="polite" tabindex="0"></aside>
@@ -313,8 +314,8 @@
           <div class="rec-layout">
             <div class="table-scroll">
               <table class="rec">
-                <caption class="sr">게임 전적 — 일시, 게임, 승자, 참가, 칩, 메모</caption>
-                <thead><tr><th scope="col">일시</th><th scope="col">게임</th><th scope="col">승자</th><th scope="col">참가</th><th scope="col" class="num">칩</th><th scope="col">메모</th></tr></thead>
+                <caption class="sr">게임 전적 — 일시, 게임, 승자, 참가, 코인, 메모</caption>
+                <thead><tr><th scope="col">일시</th><th scope="col">게임</th><th scope="col">승자</th><th scope="col">참가</th><th scope="col" class="num">코인</th><th scope="col">메모</th></tr></thead>
                 <tbody id="rec-body"></tbody>
               </table>
               <div class="rec-more" id="rec-more" hidden><button class="btn small" type="button" id="rec-more-btn">더 보기</button></div>
@@ -416,16 +417,16 @@
         <section class="g-panel card" aria-labelledby="acct-h">
           <h2 class="card-h" id="acct-h">계정</h2>
           <div id="acct-guest">
-            <p class="muted">로그인하면 표시 이름과 보유 칩을 확인할 수 있습니다.</p>
+            <p class="muted">로그인하면 표시 이름과 보유 코인을 확인할 수 있습니다.</p>
             <a class="btn primary" href="#login">로그인</a>
           </div>
           <form class="form" id="acct-form" novalidate hidden>
             <dl class="kv">
               <dt>아이디</dt><dd id="acct-email"></dd>
               <dt>내 캐릭터</dt><dd id="acct-char"></dd>
-              <dt>보유 칩</dt><dd id="acct-chips"></dd>
+              <dt>보유 코인</dt><dd id="acct-chips"></dd>
             </dl>
-            <p class="hint">칩은 캐릭터별로 쌓입니다.</p>
+            <p class="hint">코인은 캐릭터별로 쌓입니다.</p>
             <div class="field">
               <label for="set-name">표시 이름</label>
               <input class="input" id="set-name" name="nickname" type="text" autocomplete="nickname" maxlength="30" required aria-describedby="set-name-err">
@@ -438,17 +439,17 @@
             </div>
           </form>
         </section>
-        <!-- 칩 정산 요청: 멤버가 올리고 관리자가 승인 (supabase/update-9.sql) -->
+        <!-- 코인 정산 요청: 멤버가 올리고 관리자가 승인 (supabase/update-9.sql) -->
         <section class="g-panel card" aria-labelledby="creq-h" id="creq-card" hidden>
-          <h2 class="card-h" id="creq-h">칩 정산 요청</h2>
+          <h2 class="card-h" id="creq-h">코인 정산 요청</h2>
                     <form class="form" id="creq-form" novalidate>
             <p class="form-error" id="creq-err" role="alert" hidden></p>
             <div class="field" id="creq-char-f"><label for="creq-char">캐릭터</label><select class="input" id="creq-char"></select></div>
             <div class="row2">
-              <div class="field"><label for="creq-amt">칩</label>
-                <div class="amt-row"><fieldset class="cur-pick" aria-label="칩 종류">
-                  <label class="cur-opt cur-blue"><input type="radio" name="creq-cur" value="blue" checked><span class="chip green" aria-hidden="true"></span><span class="sr">블루 칩</span></label>
-                  <label class="cur-opt cur-pink"><input type="radio" name="creq-cur" value="pink"><span class="chip red" aria-hidden="true"></span><span class="sr">핑크 칩</span></label>
+              <div class="field"><label for="creq-amt">코인</label>
+                <div class="amt-row"><fieldset class="cur-pick" aria-label="코인 종류">
+                  <label class="cur-opt cur-blue"><input type="radio" name="creq-cur" value="blue" checked><span class="chip green" aria-hidden="true"></span><span class="sr">블루 코인</span></label>
+                  <label class="cur-opt cur-pink"><input type="radio" name="creq-cur" value="pink"><span class="chip red" aria-hidden="true"></span><span class="sr">핑크 코인</span></label>
                 </fieldset><input class="input" id="creq-amt" type="number" inputmode="numeric" step="1" placeholder="100 또는 -50" required></div></div>
               <div class="field"><label for="creq-why">사유</label><input class="input" id="creq-why" maxlength="200" placeholder="예: 10월 1주 활동" required></div>
             </div>
@@ -461,7 +462,7 @@
           <div class="switch">
             <div>
               <label for="set-calm">애니메이션 끄기</label>
-              <span class="hint" id="set-calm-hint">인트로·칩 낙하·자동 넘김·전환 효과를 멈춥니다.</span>
+              <span class="hint" id="set-calm-hint">인트로·코인 낙하·자동 넘김·전환 효과를 멈춥니다.</span>
             </div>
             <input type="checkbox" role="switch" id="set-calm" name="calm" aria-describedby="set-calm-hint">
           </div>
@@ -634,7 +635,7 @@
     <fieldset class="field rl-pick"><legend>누구에게</legend><div id="rl-bet-seats"></div></fieldset>
     <div class="row2">
       <div class="field"><label for="rl-bet-char">내 캐릭터</label><select class="input" id="rl-bet-char"></select></div>
-      <div class="field"><label for="rl-bet-amt">칩</label><input class="input" id="rl-bet-amt" type="number" inputmode="numeric" min="1" step="1" value="10" required></div>
+      <div class="field"><label for="rl-bet-amt">코인</label><input class="input" id="rl-bet-amt" type="number" inputmode="numeric" min="1" step="1" value="10" required></div>
     </div>
     <p class="hint" id="rl-bet-est" aria-live="polite"></p>
     <div class="form-actions"><button class="btn primary" type="submit" value="bet">걸기</button><button class="btn" type="button" data-close>닫기</button></div>
@@ -651,9 +652,9 @@
       <div class="field"><label for="rl-new-seats">자리 수</label><select class="input" id="rl-new-seats"><option value="2">2자리</option><option value="3">3자리</option><option value="4">4자리</option><option value="5">5자리</option><option value="6" selected>6자리</option><option value="7">7자리</option><option value="8">8자리</option></select></div>
       <div class="field"><label for="rl-new-fee">참가비</label><input class="input" id="rl-new-fee" type="number" inputmode="numeric" min="0" step="1" value="0"><span class="hint">시작할 때 자리마다 걷어 우승자에게</span></div>
     </div>
-    <fieldset class="field cur-field"><legend>칩 종류</legend><div class="cur-pick big">
-      <label class="cur-opt cur-blue"><input type="radio" name="rl-cur" value="blue" checked><span class="chip green" aria-hidden="true"></span>블루 칩</label>
-      <label class="cur-opt cur-pink"><input type="radio" name="rl-cur" value="pink"><span class="chip red" aria-hidden="true"></span>핑크 칩</label>
+    <fieldset class="field cur-field"><legend>코인 종류</legend><div class="cur-pick big">
+      <label class="cur-opt cur-blue"><input type="radio" name="rl-cur" value="blue" checked><span class="chip green" aria-hidden="true"></span>블루 코인</label>
+      <label class="cur-opt cur-pink"><input type="radio" name="rl-cur" value="pink"><span class="chip red" aria-hidden="true"></span>핑크 코인</label>
     </div></fieldset>
     <fieldset class="field"><legend>넘기기</legend>
       <label class="check"><input type="radio" name="rl-pass" value="after_self" checked>나에게 한 번 쏘고 살아남은 뒤에만</label>
@@ -669,9 +670,9 @@
     <h2 class="card-h" id="bj-new-h">블랙잭 테이블 만들기</h2>
     <p class="form-error" id="bj-new-err" role="alert" hidden></p>
     <div class="field"><label for="bj-new-title">테이블 이름</label><input class="input" id="bj-new-title" maxlength="40" value="블랙잭"></div>
-    <fieldset class="field cur-field"><legend>칩 종류</legend><div class="cur-pick big">
-      <label class="cur-opt cur-blue"><input type="radio" name="bj-cur" value="blue" checked><span class="chip green" aria-hidden="true"></span>블루 칩</label>
-      <label class="cur-opt cur-pink"><input type="radio" name="bj-cur" value="pink"><span class="chip red" aria-hidden="true"></span>핑크 칩</label>
+    <fieldset class="field cur-field"><legend>코인 종류</legend><div class="cur-pick big">
+      <label class="cur-opt cur-blue"><input type="radio" name="bj-cur" value="blue" checked><span class="chip green" aria-hidden="true"></span>블루 코인</label>
+      <label class="cur-opt cur-pink"><input type="radio" name="bj-cur" value="pink"><span class="chip red" aria-hidden="true"></span>핑크 코인</label>
     </div></fieldset>
     <div class="row2">
       <div class="field"><label for="bj-new-min">최소 베팅</label><input class="input" id="bj-new-min" type="number" inputmode="numeric" min="1" step="1" value="10"></div>
@@ -707,6 +708,6 @@
 <!-- 버전 고정 + 무결성 해시(SRI): CDN 파일이 바뀌면 브라우저가 실행을 거부 -->
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"
         integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
-<script type="module" src="js/main.js?v=20261027e"></script>
+<script type="module" src="js/main.js?v=20261028a"></script>
 </body>
 </html>

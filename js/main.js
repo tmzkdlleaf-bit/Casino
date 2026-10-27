@@ -1,14 +1,14 @@
-import { refreshAuth } from "./auth.js?v=20261027e";
-import { CALM_KEY, PAGES } from "./config.js?v=20261027e";
-import { AUTH_HASH, DB_CONFIGURED, USE_DB, loadAll, sb, showBootError } from "./data.js?v=20261027e";
-import { $, $$, announce, toast } from "./dom.js?v=20261027e";
-import { initBgm, initWorldBg } from "./ambience.js?v=20261027e";
-import { applyCalm, applyFilter, applyShow, castGo, castGoIndex, castStep, filterSummary, layoutCast, renderHeroChips, runIntro, setShowHover, showStep } from "./effects.js?v=20261027e";
-import { errMsg } from "./forms.js?v=20261027e";
-import { focusHeading, route } from "./router.js?v=20261027e";
-import { applyNavOrder } from "./navorder.js?v=20261027e";
-import { DATA, motionOK, nav, state } from "./state.js?v=20261027e";
-import { placeSegInk, renderAccount, renderCast, renderHome, renderInventory, renderNext, renderQuickLinks, renderRecords, renderSchedule, renderShop, renderStory } from "./views.js?v=20261027e";
+import { refreshAuth } from "./auth.js?v=20261028a";
+import { CALM_KEY, PAGES } from "./config.js?v=20261028a";
+import { AUTH_HASH, DB_CONFIGURED, USE_DB, loadAll, sb, showBootError } from "./data.js?v=20261028a";
+import { $, $$, announce, toast } from "./dom.js?v=20261028a";
+import { initBgm, initWorldBg } from "./ambience.js?v=20261028a";
+import { applyCalm, applyFilter, applyShow, castGo, castGoIndex, castStep, filterSummary, layoutCast, renderHeroChips, runIntro, setShowHover, showStep } from "./effects.js?v=20261028a";
+import { errMsg } from "./forms.js?v=20261028a";
+import { focusHeading, route } from "./router.js?v=20261028a";
+import { applyNavOrder } from "./navorder.js?v=20261028a";
+import { DATA, motionOK, nav, state } from "./state.js?v=20261028a";
+import { placeSegInk, renderAccount, renderCast, renderHome, renderInventory, renderNext, renderQuickLinks, renderRecords, renderSchedule, renderShop, renderStory } from "./views.js?v=20261028a";
 
 /* ---------- events ---------- */
 document.addEventListener("click", e => {
@@ -293,3 +293,10 @@ runIntro();
   $("#app").setAttribute("aria-busy", "false");
   $("#boot").innerHTML = "";
 })();
+
+/* 작은 이미지(도트 그림)는 확대해도 또렷하게 — 상점·소지품 */
+document.addEventListener("load", e => {
+  const img = e.target;
+  if (img.tagName === "IMG" && img.naturalWidth && img.naturalWidth <= 160 && img.naturalHeight <= 160 && img.closest(".item, .sd-img, .slot, .pf-inv-detail, #pf-inv-detail"))
+    img.classList.add("px");
+}, true);
