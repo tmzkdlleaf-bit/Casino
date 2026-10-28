@@ -5,12 +5,12 @@
    - 흐름: 앉기 → 베팅(첫 베팅 20초 뒤 또는 모두 걸면 바로) → 자리 순서대로 카드 받기/멈추기/두 배 → 딜러 → 정산
    - 카드 더미와 딜러의 엎은 카드는 서버만 앎. 화면은 받은 카드만 그림
    ========================================================= */
-import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029a";
-import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029a";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029a";
-import { nav, state } from "./state.js?v=20261029a";
-import { ALL, balOf, myChars, renderAccount } from "./views.js?v=20261029a";
-import { sfx, sfxVol, setSfxVol } from "./sfx.js?v=20261029a";
+import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029b";
+import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029b";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029b";
+import { nav, state } from "./state.js?v=20261029b";
+import { ALL, balOf, myChars, renderAccount } from "./views.js?v=20261029b";
+import { sfx, sfxVol, setSfxVol } from "./sfx.js?v=20261029b";
 
 const BJ = {
   id: null, t: null, seats: [], avatars: new Map(), chan: null, live: false, poll: 0, tickT: 0, loading: null,
@@ -227,6 +227,15 @@ function revealOrder(){
   const t = BJ.t, r = t.round, out = [], d = t.dealer_cards || [];
   const seats = BJ.seats.filter(x => x.cards.length).sort((a, b) => a.seat - b.seat);
   if (!d.length && !seats.length) return out;
+  // 결과 공개: 한 사람 카드를 전부 펼친 뒤 다음 사람으로 → 마지막에 딜러
+  if (seats.some(x => x.result)){
+    seats.forEach(x => {
+      const keys = x.cards.map((c, k) => SK(r, x.seat, k, c)), hid = keys.filter(k => !BJ.vis.has(k));
+      keys.forEach(k => out.push([k, k === hid[hid.length - 1] ? 900 : 450]));   // 한 사람이 끝나면 잠깐 쉼
+    });
+    if (d.length){ out.push([DK(r, 0), 380]); for (let k = 1; k < d.length; k++) out.push([DK(r, k), k === 1 ? 800 : 900]); }
+    return out;
+  }
   for (let k = 0; k < 2; k++){
     seats.forEach(x => { if (x.cards.length > k) out.push([SK(r, x.seat, k, x.cards[k]), 380]); });
     if (k === 0 && d.length) out.push([DK(r, 0), 380]);
@@ -248,7 +257,7 @@ function step(){
   if (!it || !BJ.t){ BJ.anim = false; finishAnim(); return; }
   BJ.vis.add(it[0]);
   const m = it[0].match(/^\d+:(\d+):(\d+)$/), s = m && seatAt(+m[1]);
-  const done = s && visCards(s).length === s.cards.length && !s.cards.some(c => c < 0);
+  const done = s && visCards(s).length === s.cards.length && visCards(s).every(c => c >= 0);
   sfx(done && total(s.cards) > 21 ? "out" : "card");
   renderDealer(); renderSeats();
   BJ.animT = setTimeout(step, it[1]);
@@ -257,14 +266,15 @@ function finishAnim(){
   flushHeld();
   if (!BJ.t) return;
   render();
-  if (BJ.t.phase === "betting" && mySeat()?.result) import("./auth.js?v=20261029a").then(m => m.loadMine()).then(renderAccount);   // 정산 뒤 내 코인
+  if (BJ.t.phase === "betting" && mySeat()?.result) import("./auth.js?v=20261029b").then(m => m.loadMine()).then(renderAccount);   // 정산 뒤 내 코인
   const t = BJ.t, me = mySeat();
   if (t.phase === "betting" && me?.result && me.cards.length && BJ.soundRound !== t.round){
     BJ.soundRound = t.round;
     sfx(/win|blackjack/.test(me.result) ? "win" : me.result === "lose" ? "out" : "card");
   }
 }
-const visCards = x => x.cards.filter((c, k) => BJ.vis.has(SK(BJ.t.round, x.seat, k, c)));
+const visCards = x => x.cards.flatMap((c, k) => BJ.vis.has(SK(BJ.t.round, x.seat, k, c)) ? [c]
+  : BJ.vis.has(SK(BJ.t.round, x.seat, k, -1)) ? [-1] : []);   // 가려 뒀던 카드는 뒤집힐 차례까지 뒷면 그대로
 const dealerDone = () => { const t = BJ.t, d = t.dealer_cards || []; return d.every((_, k) => BJ.vis.has(DK(t.round, k))); };
 
 /* ---------- 그리기 ---------- */
@@ -516,7 +526,7 @@ async function act(btn){
       if (!(amt >= t.min_bet && amt <= t.max_bet)){ toast(`베팅은 ${n(t.min_bet)}~${n(t.max_bet)}입니다`); $("#bj-amt").focus(); return; }
       BJ.betAmt = amt;
       if (await call("bj_bet", { p_table: BJ.id, p_character: me.character_id, p_amount: amt })){
-        const { loadMine } = await import("./auth.js?v=20261029a"); loadMine().then(renderAccount);
+        const { loadMine } = await import("./auth.js?v=20261029b"); loadMine().then(renderAccount);
       }
     }
     else if (a === "hit"){ sfx("card"); await call("bj_hit", { p_table: BJ.id }); }
