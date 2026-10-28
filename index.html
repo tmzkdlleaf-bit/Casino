@@ -27,24 +27,24 @@
 <!-- 제목·버튼: 갈무리 도트 글꼴 (SIL OFL, 버전 고정 + SRI) / 본문: IBM Plex Sans KR — 실제 쓰는 굵기만 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.css" integrity="sha384-55uQGdclWjXwWY0yHikdtcfcat9pPBqMBCVFIeWjRhvPPUYbpJLhIJegzTcFoh/A" crossorigin="anonymous">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="css/site.css?v=20261028a">
+<link rel="stylesheet" href="css/site.css?v=20261029a">
 <!-- 파일 주소 끝의 ?v=날짜 는 버전 표시 — 바꿔 올릴 때마다 함께 바꾸면 브라우저가 옛 파일을 쓰지 않음 (js 안의 import 주소도 같은 값) -->
 <!-- 모듈 미리 받기: import 사슬을 따라 차례로 받는 대기 시간 제거 (관리 모듈은 제외 — 관리자만 필요할 때 받음) -->
-<link rel="modulepreload" href="js/main.js?v=20261028a">
-<link rel="modulepreload" href="js/config.js?v=20261028a">
-<link rel="modulepreload" href="js/state.js?v=20261028a">
-<link rel="modulepreload" href="js/dom.js?v=20261028a">
-<link rel="modulepreload" href="js/data.js?v=20261028a">
-<link rel="modulepreload" href="js/views.js?v=20261028a">
-<link rel="modulepreload" href="js/effects.js?v=20261028a">
-<link rel="modulepreload" href="js/router.js?v=20261028a">
-<link rel="modulepreload" href="js/auth.js?v=20261028a">
-<link rel="modulepreload" href="js/forms.js?v=20261028a">
-<link rel="modulepreload" href="js/markdown.js?v=20261028a">
-<link rel="modulepreload" href="js/ambience.js?v=20261028a">
-<link rel="modulepreload" href="js/navorder.js?v=20261028a">
-<link rel="modulepreload" href="js/charedit.js?v=20261028a">
-<link rel="modulepreload" href="js/shop.js?v=20261028a">
+<link rel="modulepreload" href="js/main.js?v=20261029a">
+<link rel="modulepreload" href="js/config.js?v=20261029a">
+<link rel="modulepreload" href="js/state.js?v=20261029a">
+<link rel="modulepreload" href="js/dom.js?v=20261029a">
+<link rel="modulepreload" href="js/data.js?v=20261029a">
+<link rel="modulepreload" href="js/views.js?v=20261029a">
+<link rel="modulepreload" href="js/effects.js?v=20261029a">
+<link rel="modulepreload" href="js/router.js?v=20261029a">
+<link rel="modulepreload" href="js/auth.js?v=20261029a">
+<link rel="modulepreload" href="js/forms.js?v=20261029a">
+<link rel="modulepreload" href="js/markdown.js?v=20261029a">
+<link rel="modulepreload" href="js/ambience.js?v=20261029a">
+<link rel="modulepreload" href="js/navorder.js?v=20261029a">
+<link rel="modulepreload" href="js/charedit.js?v=20261029a">
+<link rel="modulepreload" href="js/shop.js?v=20261029a">
 </head>
 <body class="intro-on loading">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -109,7 +109,7 @@
   <div class="dock-right">
     <!-- 배경음악: config.js의 BGM_URL이 있을 때만 보임. 누르기 전에는 재생하지 않음 -->
     <button class="bgm" type="button" id="bgm" aria-pressed="false" hidden><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-volume-off"/></svg><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-volume"/></svg><span class="sr">배경음악</span></button>
-    <a class="me" href="#settings" id="me" data-member-only hidden><span class="chip green me-chip" id="me-chip" aria-hidden="true"></span><span class="me-text"><span class="sr">내 계정: </span><span class="me-name" id="me-name"></span><span class="me-bal" id="me-bal"></span></span></a>
+    <a class="me" href="#settings" id="me" data-member-only hidden><span class="me-av" id="me-chip" aria-hidden="true"></span><span class="me-text"><span class="sr">내 계정: </span><span class="me-name" id="me-name"></span><span class="me-bal" id="me-bal"></span></span></a>
     <a class="login" href="#login" data-guest-only hidden><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-login-2"/></svg><span>로그인</span></a>
     <button class="il" type="button" id="dock-logout" data-member-only hidden><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-logout"/></svg><span class="tip">로그아웃</span></button>
   </div>
@@ -260,7 +260,7 @@
         <p class="page-lede">상점 안내 문구 자리입니다.</p>
         <div class="wallet-pill">
           <span id="wallet-label">보유 코인</span>
-          <span class="wallet"><span class="chip red" aria-hidden="true"></span><strong id="wallet" aria-describedby="wallet-label">—</strong></span>
+          <span class="wallet"><strong id="wallet" aria-describedby="wallet-label">—</strong></span>
         </div>
       </div>
     </header>
@@ -289,7 +289,7 @@
         </div>
         <section class="lobby-pane" id="lobby-rl" role="tabpanel" aria-labelledby="lt-rl">
           <div class="rl-lobby-head">
-            <span class="chip red rl-lobby-chip" aria-hidden="true"></span>
+            <span class="rl-lobby-gun" id="rl-lobby-gun" aria-hidden="true"></span>
             <h2 class="h" id="h-rl">러시안 룰렛</h2>
             <button class="btn small primary" type="button" id="rl-new" data-admin-only hidden>방 만들기</button>
           </div>
@@ -708,6 +708,6 @@
 <!-- 버전 고정 + 무결성 해시(SRI): CDN 파일이 바뀌면 브라우저가 실행을 거부 -->
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"
         integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
-<script type="module" src="js/main.js?v=20261028a"></script>
+<script type="module" src="js/main.js?v=20261029a"></script>
 </body>
 </html>

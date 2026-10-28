@@ -1,9 +1,9 @@
-import { CONFIG, SUITS, idOf } from "./config.js?v=20261028a";
-import { EXTRA, RECORDS, USE_DB, sb } from "./data.js?v=20261028a";
-import { $, $$, chipAmt, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261028a";
-import { initShow, layoutCast } from "./effects.js?v=20261028a";
-import { buyHtml, myReqHtml } from "./shop.js?v=20261028a";
-import { DATA, nav, state } from "./state.js?v=20261028a";
+import { CONFIG, SUITS, idOf } from "./config.js?v=20261029a";
+import { EXTRA, RECORDS, USE_DB, sb } from "./data.js?v=20261029a";
+import { $, $$, chipAmt, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261029a";
+import { initShow, layoutCast } from "./effects.js?v=20261029a";
+import { buyHtml, myReqHtml } from "./shop.js?v=20261029a";
+import { DATA, nav, state } from "./state.js?v=20261029a";
 
 /* ---------- render ---------- */
 export const timeTag = (label, iso) => `<time${iso ? ` datetime="${esc(iso)}"` : ""}>${esc(label)}</time>`;
@@ -300,7 +300,9 @@ export function renderAccount(){
   if (on){
     $("#me-name").textContent = main?.name || p?.display_name || "내 계정";
     $("#me-bal").innerHTML = main ? `${chipAmt(main.balance, "blue")} ${chipAmt(main.pink, "pink")}` : "";
-    $("#me-chip").className = `chip ${main?.chip || "green"} me-chip`;
+    // 대표 캐릭터 얼굴 (코인 모양과 헷갈리지 않게)
+    const face = main?.thumb || main?.img || "", nm = main?.name || p?.display_name || "?";
+    $("#me-chip").innerHTML = face ? `<img src="${esc(face)}" alt="" decoding="async">` : `<span>${esc(nm.slice(0, 1))}</span>`;
   }
 }
 

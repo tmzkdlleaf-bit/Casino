@@ -1577,3 +1577,10 @@ button.rl-seat:not([aria-disabled="true"]):hover .av{border-color:var(--gold)}
 .shop-cats button[aria-pressed="true"]{border-color:var(--velvet); background:rgba(239,26,114,.15); color:var(--ivory)}
 /* 도트 그림은 또렷하게 (작은 이미지만) */
 img.px{image-rendering:pixelated; image-rendering:crisp-edges; object-fit:contain !important}
+
+/* 아래 메뉴: 대표 캐릭터 얼굴 */
+.me-av{display:grid; place-items:center; flex:none; width:2.1rem; height:2.1rem; border-radius:50%; overflow:hidden; background:var(--black-2); border:1px solid var(--line-strong); font-family:var(--f-serif); font-size:.875rem; color:var(--text-2)}
+.me-av img{width:100%; height:100%; object-fit:cover; object-position:50% 20%}
+/* 게임 목록: 룰렛 = 전기 충격기 도트 */
+.rl-lobby-gun{display:block; flex:none; width:3.6rem; rotate:-18deg; filter:drop-shadow(0 0 1px #ADCFEA) drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+.rl-lobby-gun svg{display:block; width:100%}

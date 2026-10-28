@@ -5,12 +5,12 @@
    - 탄 위치는 서버만 앎. 화면은 서버가 돌려준 결과(채팅의 'shot' 기록)를 보고 효과만 그림
    - 실시간 연결이 끊겨도 5초마다 다시 불러와 따라감
    ========================================================= */
-import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261028a";
-import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261028a";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261028a";
-import { motionOK, nav, state } from "./state.js?v=20261028a";
-import { ALL, balOf, myChars } from "./views.js?v=20261028a";
-import { sfx, sfxVol, setSfxVol } from "./sfx.js?v=20261028a";
+import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029a";
+import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029a";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029a";
+import { motionOK, nav, state } from "./state.js?v=20261029a";
+import { ALL, balOf, myChars } from "./views.js?v=20261029a";
+import { sfx, sfxVol, setSfxVol } from "./sfx.js?v=20261029a";
 
 /* ---------- 전기 충격기 (도트 그림) — 오른쪽을 향함, 한 칸 = 1 ---------- */
 const GUN = ["........................................", "....KKKKKKKKKKKKKKKKKKKKKKKKK...........", "...KSSSSSSSSSSSSSSSSSSSSSSSSSK..........", "..KLLLLLLLLLLLLLLLLLLLLLLLLLLLKKKKKKKK..", "..KLBBYYBYYBYYBBBBBBBBBBBBBBBKPPPPPPPK..", "..KLBBBBBBBBBBBBBBBBBBBBBBBBBKPQQQQQPKWW", "..KDBBBBBBBBBBBBBBBBBBBBBBBBBKPPPPPPPK..", "..KDDDDDDDDDDDDDDDDDDDDDDDDDDKPQQQQQPKWW", "..KKKKKKDDDDDDDKKKKKKKKKKKKKKKPPPPPPPK..", ".......KGGGGGKDK....K.......KKKKKKKKK...", "......KGgGGGKKDK...K....................", "......KGGGGGK.KMK..K....................", ".....KGgGGGK...KMKK.....................", ".....KGGGGGK....KK......................", "....KGgGGGK.............................", "....KGGGGGK.............................", "....KKKKKKK............................."];
@@ -18,6 +18,7 @@ const GUN_COL = { K: "#05081A", S: "#ADCFEA", L: "#3B63C4", B: "#1D367B", D: "#0
 (function drawGun(){
   let rects = "";
   GUN.forEach((row, y) => { let x = 0; while (x < row.length){ const c = row[x]; let w = 1; while (row[x + w] === c) w++; if (c !== "."){ rects += `<rect x="${x}" y="${y}" width="${w}" height="1" fill="${GUN_COL[c]}"${c === "Y" ? ` class="g-led"` : c === "W" ? ` class="g-prong"` : ""}/>`; } x += w; } });
+  $("#rl-lobby-gun").innerHTML = `<svg viewBox="0 0 42 18" shape-rendering="crispEdges">${rects}</svg>`;   // 게임 목록의 룰렛 표시
   $("#rl-gun").innerHTML = `<svg class="rl-gun-svg" viewBox="-2 -4 46 26" shape-rendering="crispEdges">${rects}
     <polyline class="g-arc" points="40,5.5 41.2,6.2 40.4,6.6 41.4,7.4" shape-rendering="auto"/>
     <polyline class="g-arc g-arc2" points="40,5.5 40.6,6.4 41.6,6.8 40.2,7.5" shape-rendering="auto"/></svg>`;
@@ -671,7 +672,7 @@ $("#rl-ava-form").addEventListener("submit", async e => {
   const cid = $("#rl-ava-char").value, old = RL.avatars.get(cid)?.path;
   await withBusy($('button[type="submit"]', e.target), async () => {
     try {
-      const { toWebP, extOf } = await import("./img.js?v=20261028a");
+      const { toWebP, extOf } = await import("./img.js?v=20261029a");
       const blob = await toWebP(avaFile, 512), path = `${cid}/${Date.now()}.${extOf(blob)}`;
       const up = await sb.storage.from("roulette").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
       if (up.error) throw up.error;
