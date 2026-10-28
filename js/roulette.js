@@ -5,12 +5,13 @@
    - 탄 위치는 서버만 앎. 화면은 서버가 돌려준 결과(채팅의 'shot' 기록)를 보고 효과만 그림
    - 실시간 연결이 끊겨도 5초마다 다시 불러와 따라감
    ========================================================= */
-import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029b";
-import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029b";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029b";
-import { motionOK, nav, state } from "./state.js?v=20261029b";
-import { ALL, balOf, myChars } from "./views.js?v=20261029b";
-import { sfx, sfxVol, setSfxVol } from "./sfx.js?v=20261029b";
+import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029c";
+import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029c";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029c";
+import { motionOK, nav, state } from "./state.js?v=20261029c";
+import { ALL, balOf, myChars } from "./views.js?v=20261029c";
+import { sfx, setSfxVol } from "./sfx.js?v=20261029c";
+import { hotkeys, kbd, toolsFrame, toolsMenu } from "./gametools.js?v=20261029c";
 
 /* ---------- 전기 충격기 (도트 그림) — 오른쪽을 향함, 한 칸 = 1 ---------- */
 const GUN = ["........................................", "....KKKKKKKKKKKKKKKKKKKKKKKKK...........", "...KSSSSSSSSSSSSSSSSSSSSSSSSSK..........", "..KLLLLLLLLLLLLLLLLLLLLLLLLLLLKKKKKKKK..", "..KLBBYYBYYBYYBBBBBBBBBBBBBBBKPPPPPPPK..", "..KLBBBBBBBBBBBBBBBBBBBBBBBBBKPQQQQQPKWW", "..KDBBBBBBBBBBBBBBBBBBBBBBBBBKPPPPPPPK..", "..KDDDDDDDDDDDDDDDDDDDDDDDDDDKPQQQQQPKWW", "..KKKKKKDDDDDDDKKKKKKKKKKKKKKKPPPPPPPK..", ".......KGGGGGKDK....K.......KKKKKKKKK...", "......KGgGGGKKDK...K....................", "......KGGGGGK.KMK..K....................", ".....KGgGGGK...KMKK.....................", ".....KGGGGGK....KK......................", "....KGgGGGK.............................", "....KGGGGGK.............................", "....KKKKKKK............................."];
@@ -224,8 +225,9 @@ function render(){
   const t = $("#rl-title");
   if (t.textContent !== r.title) t.textContent = r.title;
   setTitle(r.title);
-  $("#rl-meta").innerHTML = [r.entry_fee ? `<span title="참가비">참가비 ${chipAmt(r.entry_fee, r.currency)}</span>` : `<span class="amt amt-${curOf(r.currency)}"><i class="chip ${CUR[curOf(r.currency)].chip}" aria-hidden="true"></i>${CUR[curOf(r.currency)].name}</span>`,
-    `<span>${r.pass_rule === "free" ? "넘기기 자유" : "넘기기는 나에게 쏜 뒤"}</span>`].join("");
+  $("#rl-meta").innerHTML = "";
+  $("#rl-table").classList.toggle("playing", r.status === "playing");
+  renderFelt();
   renderStatus(); renderRing(); renderCyl(); renderBar(); renderTools(); renderPool(); tick();
   aimGun(RL.target ?? r.turn_seat);
 
@@ -256,22 +258,20 @@ function renderStatus(){
   const r = RL.room, el = $("#rl-status");
   const turn = r.turn_seat != null ? seatAt(r.turn_seat) : null;
   let html = "";
-  if (r.status === "waiting") html = `<b>대기 중</b> ↻`;
-  else if (r.status === "playing") html = canAct() && !ctlSeat().character_id
-    ? `<b class="mine">${esc(seatChar(turn).name)} 차례</b> ↻`
-    : isMyTurn()
-    ? `<b class="mine">내 차례</b>`
-    : `<b>${esc(turn ? seatChar(turn).name : "—")}</b> 차례 ↻`;
+  if (r.status === "waiting") html = `<b>대기 중</b>`;
+  else if (r.status === "playing") html = canAct() && !ctlSeat().character_id ? `<b class="mine">${esc(seatChar(turn).name)} 차례</b>`
+    : isMyTurn() ? `<b class="mine">내 차례</b>` : "";   // 남의 차례는 자리의 시간 고리로 충분
   else if (r.status === "finished"){ const w = seatAt(r.winner_seat); html = `<b class="win">${esc(w ? seatChar(w).name : "—")} 우승</b>${r.pot ? ` · 판돈 ${chipAmt(r.pot, r.currency)}` : ""}`; }
-  else html = `<b>취소된 게임</b> — 참가비와 베팅은 돌려드렸습니다`;
-  if (r.status === "playing" && TURN.ok) html += `<span class="left" id="rl-left"></span>`;
+  else html = `<b>취소됨</b>`;
   el.innerHTML = html;
+  el.classList.toggle("blank", !html);
 }
 
 /* 자리: 내 자리를 맨 아래에 두고 둥글게 */
 function renderRing(){
   const r = RL.room, me = mySeat(), N = r.max_seats, base = me ? me.seat : 0;
   const my = canAct(), ctl = ctlSeat(), admin = state.isAdmin && r.status === "waiting";
+  const joinAt = state.session && r.status === "waiting" && !me && myChars().length ? Array.from({ length: N }, (_, i) => i).find(i => !seatAt(i)) ?? -1 : -1;   // 앉으면 들어갈 자리
   const betBy = {}; RL.bets.forEach(b => { betBy[b.seat] = (betBy[b.seat] || 0) + b.amount; });
   $("#rl-ring").style.setProperty("--n", N);
   // 자리와 자리 사이의 작은 화살표: 차례가 도는 방향(시계 방향)을 늘 보여 줌
@@ -283,19 +283,20 @@ function renderRing(){
   $("#rl-ring").innerHTML = arrows + Array.from({ length: N }, (_, i) => {
     const ang = 90 + (i - base) * 360 / N, rad = ang * Math.PI / 180;
     const x = 50 + 40 * Math.cos(rad), y = 48 + 33 * Math.sin(rad);
-    const s = seatAt(i), pos = `left:${x.toFixed(2)}%;top:${y.toFixed(2)}%`;
-    if (!s) return `<div class="rl-seat empty" style="${pos}" data-seat="${i}" data-ang="${ang}"><span class="av"></span><span class="nm">빈 자리</span></div>`;
+    const s = seatAt(i), pos = `left:${x.toFixed(2)}%;top:${y.toFixed(2)}%`, up = y < 40 ? " up" : "";   // 위쪽 자리는 이름을 머리 위로 (가운데 총과 겹치지 않게)
+    if (!s) return i === joinAt
+      ? `<button type="button" class="rl-seat empty join${up}" style="${pos}" data-act="join" data-seat="${i}" data-ang="${ang}" aria-label="이 자리에 앉기"><span class="av"><span class="plus" aria-hidden="true"></span></span><span class="nm">앉기</span></button>`
+      : `<div class="rl-seat empty${up}" style="${pos}" data-seat="${i}" data-ang="${ang}" aria-label="빈 자리"><span class="av"></span></div>`;
     const c = seatChar(s), src = avatarOf(c), isMe = me && me.seat === i;
     const turn = r.status === "playing" && r.turn_seat === i, win = r.status === "finished" && r.winner_seat === i;
     const can = (my && s.alive) || (admin && !isMe);
     const label = `${c.name}${c.dummy ? " (더미)" : ""}${isMe ? " (나)" : ""}${!s.alive ? ", 탈락" : ""}${turn ? ", 지금 차례" : ""}${win ? ", 우승" : ""}${my && s.alive ? (i === ctl.seat ? " — 자기 자신에게 겨누기" : " — 이 자리에 겨누기") : admin && !isMe ? " — 자리 비우기" : ""}`;
-    return `<button type="button" class="rl-seat${c.dummy ? " dummy" : ""}${s.alive ? "" : " dead"}${turn ? " turn" : ""}${isMe ? " me" : ""}${win ? " win" : ""}${RL.target === i ? " aimed" : ""}"
+    return `<button type="button" class="rl-seat${up}${c.dummy ? " dummy" : ""}${s.alive ? "" : " dead"}${turn ? " turn" : ""}${isMe ? " me" : ""}${win ? " win" : ""}${RL.target === i ? " aimed" : ""}"
       style="${pos}" data-seat="${i}" data-ang="${ang}" ${can ? "" : `aria-disabled="true"`} aria-pressed="${RL.target === i}" aria-label="${esc(label)}">
-      <span class="av">${src ? `<img src="${esc(src)}" alt="" decoding="async" draggable="false">` : `<span class="ph">${esc(c.name.slice(0, 1))}</span>`}<span class="x" aria-hidden="true"></span></span>
-      <span class="nm">${c.role === "직원" ? "" : `<span class="chip ${c.chip}" aria-hidden="true"></span>`}${esc(c.name)}${isMe ? `<small>나</small>` : ""}${c.dummy ? `<small class="dm">더미</small>` : ""}</span>
+      <span class="av">${src ? `<img src="${esc(src)}" alt="" decoding="async" draggable="false">` : `<span class="ph">${esc(c.name.slice(0, 1))}</span>`}<span class="x" aria-hidden="true"></span>${turn && TURN.ok ? `<span class="tm" aria-hidden="true"></span>` : ""}</span>
+      <span class="nm">${c.role === "직원" ? "" : `<span class="chip ${c.chip}" aria-hidden="true"></span>`}${esc(c.name)}${isMe ? `<small>나</small>` : ""}</span>
       ${betBy[i] ? `<span class="bet" aria-hidden="true">${n(betBy[i])}</span>` : ""}
       ${nextSeat === i && nextSeat !== r.turn_seat ? `<span class="nx" aria-hidden="true">다음</span>` : ""}
-      ${turn && TURN.ok ? `<span class="tm" aria-hidden="true"></span>` : ""}
     </button>`;
   }).join("");
 }
@@ -318,7 +319,7 @@ function tick(){
   const left = leftSec(), on = left != null && TURN.ok;
   const lab = $("#rl-left"), tm = $("#rl-ring .rl-seat.turn .tm");
   if (lab) { lab.textContent = on ? `${left}초` : ""; lab.classList.toggle("low", on && left <= 10); }
-  if (tm) { tm.textContent = on ? left : ""; tm.classList.toggle("low", on && left <= 10); }
+  if (tm) { tm.textContent = on ? left : ""; tm.classList.toggle("low", on && left <= 10); tm.parentElement.style.setProperty("--p", on ? (left / TURN_SEC).toFixed(3) : 1); }
   if (on && left === 0 && state.session && Date.now() > RL.timeoutTry && !(RL.fxUntil > Date.now())){
     RL.timeoutTry = Date.now() + 4000;
     sb.rpc("roulette_timeout", { p_room: RL.id }).then(({ data, error }) => {
@@ -353,25 +354,27 @@ function renderBar(){
     html = `<a class="btn" href="#login">로그인</a>`;
   } else if (r.status === "waiting"){
     if (me) html = `<button class="btn" type="button" data-act="leave">일어나기</button>`;
-    else if (!chars.length) html = `<button class="btn primary" type="button" disabled title="연결된 캐릭터가 없습니다">자리에 앉기</button>`;
+    else if (!chars.length) html = "";
     else html = `${chars.length > 1 ? `<label class="sr" for="rl-join-char">앉을 캐릭터</label><select class="input rl-sel" id="rl-join-char">${chars.map(c =>
       `<option value="${esc(c.uuid)}"${c.uuid === RL.myChar ? " selected" : ""}>${esc(c.name)} — ${CUR[curOf(r.currency)].short} ${n(balOf(c, r.currency))}</option>`).join("")}</select>` : ""}
-      <button class="btn primary" type="button" data-act="join"${RL.seats.length >= r.max_seats ? " disabled" : ""}>${chars.length > 1 ? "" : esc(chars[0].name) + "(으)로 "}자리에 앉기</button>
+      <button class="btn primary rl-act" type="button" data-act="join"${RL.seats.length >= r.max_seats ? " disabled" : ""}>앉기${chars.length === 1 ? `<small>${esc(chars[0].name)}</small>` : ""}</button>
 `;
   } else if (r.status === "playing"){
     const ctl = ctlSeat(), my = !!ctl, dummyTurn = my && !ctl.character_id, tg = RL.target != null ? seatAt(RL.target) : null;
     const canPass = my && (r.pass_rule === "free" || r.self_survived);
     const shootLabel = !my ? "쏘기" : tg && tg.seat === ctl.seat ? (dummyTurn ? `${esc(seatChar(ctl).name)} 자신에게 쏘기` : "나에게 쏘기") : `${esc(seatChar(tg).name)}에게 쏘기`;
     html = `
-      <button class="btn rl-act shoot" type="button" data-act="shoot"${my ? "" : " disabled"}><span class="k" aria-hidden="true">⚡</span>${shootLabel}</button>
-      <button class="btn rl-act" type="button" data-act="pass"${canPass ? "" : " disabled"} ${my && !canPass ? `title="나에게 한 번 쏘고 살아남아야 넘길 수 있습니다"` : ""}>넘기기</button>
-      <button class="btn rl-act" type="button" data-act="bet"${betOpen() && chars.length ? "" : " disabled"}>베팅하기</button>
+      <button class="btn rl-act shoot" type="button" data-act="shoot" data-key="f"${my ? "" : " disabled"}><span class="k" aria-hidden="true">⚡</span>${shootLabel}${kbd("f")}</button>
+      <button class="btn rl-act" type="button" data-act="pass" data-key="p"${canPass ? "" : " disabled"} ${my && !canPass ? `title="나에게 한 번 쏘고 살아남아야 넘길 수 있습니다"` : ""}>${my && !canPass ? `<span class="lock" aria-hidden="true"></span>` : ""}넘기기${kbd("p")}</button>
+      <button class="btn rl-act" type="button" data-act="bet" data-key="b"${betOpen() && chars.length ? "" : " disabled"}>베팅${kbd("b")}</button>
 `;
   } else {
     const myBets = RL.bets.filter(b => mineUuids().has(b.character_id));
     const got = myBets.reduce((s, b) => s + (b.payout || 0), 0), put = myBets.reduce((s, b) => s + b.amount, 0);
     html = `${put ? `<p class="rl-note bet-res">${chipAmt(put, r.currency)} → ${chipAmt(got, r.currency)}</p>` : ""}<a class="btn" href="#game">방 목록으로</a>`;
   }
+  // 방장: 시작은 아래 버튼 줄에 (나머지는 메뉴)
+  if (state.isAdmin && r.status === "waiting") html += `<button class="btn rl-act host" type="button" data-act="start" data-key="n"${RL.seats.length < 2 ? " disabled" : ""}>게임 시작${kbd("n")}</button>`;
   bar.innerHTML = html;
   if (keep) $(`[data-act="${keep}"]`, bar)?.focus();
 }
@@ -381,19 +384,26 @@ function renderTools(){
   const r = RL.room, a = state.isAdmin;
   const canAva = state.session && (myChars().length || (a && RL.seats.length));
   const tools = $("#rl-tools");
-  // 소리 막대는 처음 한 번만 그림 (끄는 중에 다시 그려져 손에서 빠지지 않게)
-  if (!$(".rl-btns", tools)) tools.innerHTML = `<label class="rl-vol" title="효과음 크기"><span>소리</span><input type="range" id="rl-vol" min="0" max="100" step="10" value="${Math.round(sfxVol() * 100)}" aria-label="효과음 크기"><output>${Math.round(sfxVol() * 100) || "끔"}</output></label><span class="rl-btns"></span>`;
-  const html = [
-    canAva ? `<button class="btn small" type="button" data-act="avatar">자리 이미지</button>` : "",
-    a && DUMMY.ok && r.status === "waiting" ? `<button class="btn small" type="button" data-act="dummy"${RL.seats.length >= r.max_seats ? " disabled" : ""}>더미 추가</button>` : "",
-    a && r.status === "playing" && RL.seats.some(s => !s.character_id) ? `<button class="btn small" type="button" data-act="auto" aria-pressed="${RL.autoDummy}">더미 자동 ${RL.autoDummy ? "켬" : "끔"}</button>` : "",
-    a && r.status === "waiting" ? `<button class="btn small primary" type="button" data-act="start"${RL.seats.length < 2 ? " disabled" : ""}>게임 시작</button>` : "",
-    a && r.status === "playing" ? `<button class="btn small" type="button" data-act="skip">차례 넘기기</button>` : "",
-    a && (r.status === "waiting" || r.status === "playing") ? `<button class="btn small danger" type="button" data-act="cancel">게임 취소</button>` : "",
-    a && (r.status === "finished" || r.status === "cancelled") ? `<button class="btn small danger" type="button" data-act="delete">방 지우기</button>` : ""
-  ].join("");
-  const box = $(".rl-btns", tools);
-  if (box.dataset.h !== html){ box.innerHTML = html; box.dataset.h = html; }
+  toolsFrame(tools, "rl-vol");
+  toolsMenu(tools, [
+    canAva ? `<button type="button" role="menuitem" data-act="avatar">자리 이미지</button>` : "",
+    a && DUMMY.ok && r.status === "waiting" ? `<button type="button" role="menuitem" data-act="dummy"${RL.seats.length >= r.max_seats ? " disabled" : ""}>더미 앉히기</button>` : "",
+    a && r.status === "playing" && RL.seats.some(s => !s.character_id) ? `<button type="button" role="menuitemcheckbox" data-act="auto" aria-checked="${RL.autoDummy}">더미 자동 진행</button>` : "",
+    a && r.status === "playing" ? `<button type="button" role="menuitem" data-act="skip">차례 넘기기</button>` : "",
+    a && (r.status === "waiting" || r.status === "playing") ? `<button type="button" role="menuitem" class="danger" data-act="cancel">게임 취소</button>` : "",
+    a && (r.status === "finished" || r.status === "cancelled") ? `<button type="button" role="menuitem" class="danger" data-act="delete">방 지우기</button>` : ""
+  ].join(""));
+}
+
+/* 테이블 바닥에 새긴 규칙 (설명 문구 대신) */
+function renderFelt(){
+  const r = RL.room, c = curOf(r.currency), el = $("#rl-felt");
+  const h = `${c}|${r.entry_fee}|${r.pass_rule}`;
+  if (el.dataset.h === h) return;
+  el.dataset.h = h;
+  el.innerHTML = `<span class="cur amt-${c}"><i class="chip ${CUR[c].chip}" aria-hidden="true"></i>${CUR[c].name}${r.entry_fee ? `<i>·</i>참가비 ${n(r.entry_fee)}` : ""}</span>
+    <span class="rule">${r.pass_rule === "free" ? "넘기기 자유" : "나에게 쏜 뒤 넘기기"}</span>`;
+  el.setAttribute("aria-label", `${CUR[c].name}${r.entry_fee ? `, 참가비 ${r.entry_fee}` : ""}, ${r.pass_rule === "free" ? "넘기기 자유" : "나에게 한 번 쏘고 살아남아야 넘길 수 있음"}`);
 }
 
 /* ---------- 채팅 ---------- */
@@ -450,7 +460,7 @@ function center(el, box){ const r = el.getBoundingClientRect(); return [r.left +
 function aimGun(seat){
   const el = seat != null && $(`#rl-ring [data-seat="${seat}"]`);
   const gun = $("#rl-gun");
-  if (!el){ gun.style.setProperty("--aim", "-90deg"); gun.style.setProperty("--flip", 1); return; }
+  if (!el){ gun.style.setProperty("--aim", "-18deg"); gun.style.setProperty("--flip", 1); return; }   // 쉬는 중엔 테이블에 비스듬히 눕힘
   const ang = +el.dataset.ang;
   gun.style.setProperty("--aim", ang + "deg");
   // 왼쪽을 겨눌 때 손잡이가 위로 뒤집히지 않게 상하 반전
@@ -547,6 +557,7 @@ async function call(fn, args, ok){
 }
 
 $("#rl-ring").addEventListener("click", async e => {
+  const j = e.target.closest('[data-act="join"]'); if (j) return act(j);
   const b = e.target.closest("button.rl-seat");
   if (!b || b.getAttribute("aria-disabled") === "true") return;
   const i = +b.dataset.seat, r = RL.room;
@@ -672,7 +683,7 @@ $("#rl-ava-form").addEventListener("submit", async e => {
   const cid = $("#rl-ava-char").value, old = RL.avatars.get(cid)?.path;
   await withBusy($('button[type="submit"]', e.target), async () => {
     try {
-      const { toWebP, extOf } = await import("./img.js?v=20261029b");
+      const { toWebP, extOf } = await import("./img.js?v=20261029c");
       const blob = await toWebP(avaFile, 512), path = `${cid}/${Date.now()}.${extOf(blob)}`;
       const up = await sb.storage.from("roulette").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
       if (up.error) throw up.error;
@@ -706,3 +717,4 @@ $("#rl-tools").addEventListener("input", e => {
   e.target.nextElementSibling.textContent = v || "끔";
 });
 $("#rl-tools").addEventListener("change", e => { if (e.target.id === "rl-vol" && +e.target.value) sfx("turn"); });
+hotkeys("roulette", "#rl-bar");

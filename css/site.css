@@ -1584,3 +1584,140 @@ img.px{image-rendering:pixelated; image-rendering:crisp-edges; object-fit:contai
 /* 게임 목록: 룰렛 = 전기 충격기 도트 */
 .rl-lobby-gun{display:block; flex:none; width:3.6rem; rotate:-18deg; filter:drop-shadow(0 0 1px #ADCFEA) drop-shadow(0 3px 4px rgba(0,0,0,.5))}
 .rl-lobby-gun svg{display:block; width:100%}
+
+/* =========================================================
+   게임 화면 다듬기 — 설명 대신 배치로
+   ========================================================= */
+/* 오른쪽 위: 소리 · 메뉴 아이콘 */
+#rl-meta:empty, #bj-meta:empty{display:none}
+.rl-tools{flex-wrap:nowrap; gap:.35rem}
+.g-pop{position:relative}
+.g-pop[hidden]{display:none}
+.g-ico{display:grid; place-items:center; width:2.5rem; height:2.5rem; border:1px solid var(--line); background:rgba(5,8,26,.55); color:var(--text-2); cursor:pointer; list-style:none}
+.g-ico::-webkit-details-marker{display:none}
+.g-ico svg{width:1.1rem; height:1.1rem}
+.g-ico:hover, .g-pop[open] > .g-ico{border-color:var(--gold); color:var(--ivory)}
+.g-ico:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
+.g-drop{position:absolute; right:0; top:calc(100% + .35rem); z-index:30; min-width:12rem; padding:.35rem; background:#0B1330; border:1px solid var(--line-strong); box-shadow:0 14px 30px rgba(0,0,0,.6)}
+.g-vol .g-drop{min-width:0; padding:.25rem}
+.g-vol .rl-vol{border:0}
+.g-menu-list{display:grid}
+.g-menu-list > button{display:block; width:100%; padding:.6rem .75rem; border:0; background:none; color:var(--ivory); font:inherit; font-size:.875rem; text-align:left; cursor:pointer}
+.g-menu-list > button:hover, .g-menu-list > button:focus-visible{background:rgba(173,207,234,.1); outline:none}
+.g-menu-list > button[disabled]{opacity:.4; cursor:default}
+.g-menu-list > button.danger{color:var(--red-text); border-top:1px solid var(--line)}
+.g-menu-list > button[aria-checked]::after{content:"끔"; float:right; color:var(--smoke)}
+.g-menu-list > button[aria-checked="true"]::after{content:"켬"; color:var(--gold)}
+.g-sel{display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:.5rem; padding:.4rem .75rem; font-size:.875rem; color:var(--text-2)}
+.g-sel .input{min-height:2.1rem; padding:.2rem .5rem; font-size:.8125rem}
+
+/* 아래 버튼: 단축키 표시 */
+.rl-act kbd{display:inline-grid; place-items:center; min-width:1.15rem; height:1.15rem; margin-left:.55rem; padding:0 .2rem; border:1px solid currentColor; border-radius:2px; font:600 .625rem/1 var(--f-sans, sans-serif); opacity:.55}
+.rl-act[disabled] kbd{display:none}
+.rl-act.host{border-color:var(--gold); color:var(--gold)}
+.rl-act small{margin-left:.4rem; font-size:.75rem; opacity:.8}
+.rl-act .lock{display:inline-block; width:.6rem; height:.7rem; margin-right:.4rem; background:currentColor; clip-path:polygon(15% 45%, 15% 20%, 30% 5%, 70% 5%, 85% 20%, 85% 45%, 100% 45%, 100% 100%, 0 100%, 0 45%, 30% 45%, 30% 25%, 38% 18%, 62% 18%, 70% 25%, 70% 45%)}
+@media (hover:none){ .rl-act kbd{display:none} }
+
+/* 차례 시간: 아바타 둘레의 줄어드는 고리 (숫자는 10초 남았을 때만) */
+.rl-seat .av, .bj-seat .av, .bj-who .av{--p:1}
+.rl-seat.turn .av::after, .bj-seat.turn .av::after, .bj-hand.dealer.turn .av::after{content:""; position:absolute; inset:-7px; border-radius:50%; pointer-events:none;
+  background:conic-gradient(var(--velvet) calc(var(--p) * 360deg), rgba(238,243,250,.12) 0);
+  -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px)); mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px)); transition:--p 1s linear}
+.rl-seat .tm, .bj-seat .tm, .bj-who .tm{top:auto; bottom:-.35rem; left:50%; right:auto; translate:-50% 0; z-index:2}
+.rl-seat .tm:not(.low), .bj-seat .tm:not(.low), .bj-who .tm:not(.low){display:none}
+.rl-seat.turn .av, .bj-seat.turn .av{animation:none; box-shadow:0 0 22px rgba(239,26,114,.45)}
+
+/* 빈 자리: 글자 대신 점선 원, 앉을 수 있는 자리만 + */
+.rl-seat.empty .av, .bj-seat.empty .av{opacity:.55}
+.rl-seat.join, .bj-seat.join{cursor:pointer; background:none; border:0; padding:0; font:inherit; color:inherit}
+.rl-seat.join .av, .bj-seat.join .av{opacity:1; border-color:var(--gold)}
+.rl-seat.join .nm, .bj-seat.join .nm{color:var(--gold); background:none}
+.rl-seat.join:hover .av, .bj-seat.join:hover .av{background:rgba(173,207,234,.12)}
+.rl-seat.join:focus-visible .av, .bj-seat.join:focus-visible .av{outline:2px solid var(--focus); outline-offset:4px}
+.plus{position:relative; width:38%; aspect-ratio:1; background:linear-gradient(var(--gold), var(--gold)) center/100% 3px no-repeat, linear-gradient(var(--gold), var(--gold)) center/3px 100% no-repeat}
+
+/* 룰렛: 위쪽 자리는 이름을 머리 위로 */
+.rl-seat.up .nm{order:-1}
+.rl-seat.up .nx{top:auto; bottom:-.2rem}
+.rl-gun{width:clamp(6rem, 12vw, 9rem)}
+
+/* 테이블 바닥 글씨 */
+.rl-felt{position:absolute; left:50%; top:57%; translate:-50% 0; z-index:0; display:grid; justify-items:center; gap:.15rem; pointer-events:none; font-family:var(--f-serif); color:rgba(173,207,234,.5); text-align:center; white-space:nowrap}
+.rl-felt .cur{display:inline-flex; align-items:center; gap:.35rem; font-size:.8125rem; letter-spacing:.12em}
+.rl-felt .cur i:not(.chip){font-style:normal; opacity:.6}
+.rl-felt .chip{--size:.8rem; box-shadow:none; opacity:.8}
+.rl-felt .chip::before{display:none}
+.rl-felt .rule{font-size:.6875rem; letter-spacing:.2em; opacity:.8}
+@media (max-width:700px){ .rl-felt{top:58%} .rl-felt .rule{display:none} .rl-table.playing .rl-felt{display:none} }
+
+/* 블랙잭 테이블 */
+.bj-table{grid-template-rows:auto auto minmax(0,1fr); gap:.4rem}
+.bj-felt{justify-self:center; display:grid; justify-items:center; width:min(28rem, 80%); margin-top:-.2rem; pointer-events:none; color:rgba(173,207,234,.55); font-family:var(--f-serif)}
+.bj-felt svg{display:block; width:100%; overflow:visible}
+.bj-felt text{fill:currentColor; font-size:13px; letter-spacing:.18em}
+.bj-felt .lim{display:inline-flex; align-items:center; gap:.4rem; margin-top:-.2rem; font-size:.75rem; letter-spacing:.1em}
+.bj-felt .lim i{font-style:normal; opacity:.6}
+.bj-felt .lim .amt{color:inherit}
+.bj-shoe{position:absolute; right:clamp(1rem, 3vw, 2rem); top:1rem; width:3.4rem; height:2.6rem; pointer-events:none}
+.bj-shoe i{position:absolute; inset:0; background:repeating-linear-gradient(45deg, #1D367B 0 4px, #0E1B45 4px 8px); box-shadow:0 0 0 2px #05081A, inset 0 0 0 2px rgba(173,207,234,.6); rotate:-6deg; translate:calc(var(--k, 0) * 3px) calc(var(--k, 0) * -3px)}
+.bj-shoe i:nth-child(2){--k:1} .bj-shoe i:nth-child(3){--k:2}
+
+/* 손패: 카드 위 오른쪽에 합계 배지, 결과 표는 카드 아래 */
+.bj-hw{position:relative; display:grid; justify-items:center; min-height:4.6rem}
+.bj-hw .bj-cards{min-height:4.6rem}
+.bj-tot{position:absolute; top:-.55rem; right:calc(50% - 3.2rem); z-index:2; min-width:1.7rem; padding:.1rem .35rem; background:#05081A; border:1px solid var(--line-strong); font-size:.8125rem; line-height:1.3; text-align:center; font-variant-numeric:tabular-nums}
+.bj-tot.part::after{content:"+"; color:var(--smoke)}
+.bj-tot.bust{background:var(--pink-fill); border-color:var(--pink-fill); color:#fff}
+.bj-tot.bj{background:var(--gold); border-color:var(--gold); color:#05081A}
+.bj-hw .bj-tag{position:absolute; bottom:-.7rem; left:50%; translate:-50% 0; z-index:2}
+.bj-seat{gap:.35rem}
+.bj-seat .bj-tot{font-size:.8125rem}
+.bj-seat > .bj-tag{display:none}
+
+/* 베팅 자리: 바닥에 그린 원 + 코인 */
+.bj-spot{position:relative; display:grid; place-items:center; width:2.9rem; height:2.9rem; border-radius:50%; border:2px solid rgba(173,207,234,.28); box-shadow:inset 0 0 0 4px rgba(5,8,26,.25)}
+.bj-spot.on{border-color:rgba(173,207,234,.55)}
+.bj-spot.ready{border-color:var(--gold); box-shadow:0 0 12px rgba(173,207,234,.35)}
+.bj-spot .stk{display:grid; justify-items:center}
+.bj-spot .chip{--size:1.5rem; margin-top:-1.15rem; box-shadow:0 2px 0 rgba(0,0,0,.6)}
+.bj-spot .chip:first-child{margin-top:0}
+.bj-spot .chip::before{inset:22%}
+.bj-spot b{position:absolute; bottom:-.55rem; padding:0 .3rem; background:#05081A; font-family:var(--f-serif); font-size:.6875rem; line-height:1.4; color:var(--ivory); font-variant-numeric:tabular-nums}
+.bj-seat.dummy .bj-spot{border-style:dashed; opacity:.5}
+
+/* 이름표 */
+.bj-seat .nm{padding:.1rem .55rem; background:rgba(5,8,26,.8); border:1px solid var(--line)}
+.bj-seat.mine .nm{border-color:var(--red-text); border-bottom-width:1px; color:#fff}
+.bj-seat.dummy .nm{color:var(--smoke); font-style:italic}
+.bj-seat.dummy .av{border-style:dashed}
+.bj-kick{top:auto; bottom:2.6rem; right:.2rem; width:1.4rem; height:1.4rem; padding:0; font-size:.875rem; line-height:1}
+
+/* 딜러: 손패 + 이름표 */
+.bj-who{display:inline-flex; align-items:center; gap:.45rem}
+.bj-who .nm{padding:.1rem .55rem; background:rgba(5,8,26,.8); border:1px solid var(--line); color:var(--text-2); font-size:.8125rem}
+.bj-who .av{position:relative; display:grid; place-items:center; width:2.4rem; height:2.4rem; border-radius:50%; border:2px solid rgba(238,243,250,.55); background:var(--black-2)}
+.bj-who .av img{position:absolute; inset:0; width:100%; height:100%; border-radius:50%; object-fit:cover; object-position:50% 20%}
+.bj-hand.dealer .bj-tot{right:calc(50% - 3.4rem)}
+
+/* 상태 칩: 베팅 남은 시간 막대 */
+.rl-status{display:inline-flex; align-items:center; gap:.5rem}
+.rl-status .bar{position:relative; display:block; width:4.5rem; height:3px; background:rgba(238,243,250,.15)}
+.rl-status .bar i{position:absolute; inset:0 auto 0 0; background:var(--gold); transition:width 1s linear}
+.rl-status .left{margin-left:0; min-width:1.2rem; text-align:right}
+
+/* 채팅: 진행 기록은 흐리게, 대화는 말풍선 */
+.rl-log .s, .rl-log .sh{font-size:.6875rem; opacity:.55}
+.rl-log .s.res{opacity:.8; color:var(--text-2)}
+.rl-log .sh.live{opacity:.85}
+.rl-log .c{justify-self:start; max-width:92%; margin-block:.2rem; padding:.35rem .65rem .45rem; background:rgba(238,243,250,.07); border:1px solid var(--line); border-radius:2px 10px 10px 10px; font-size:.9375rem}
+.rl-log .c b{font-size:.75rem}
+
+@media (max-width:700px){
+  .bj-shoe{display:none}
+  .bj-felt{width:92%}
+  .bj-felt text{font-size:15px}
+  .bj-spot{width:2.4rem; height:2.4rem}
+  .bj-spot .chip{--size:1.25rem; margin-top:-1rem}
+}
+@property --p{syntax:"<number>"; inherits:true; initial-value:1}

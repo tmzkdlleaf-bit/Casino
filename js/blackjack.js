@@ -5,12 +5,13 @@
    - 흐름: 앉기 → 베팅(첫 베팅 20초 뒤 또는 모두 걸면 바로) → 자리 순서대로 카드 받기/멈추기/두 배 → 딜러 → 정산
    - 카드 더미와 딜러의 엎은 카드는 서버만 앎. 화면은 받은 카드만 그림
    ========================================================= */
-import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029b";
-import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029b";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029b";
-import { nav, state } from "./state.js?v=20261029b";
-import { ALL, balOf, myChars, renderAccount } from "./views.js?v=20261029b";
-import { sfx, sfxVol, setSfxVol } from "./sfx.js?v=20261029b";
+import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029c";
+import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029c";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029c";
+import { nav, state } from "./state.js?v=20261029c";
+import { ALL, balOf, myChars, renderAccount } from "./views.js?v=20261029c";
+import { sfx, setSfxVol } from "./sfx.js?v=20261029c";
+import { hotkeys, kbd, toolsFrame, toolsMenu } from "./gametools.js?v=20261029c";
 
 const BJ = {
   id: null, t: null, seats: [], avatars: new Map(), chan: null, live: false, poll: 0, tickT: 0, loading: null,
@@ -266,7 +267,7 @@ function finishAnim(){
   flushHeld();
   if (!BJ.t) return;
   render();
-  if (BJ.t.phase === "betting" && mySeat()?.result) import("./auth.js?v=20261029b").then(m => m.loadMine()).then(renderAccount);   // 정산 뒤 내 코인
+  if (BJ.t.phase === "betting" && mySeat()?.result) import("./auth.js?v=20261029c").then(m => m.loadMine()).then(renderAccount);   // 정산 뒤 내 코인
   const t = BJ.t, me = mySeat();
   if (t.phase === "betting" && me?.result && me.cards.length && BJ.soundRound !== t.round){
     BJ.soundRound = t.round;
@@ -285,7 +286,8 @@ function render(){
   else if (!myChars().some(c => c.uuid === BJ.myChar)) BJ.myChar = myChars().sort((a, b) => (a.role === "참가자" ? 0 : 1) - (b.role === "참가자" ? 0 : 1))[0]?.uuid || null;
   if ($("#bj-title").textContent !== t.title) $("#bj-title").textContent = t.title;
   setTitle(t.title);
-  $("#bj-meta").innerHTML = `<span title="베팅 범위">${chipAmt(t.min_bet, t.currency)}~${n(t.max_bet)}</span>`;
+  $("#bj-meta").innerHTML = "";
+  renderFelt();
   renderRound();
   renderDealer(); renderSeats(); renderStatus(); renderBar(); renderTools(); renderFinal(); tick();
   const dt = dealerCtl() && t.phase === "playing" && t.turn_seat === -1 && !BJ.anim;
@@ -302,22 +304,43 @@ function renderDealer(){
   const showBack = BJ.vis.has(DK(r, "back")) && !BJ.vis.has(DK(r, 1));
   const shown = vis.map((c, i) => cardHtml(c, DK(r, i))).join("") + (showBack ? cardHtml(0, DK(r, "hole"), true) : "");
   const full = vis.length === cards.length && cards.length > 1;   // 엎은 카드까지 다 펼침
-  const tot = vis.length ? (full ? total(vis) : `${total(vis)}${showBack ? "+?" : ""}`) : "";
-  const bust = full && total(vis) > 21, bj = full && isBJ(vis);
+  const tot = vis.length ? total(vis) : null;
+  const bust = full && tot > 21, bj = full && isBJ(vis);
   const dc = t.dealer_character_id ? charOf(t.dealer_character_id) : null, dturn = t.phase === "playing" && t.turn_seat === -1 && !BJ.anim;
-  $("#bj-dealer").innerHTML = `<div class="bj-hand dealer${dc ? " has-char" : ""}${dturn ? " turn" : ""}">
-      ${dc ? `<span class="bj-dealer-av">${avatarOf(dc) ? `<img src="${esc(avatarOf(dc))}" alt="" decoding="async">` : `<span class="ph">${esc(dc.name.slice(0, 1))}</span>`}${dturn ? `<span class="tm" aria-hidden="true"></span>` : ""}</span>` : ""}
-      <span class="bj-who">${dc ? esc(dc.name) : "딜러"}${tot !== "" ? ` <b class="bj-tot${bust ? " bust" : bj ? " bj" : ""}">${bj ? "블랙잭" : bust ? `${tot} 버스트` : tot}</b>` : ""}</span>
-      <div class="bj-cards">${shown || `<span class="pc slot"></span><span class="pc slot"></span>`}</div>
+  $("#bj-dealer").innerHTML = `<div class="bj-hand dealer${dc ? " has-char" : ""}${dturn ? " turn" : ""}" aria-label="${esc(`딜러${dc ? " " + dc.name : ""}${tot != null ? `, 합 ${tot}${full ? "" : " 이상"}` : ""}`)}">
+      <div class="bj-hw"><div class="bj-cards">${shown || `<span class="pc slot"></span><span class="pc slot"></span>`}</div>
+        ${tot != null ? `<span class="bj-tot${bust ? " bust" : bj ? " bj" : ""}${full ? "" : " part"}">${bj ? "BJ" : tot}</span>` : ""}</div>
+      <span class="bj-who">${dc ? `<span class="av"${dturn ? ` data-turn` : ""}>${avatarOf(dc) ? `<img src="${esc(avatarOf(dc))}" alt="" decoding="async">` : `<span class="ph">${esc(dc.name.slice(0, 1))}</span>`}${dturn ? `<span class="tm" aria-hidden="true"></span>` : ""}</span>` : ""}<span class="nm">${dc ? esc(dc.name) : "딜러"}</span></span>
     </div>`;
+}
+
+/* 테이블 바닥에 새긴 규칙 (설명 문구 대신) */
+function renderFelt(){
+  const t = BJ.t, h = `${t.currency}|${t.min_bet}|${t.max_bet}`, el = $("#bj-felt");
+  if (el.dataset.h === h) return;
+  el.dataset.h = h;
+  el.innerHTML = `<svg viewBox="0 0 400 60" aria-hidden="true"><path id="bj-arc" d="M30 8 Q200 62 370 8" fill="none"/>
+      <text><textPath href="#bj-arc" startOffset="50%" text-anchor="middle">블랙잭은 3 : 2 · 딜러는 17에서 멈춤</textPath></text></svg>
+    <span class="lim">${chipAmt(t.min_bet, t.currency)}<i>—</i>${n(t.max_bet)}</span>`;
+  el.setAttribute("aria-label", `규칙: 블랙잭은 베팅의 1.5배, 딜러는 17 이상에서 멈춤. 베팅 ${CUR[cur()].name} ${n(t.min_bet)}~${n(t.max_bet)}`);
+}
+
+/* 베팅 자리: 금액에 따라 코인 1~3개를 쌓아 보임 */
+function spot(s, t){
+  if (!s || !s.bet || s.state === "idle" || !s.character_id) return `<span class="bj-spot" aria-hidden="true"></span>`;
+  const k = s.bet >= t.min_bet * 10 ? 3 : s.bet >= t.min_bet * 3 ? 2 : 1, chip = CUR[cur()].chip;
+  return `<span class="bj-spot on${s.state === "bet" ? " ready" : ""}"><span class="stk">${`<i class="chip ${chip}"></i>`.repeat(k + (s.doubled ? 1 : 0))}</span><b>${n(s.bet)}</b></span>`;
 }
 
 function renderSeats(){
   const t = BJ.t, me = mySeat(), N = t.max_seats, admin = state.isAdmin;
+  const joinAt = canJoin() ? Array.from({ length: N }, (_, i) => i).find(i => !seatAt(i)) : -1;   // 앉으면 들어갈 자리
   $("#bj-seats").style.setProperty("--n", N);
   $("#bj-seats").innerHTML = Array.from({ length: N }, (_, i) => {
     const s = seatAt(i), off = i - (N - 1) / 2, arc = `style="--dy:${(-Math.pow(Math.abs(off), 1.6) * 14).toFixed(1)}px"`;   // 양 끝이 살짝 올라가 둥글게
-    if (!s) return `<div class="bj-seat empty" ${arc}><span class="av"></span><span class="nm">빈 자리</span></div>`;
+    if (!s) return i === joinAt
+      ? `<button class="bj-seat empty join" type="button" data-act="join" ${arc} aria-label="이 자리에 앉기"><span class="bj-hw"></span>${spot(null)}<span class="av"><span class="plus" aria-hidden="true"></span></span><span class="nm">앉기</span></button>`
+      : `<div class="bj-seat empty" ${arc} aria-label="빈 자리"><span class="bj-hw"></span>${spot(null)}<span class="av"></span></div>`;
     const c = seatChar(s), src = c.dummy ? "" : avatarOf(c), isMe = me && me.seat === i;
     const vc = visCards(s), complete = vc.length === s.cards.length, settled = complete && dealerDone() && !BJ.anim;
     const masked = vc.some(cd => cd < 0);   // 가린 테이블: 남의 카드
@@ -325,19 +348,19 @@ function renderSeats(){
     const tag = !complete || masked ? ""
       : s.state === "bust" || (s.result && tot > 21 && !settled) ? `<span class="bj-tag bust">버스트</span>`
       : s.state === "blackjack" || (s.result && isBJ(s.cards) && !settled) ? `<span class="bj-tag bj">블랙잭</span>`
-      : s.result && s.cards.length && settled ? `<span class="bj-tag res-${s.result}">${RESULT[s.result]}${s.character_id ? (s.payout > s.bet ? ` +${n(s.payout - s.bet)}` : s.result === "lose" ? ` -${n(s.bet)}` : "") : ""}</span>` : "";
-    const label = `${c.name}${isMe ? " (나)" : ""}${vc.length ? (masked ? `, 카드 ${vc.length}장 (가려짐)` : `, 카드 ${vc.map(cardName).join(", ")}, 합 ${tot}`) : ""}${s.bet ? `, 베팅 ${s.bet}` : ""}${turn ? ", 지금 차례" : ""}`;
-    return `<div ${arc} class="bj-seat${isMe ? " mine" : ""}${turn ? " turn" : ""}${complete && (s.state === "bust" || (settled && s.result === "lose")) ? " lost" : ""}${settled && (s.result === "win" || s.result === "blackjack") ? " won" : ""}" data-seat="${i}" aria-label="${esc(label)}">
-      <div class="bj-cards">${vc.map((cd, k) => cardHtml(cd, SK(t.round, i, k, cd))).join("")}</div>
-      ${vc.length && !masked ? `<span class="bj-tot">${tot}${soft(vc) && tot < 21 && s.state === "playing" ? `<small>/${tot - 10}</small>` : ""}</span>` : ""}
-      ${tag}
+      : s.result && s.cards.length && settled ? `<span class="bj-tag res-${s.result}">${RESULT[s.result]}${s.character_id ? (s.payout > s.bet ? ` +${n(s.payout - s.bet)}` : s.result === "lose" ? ` −${n(s.bet)}` : "") : ""}</span>` : "";
+    const label = `${c.name}${isMe ? " (나)" : ""}${c.dummy ? " (더미)" : ""}${vc.length ? (masked ? `, 카드 ${vc.length}장 (가려짐)` : `, 카드 ${vc.map(cardName).join(", ")}, 합 ${tot}`) : ""}${s.bet ? `, 베팅 ${s.bet}` : ""}${turn ? ", 지금 차례" : ""}`;
+    return `<div ${arc} class="bj-seat${isMe ? " mine" : ""}${c.dummy ? " dummy" : ""}${turn ? " turn" : ""}${complete && (s.state === "bust" || (settled && s.result === "lose")) ? " lost" : ""}${settled && (s.result === "win" || s.result === "blackjack") ? " won" : ""}" data-seat="${i}" aria-label="${esc(label)}">
+      <div class="bj-hw"><div class="bj-cards">${vc.map((cd, k) => cardHtml(cd, SK(t.round, i, k, cd))).join("")}</div>
+        ${vc.length && !masked ? `<span class="bj-tot${tot > 21 ? " bust" : ""}">${soft(vc) && tot < 21 && s.state === "playing" ? `${tot - 10}/${tot}` : tot}</span>` : ""}${tag}</div>
+      ${spot(s, t)}
       <span class="av">${src ? `<img src="${esc(src)}" alt="" decoding="async" draggable="false">` : `<span class="ph">${esc(c.name.slice(0, 1))}</span>`}${turn ? `<span class="tm" aria-hidden="true"></span>` : ""}</span>
-      <span class="nm">${esc(c.name)}${isMe ? `<small>나</small>` : ""}${c.dummy ? `<small class="dm">더미</small>` : ""}</span>
-      ${s.bet && s.state !== "idle" && !c.dummy ? `<span class="bj-bet${s.state === "bet" ? " ready" : ""}">${chipAmt(s.bet, t.currency)}${s.doubled ? `<small>×2</small>` : ""}</span>` : ""}
-      ${admin && !isMe ? `<button class="bj-kick" type="button" data-kick="${i}" aria-label="${esc(c.name)} 자리 비우기">비우기</button>` : ""}
+      <span class="nm">${esc(c.name)}</span>
+      ${admin && !isMe ? `<button class="bj-kick" type="button" data-kick="${i}" aria-label="${esc(c.name)} 자리 비우기">×</button>` : ""}
     </div>`;
   }).join("");
 }
+const canJoin = () => { const t = BJ.t; return !!(state.session && t?.status === "open" && !mySeat() && myChars().length && BJ.seats.length < t.max_seats && !BJ.anim); };
 
 function leftSec(){
   const t = BJ.t; if (!t || t.status !== "open") return null;
@@ -349,9 +372,7 @@ function renderStatus(){
   const t = BJ.t, el = $("#bj-status");
   let html = "";
   if (!BJ.anim && t.status === "open"){
-    if (t.phase === "betting" && t.bet_deadline) html = `<b>베팅</b> <span class="left" id="bj-left"></span>`;
-    else if (isMyTurn()) html = `<b class="mine">내 차례</b> <span class="left" id="bj-left"></span>`;
-    else if (t.phase === "playing" && t.turn_seat === -1) html = `<b${dealerCtl() ? ` class="mine"` : ""}>딜러 차례</b> <span class="left" id="bj-left"></span>`;
+    if (t.phase === "betting" && t.bet_deadline) html = `<b>베팅</b><span class="left" id="bj-left"></span><i class="bar"><i id="bj-left-bar"></i></i>`;
   }
   el.innerHTML = html;
   el.classList.toggle("blank", !html);
@@ -391,21 +412,24 @@ function renderBar(){
   let html = "";
   // 딜러 자리의 진행 버튼 (손님 버튼과 따로)
   const dealerBtns = !BJ.anim && t.status === "open" && dealerCtl()
-    ? t.phase === "betting" ? `<button class="btn rl-act shoot" type="button" data-act="ddeal"${BJ.seats.some(x => x.state === "bet" || !x.character_id) ? "" : " disabled"}>카드 나누기</button>`
-    : t.turn_seat === -1 ? `<button class="btn rl-act shoot" type="button" data-act="dplay">딜러 카드 펼치기</button>` : "" : "";
+    ? t.phase === "betting" ? `<button class="btn rl-act shoot" type="button" data-act="ddeal" data-key="n"${BJ.seats.some(x => x.state === "bet" || !x.character_id) ? "" : " disabled"}>카드 나누기${kbd("n")}</button>`
+    : t.turn_seat === -1 ? `<button class="btn rl-act shoot" type="button" data-act="dplay" data-key="n">딜러 카드 펼치기${kbd("n")}</button>` : ""
+    // 컴퓨터 딜러 테이블: 관리자가 바로 나누기
+    : !BJ.anim && t.status === "open" && state.isAdmin && !t.dealer_character_id && t.phase === "betting"
+    ? `<button class="btn rl-act host" type="button" data-act="dealnow" data-key="n"${BJ.seats.some(x => x.state === "bet" || !x.character_id) ? "" : " disabled"}>카드 나누기${kbd("n")}</button>` : "";
   if (BJ.anim) html = "";
   else if (!state.session) html = `<a class="btn" href="#login">로그인</a>`;
   else if (t.status === "closed") html = `<a class="btn" href="#game">게임으로</a>`;
   else if (!me){
-    html = !chars.length ? `<button class="btn primary" type="button" disabled title="연결된 캐릭터가 없습니다">자리에 앉기</button>`
+    html = !chars.length ? ""
       : `${chars.length > 1 ? `<label class="sr" for="bj-join-char">앉을 캐릭터</label><select class="input rl-sel" id="bj-join-char">${chars.map(x =>
       `<option value="${esc(x.uuid)}"${x.uuid === BJ.myChar ? " selected" : ""}>${esc(x.name)} — ${CUR[c].short} ${n(balOf(x, c))}</option>`).join("")}</select>` : ""}
-      <button class="btn primary" type="button" data-act="join"${BJ.seats.length >= t.max_seats ? " disabled" : ""}>자리에 앉기</button>`;
+      <button class="btn primary rl-act" type="button" data-act="join"${BJ.seats.length >= t.max_seats ? " disabled" : ""}>앉기${chars.length === 1 ? `<small>${esc(chars[0].name)}</small>` : ""}</button>`;
   } else if (isMyTurn()){
     const canDouble = me.cards.length === 2 && balOf(chars.find(x => x.uuid === me.character_id), c) >= me.bet;
-    html = `<button class="btn rl-act shoot" type="button" data-act="hit">카드 받기</button>
-      <button class="btn rl-act" type="button" data-act="stand">멈추기</button>
-      <button class="btn rl-act" type="button" data-act="double"${canDouble ? "" : " disabled"}>두 배 <small>+${n(me.bet)}</small></button>`;
+    html = `<button class="btn rl-act shoot" type="button" data-act="hit" data-key="h">카드 받기${kbd("h")}</button>
+      <button class="btn rl-act" type="button" data-act="stand" data-key="s">멈추기${kbd("s")}</button>
+      <button class="btn rl-act" type="button" data-act="double" data-key="d"${canDouble ? "" : " disabled"}>두 배 <small>+${n(me.bet)}</small>${kbd("d")}</button>`;
   } else if (t.phase === "betting" && me.state === "idle"){
     const mc = chars.find(x => x.uuid === me.character_id), have = balOf(mc, c);
     const amt = Math.min(t.max_bet, Math.max(t.min_bet, BJ.betAmt ?? t.min_bet));
@@ -417,27 +441,24 @@ function renderBar(){
         <button class="btn small" type="button" data-amt="x2">×2</button>
         <button class="btn small" type="button" data-amt="max">최대</button>
       </div>
-      <button class="btn rl-act shoot" type="button" data-act="bet"${have < t.min_bet ? " disabled" : ""}>베팅</button>
-      <button class="btn" type="button" data-act="leave">일어나기</button>`;
+      <button class="btn rl-act shoot" type="button" data-act="bet" data-key="b"${have < t.min_bet ? " disabled" : ""}>베팅${kbd("b")}</button>
+      <button class="btn ghost-x" type="button" data-act="leave" title="일어나기" aria-label="일어나기">일어나기</button>`;
   } else if (t.phase === "betting" && me.state === "bet"){
     html = `<button class="btn" type="button" data-act="leave">베팅 취소</button>`;
   }
-  bar.innerHTML = dealerBtns + (dealerBtns && !me ? "" : html);
+  bar.innerHTML = (dealerBtns && !me && dealerCtl() ? "" : html) + dealerBtns;
   if (keep) $(`[data-act="${keep}"]`, bar)?.focus();
 }
 
 function renderTools(){
   const t = BJ.t, tools = $("#bj-tools"), a = state.isAdmin;
-  if (!$(".bj-btns", tools)) tools.innerHTML = `<label class="rl-vol" title="효과음 크기"><span>소리</span><input type="range" id="bj-vol" min="0" max="100" step="10" value="${Math.round(sfxVol() * 100)}" aria-label="효과음 크기"><output>${Math.round(sfxVol() * 100) || "끔"}</output></label><span class="rl-btns bj-btns"></span>`;
-  const html = [
-    a && DUMMY.ok && t.status === "open" ? `<button class="btn small" type="button" data-act="dummy"${BJ.seats.length >= t.max_seats ? " disabled" : ""}>더미 추가</button>` : "",
-    a && VIEW.ok && t.status === "open" && t.phase === "betting" ? `<label class="sr" for="bj-dealer-sel">딜러</label><select class="input small-sel" id="bj-dealer-sel" title="딜러 자리">${dealerOpts(t.dealer_character_id)}</select>` : "",
-    a && !t.dealer_character_id && t.status === "open" && t.phase === "betting" ? `<button class="btn small primary" type="button" data-act="dealnow"${BJ.seats.some(x => x.state === "bet" || !x.character_id) ? "" : " disabled"}>카드 나누기</button>` : "",
-    a && t.status === "open" ? `<button class="btn small danger" type="button" data-act="close">테이블 닫기</button>` : "",
-    a && t.status === "closed" ? `<button class="btn small danger" type="button" data-act="delete">테이블 지우기</button>` : ""
-  ].join("");
-  const box = $(".bj-btns", tools);
-  if (box.dataset.h !== html){ box.innerHTML = html; box.dataset.h = html; }
+  toolsFrame(tools, "bj-vol");
+  toolsMenu(tools, [
+    a && DUMMY.ok && t.status === "open" ? `<button type="button" role="menuitem" data-act="dummy"${BJ.seats.length >= t.max_seats ? " disabled" : ""}>더미 앉히기</button>` : "",
+    a && VIEW.ok && t.status === "open" && t.phase === "betting" ? `<label class="g-sel"><span>딜러</span><select class="input" id="bj-dealer-sel">${dealerOpts(t.dealer_character_id)}</select></label>` : "",
+    a && t.status === "open" ? `<button type="button" role="menuitem" class="danger" data-act="close">테이블 닫기</button>` : "",
+    a && t.status === "closed" ? `<button type="button" role="menuitem" class="danger" data-act="delete">테이블 지우기</button>` : ""
+  ].join(""));
 }
 
 /* 딜러 자리 고르기: 컴퓨터 또는 직원 캐릭터 */
@@ -453,9 +474,11 @@ $("#bj-tools").addEventListener("change", async e => {
 
 /* 1초마다: 남은 시간 + 시간이 다 되면 아무나 bj_tick 을 불러 진행 */
 function tick(){
-  const left = leftSec(), lab = $("#bj-left"), tm = $("#bj-seats .bj-seat.turn .tm") || $("#bj-dealer .turn .tm");
-  if (lab) { lab.textContent = left != null ? `${left}초` : ""; lab.classList.toggle("low", left != null && left <= 5); }
-  if (tm) { tm.textContent = left ?? ""; tm.classList.toggle("low", left != null && left <= 5); }
+  const left = leftSec(), lab = $("#bj-left"), tm = $("#bj-seats .bj-seat.turn .tm") || $("#bj-dealer .tm");
+  if (lab) { lab.textContent = left != null ? left : ""; lab.classList.toggle("low", left != null && left <= 5); }
+  if (tm) { tm.textContent = left ?? ""; tm.classList.toggle("low", left != null && left <= 10); tm.parentElement.style.setProperty("--p", left != null ? (left / TURN_SEC).toFixed(3) : 1); }
+  const bar = $("#bj-left-bar"), t = BJ.t;
+  if (bar && t?.bet_deadline && left != null) bar.style.width = `${Math.min(100, left / (t.dealer_character_id ? 30 : 20) * 100)}%`;
   if (left === 0 && state.session && Date.now() > BJ.tickTry){
     BJ.tickTry = Date.now() + 3000;
     sb.rpc("bj_tick", { p_table: BJ.id }).then(({ data }) => { if (data) load(true); });
@@ -526,7 +549,7 @@ async function act(btn){
       if (!(amt >= t.min_bet && amt <= t.max_bet)){ toast(`베팅은 ${n(t.min_bet)}~${n(t.max_bet)}입니다`); $("#bj-amt").focus(); return; }
       BJ.betAmt = amt;
       if (await call("bj_bet", { p_table: BJ.id, p_character: me.character_id, p_amount: amt })){
-        const { loadMine } = await import("./auth.js?v=20261029b"); loadMine().then(renderAccount);
+        const { loadMine } = await import("./auth.js?v=20261029c"); loadMine().then(renderAccount);
       }
     }
     else if (a === "hit"){ sfx("card"); await call("bj_hit", { p_table: BJ.id }); }
@@ -559,6 +582,7 @@ $("#bj-bar").addEventListener("keydown", e => { if (e.target.id === "bj-amt" && 
 $("#bj-bar").addEventListener("focusout", e => { if (e.target.id === "bj-amt") setTimeout(() => { if (document.activeElement?.id !== "bj-amt" && BJ.t) renderBar(); }, 0); });
 $("#bj-tools").addEventListener("click", e => { const b = e.target.closest("[data-act]"); if (b) act(b); });
 $("#bj-seats").addEventListener("click", async e => {
+  const j = e.target.closest('[data-act="join"]'); if (j) return act(j);
   const b = e.target.closest("[data-kick]"); if (!b) return;
   if (!confirm("이 자리를 비울까요? 이번 판에 건 코인은 돌려줍니다.")) return;
   await withBusy(b, async () => { await call("admin_bj_kick", { p_table: BJ.id, p_seat: +b.dataset.kick }); load(true); });
@@ -570,3 +594,4 @@ $("#bj-tools").addEventListener("input", e => {
 $("#bj-tools").addEventListener("change", e => { if (e.target.id === "bj-vol" && +e.target.value) sfx("card"); });
 
 document.addEventListener("comu:auth", () => { if (nav.current === "blackjack" && BJ.t) render(); if (nav.current === "game") loadLobby(); });
+hotkeys("blackjack", "#bj-bar");

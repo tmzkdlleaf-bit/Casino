@@ -27,24 +27,24 @@
 <!-- 제목·버튼: 갈무리 도트 글꼴 (SIL OFL, 버전 고정 + SRI) / 본문: IBM Plex Sans KR — 실제 쓰는 굵기만 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.css" integrity="sha384-55uQGdclWjXwWY0yHikdtcfcat9pPBqMBCVFIeWjRhvPPUYbpJLhIJegzTcFoh/A" crossorigin="anonymous">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="css/site.css?v=20261029b">
+<link rel="stylesheet" href="css/site.css?v=20261029c">
 <!-- 파일 주소 끝의 ?v=날짜 는 버전 표시 — 바꿔 올릴 때마다 함께 바꾸면 브라우저가 옛 파일을 쓰지 않음 (js 안의 import 주소도 같은 값) -->
 <!-- 모듈 미리 받기: import 사슬을 따라 차례로 받는 대기 시간 제거 (관리 모듈은 제외 — 관리자만 필요할 때 받음) -->
-<link rel="modulepreload" href="js/main.js?v=20261029b">
-<link rel="modulepreload" href="js/config.js?v=20261029b">
-<link rel="modulepreload" href="js/state.js?v=20261029b">
-<link rel="modulepreload" href="js/dom.js?v=20261029b">
-<link rel="modulepreload" href="js/data.js?v=20261029b">
-<link rel="modulepreload" href="js/views.js?v=20261029b">
-<link rel="modulepreload" href="js/effects.js?v=20261029b">
-<link rel="modulepreload" href="js/router.js?v=20261029b">
-<link rel="modulepreload" href="js/auth.js?v=20261029b">
-<link rel="modulepreload" href="js/forms.js?v=20261029b">
-<link rel="modulepreload" href="js/markdown.js?v=20261029b">
-<link rel="modulepreload" href="js/ambience.js?v=20261029b">
-<link rel="modulepreload" href="js/navorder.js?v=20261029b">
-<link rel="modulepreload" href="js/charedit.js?v=20261029b">
-<link rel="modulepreload" href="js/shop.js?v=20261029b">
+<link rel="modulepreload" href="js/main.js?v=20261029c">
+<link rel="modulepreload" href="js/config.js?v=20261029c">
+<link rel="modulepreload" href="js/state.js?v=20261029c">
+<link rel="modulepreload" href="js/dom.js?v=20261029c">
+<link rel="modulepreload" href="js/data.js?v=20261029c">
+<link rel="modulepreload" href="js/views.js?v=20261029c">
+<link rel="modulepreload" href="js/effects.js?v=20261029c">
+<link rel="modulepreload" href="js/router.js?v=20261029c">
+<link rel="modulepreload" href="js/auth.js?v=20261029c">
+<link rel="modulepreload" href="js/forms.js?v=20261029c">
+<link rel="modulepreload" href="js/markdown.js?v=20261029c">
+<link rel="modulepreload" href="js/ambience.js?v=20261029c">
+<link rel="modulepreload" href="js/navorder.js?v=20261029c">
+<link rel="modulepreload" href="js/charedit.js?v=20261029c">
+<link rel="modulepreload" href="js/shop.js?v=20261029c">
 </head>
 <body class="intro-on loading">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -353,6 +353,7 @@
             <div class="rl-gun" id="rl-gun"></div>
             <div class="rl-mag" id="rl-mag"><ol class="rl-cyl" id="rl-cyl"></ol><span class="rl-cyl-n" id="rl-cyl-n"></span></div>
           </div>
+          <div class="rl-felt" id="rl-felt" role="img"></div>
           <div class="rl-sparks" id="rl-sparks" aria-hidden="true"></div>
           <svg class="rl-fx" id="rl-fx" aria-hidden="true"></svg>
         </div>
@@ -389,6 +390,8 @@
         <div class="table bj-table" id="bj-table">
           <div class="bj-round" id="bj-round" aria-live="polite"></div>
           <div class="bj-dealer" id="bj-dealer"></div>
+          <div class="bj-felt" id="bj-felt" role="img"></div>
+          <div class="bj-shoe" aria-hidden="true"><i></i><i></i><i></i></div>
           <div class="bj-seats" id="bj-seats" role="group" aria-label="자리"></div>
           <section class="bj-final" id="bj-final" aria-live="polite" hidden></section>
         </div>
@@ -708,6 +711,6 @@
 <!-- 버전 고정 + 무결성 해시(SRI): CDN 파일이 바뀌면 브라우저가 실행을 거부 -->
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"
         integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
-<script type="module" src="js/main.js?v=20261029b"></script>
+<script type="module" src="js/main.js?v=20261029c"></script>
 </body>
 </html>
