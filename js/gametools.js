@@ -3,8 +3,8 @@
    - 소리: 스피커 단추 → 눌러 펼치면 크기 막대
    - 메뉴: … 단추 → 방장·관리 기능을 한곳에 (자주 쓰는 '시작'은 아래 버튼 줄에)
    ========================================================= */
-import { $, $$ } from "./dom.js?v=20261029c";
-import { sfxVol } from "./sfx.js?v=20261029c";
+import { $, $$ } from "./dom.js?v=20261029d";
+import { sfxVol } from "./sfx.js?v=20261029d";
 
 const ICON_VOL = on => `<svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path d="M2 6h3l4-3v10l-4-3H2z" fill="currentColor"/>${on
   ? `<path d="M11 5h1v1h1v4h-1v1h-1v-1h1V6h-1z" fill="currentColor"/><path d="M13 3h1v1h1v8h-1v1h-1v-1h1V4h-1z" fill="currentColor" opacity=".6"/>`

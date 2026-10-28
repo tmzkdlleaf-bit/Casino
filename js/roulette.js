@@ -5,13 +5,13 @@
    - 탄 위치는 서버만 앎. 화면은 서버가 돌려준 결과(채팅의 'shot' 기록)를 보고 효과만 그림
    - 실시간 연결이 끊겨도 5초마다 다시 불러와 따라감
    ========================================================= */
-import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029c";
-import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029c";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029c";
-import { motionOK, nav, state } from "./state.js?v=20261029c";
-import { ALL, balOf, myChars } from "./views.js?v=20261029c";
-import { sfx, setSfxVol } from "./sfx.js?v=20261029c";
-import { hotkeys, kbd, toolsFrame, toolsMenu } from "./gametools.js?v=20261029c";
+import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029d";
+import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029d";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029d";
+import { motionOK, nav, state } from "./state.js?v=20261029d";
+import { ALL, balOf, myChars } from "./views.js?v=20261029d";
+import { sfx, setSfxVol } from "./sfx.js?v=20261029d";
+import { hotkeys, kbd, toolsFrame, toolsMenu } from "./gametools.js?v=20261029d";
 
 /* ---------- 전기 충격기 (도트 그림) — 오른쪽을 향함, 한 칸 = 1 ---------- */
 const GUN = ["........................................", "....KKKKKKKKKKKKKKKKKKKKKKKKK...........", "...KSSSSSSSSSSSSSSSSSSSSSSSSSK..........", "..KLLLLLLLLLLLLLLLLLLLLLLLLLLLKKKKKKKK..", "..KLBBYYBYYBYYBBBBBBBBBBBBBBBKPPPPPPPK..", "..KLBBBBBBBBBBBBBBBBBBBBBBBBBKPQQQQQPKWW", "..KDBBBBBBBBBBBBBBBBBBBBBBBBBKPPPPPPPK..", "..KDDDDDDDDDDDDDDDDDDDDDDDDDDKPQQQQQPKWW", "..KKKKKKDDDDDDDKKKKKKKKKKKKKKKPPPPPPPK..", ".......KGGGGGKDK....K.......KKKKKKKKK...", "......KGgGGGKKDK...K....................", "......KGGGGGK.KMK..K....................", ".....KGgGGGK...KMKK.....................", ".....KGGGGGK....KK......................", "....KGgGGGK.............................", "....KGGGGGK.............................", "....KKKKKKK............................."];
@@ -336,8 +336,8 @@ function renderCyl(){
   if (r.status !== "playing"){ el.innerHTML = ""; n.textContent = ""; return; }
   // 6칸 원형 탄창: 쏜 칸은 빈 구멍, 다음에 쏠 칸은 테두리 강조
   el.innerHTML = Array.from({ length: 6 }, (_, i) => `<li class="${i < r.shots ? "used" : ""}${i === r.shots ? " next" : ""}" style="--i:${i}"></li>`).join("");
-  n.innerHTML = `<b>${r.shots}</b>/6`;
-  n.setAttribute("aria-label", `6발 중 ${r.shots}발 쏨`);
+  n.innerHTML = `<b>${6 - r.shots}</b>/6`;   // 남은 칸 수
+  n.setAttribute("aria-label", `6칸 중 ${6 - r.shots}칸 남음`);
 }
 
 function renderPool(){
@@ -683,7 +683,7 @@ $("#rl-ava-form").addEventListener("submit", async e => {
   const cid = $("#rl-ava-char").value, old = RL.avatars.get(cid)?.path;
   await withBusy($('button[type="submit"]', e.target), async () => {
     try {
-      const { toWebP, extOf } = await import("./img.js?v=20261029c");
+      const { toWebP, extOf } = await import("./img.js?v=20261029d");
       const blob = await toWebP(avaFile, 512), path = `${cid}/${Date.now()}.${extOf(blob)}`;
       const up = await sb.storage.from("roulette").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
       if (up.error) throw up.error;
