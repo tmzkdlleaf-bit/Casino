@@ -6,7 +6,7 @@
    - 읽던 위치는 회차마다 이 기기에 기억
    ========================================================= */
 import { $, $$, esc } from "./dom.js?v=20261029g";
-import { motionOK } from "./state.js?v=20261029g";
+import { motionOK, state } from "./state.js?v=20261029g";
 import { ALL } from "./views.js?v=20261029g";
 import { SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId } from "./logview.js?v=20261029g";
 
@@ -21,8 +21,10 @@ const VOL = .4;
 
 const N = {
   on: false, lines: [], pos: 0, typing: false, auto: false, speed: 1, sound: false,
-  tTimer: 0, aTimer: 0, nodes: null, bgKey: null, bgmKey: null, audio: null, faceKey: null, bgFlip: 0
+  tTimer: 0, aTimer: 0, nodes: null, bgKey: null, bgmKey: null, audio: null, faceKey: null, bgFlip: 0,
+  side: [], upTo: -1, mine: new Set(), unread: { other: 0, secret: 0 }, openSide: null
 };
+const SIDE_MAX = 120;      // 채팅창에 남겨 두는 메시지 수
 try { const p = JSON.parse(localStorage.getItem(PREF_KEY) || "{}"); if (p.speed >= 0 && p.speed < 3) N.speed = p.speed; N.sound = !!p.sound; } catch (_) {}
 const savePref = () => { try { localStorage.setItem(PREF_KEY, JSON.stringify({ speed: N.speed, sound: N.sound })); } catch (_) {} };
 
@@ -40,6 +42,16 @@ function build(){
         <div class="vn-text" id="vn-text" aria-live="polite"></div>
         <span class="vn-more" id="vn-more" aria-hidden="true">▼</span>
       </div>
+      <div class="vn-side" id="vn-side">
+        <section class="vn-chat" data-kind="secret" hidden aria-label="비밀 채팅"><header><span class="dot" aria-hidden="true"></span>비밀<button type="button" class="vn-chat-x" data-vn="side-close" aria-label="닫기">×</button></header><ol class="vn-chat-list"></ol></section>
+        <section class="vn-chat" data-kind="other" hidden aria-label="잡담 채팅"><header><span class="dot" aria-hidden="true"></span>잡담<button type="button" class="vn-chat-x" data-vn="side-close" aria-label="닫기">×</button></header><ol class="vn-chat-list"></ol></section>
+      </div>
+      <div class="vn-sidebtns" id="vn-sidebtns">
+        <button type="button" class="vn-sidebtn" data-side="secret" hidden>비밀 <span class="n"></span></button>
+        <button type="button" class="vn-sidebtn" data-side="other" hidden>잡담 <span class="n"></span></button>
+      </div>
+      <div class="vn-notes" id="vn-notes" aria-label="쪽지"></div>
+      <div class="vn-note-open" id="vn-note-open" hidden role="dialog" aria-label="쪽지 내용"></div>
       <div class="vn-log" id="vn-log" hidden role="dialog" aria-label="지난 대사">
         <div class="vn-log-head"><strong>지난 대사</strong><span class="grow"></span>
           <button class="btn small" type="button" data-vn="first">처음부터</button>
@@ -62,12 +74,91 @@ function build(){
 }
 
 /* ---------- 지금 보이는 탭의 대사 목록 ---------- */
+/* 메인 탭 → 대사창(한 줄씩 넘김), 잡담·비밀·정보 → 옆 (지나갈 때 채팅창·쪽지로 나타남) */
+const kindOf = t => { const f = V.log.tabs[t]?.[1]; return f === "other" || f === "secret" || f === "info" ? f : "main"; };
 function collect(){
   const log = V.log;
-  N.lines = [];
-  log.m.forEach((x, i) => { if (!V.hidden.has(x[0])) N.lines.push(i); });
+  N.lines = []; N.side = [];
+  log.m.forEach((x, i) => { if (V.hidden.has(x[0])) return; (kindOf(x[0]) === "main" ? N.lines : N.side).push(i); });
+  if (!N.lines.length){ N.lines = N.side; N.side = []; }          // 메인 탭이 없으면 전부 대사창으로
   $("#vn-seek").max = Math.max(1, N.lines.length);
+  // 내 캐릭터 이름: 채팅창에서 오른쪽 말풍선으로
+  const mine = new Set(state.mine.map(m => m.uuid));
+  N.mine = new Set(ALL().filter(c => mine.has(c.uuid)).map(c => c.name.trim()));
+  const kinds = new Set(N.side.map(i => kindOf(log.m[i][0])));
+  for (const k of ["secret", "other"]){
+    $(`.vn-chat[data-kind="${k}"]`).hidden = !kinds.has(k);
+    $(`.vn-sidebtn[data-side="${k}"]`).hidden = !kinds.has(k);
+  }
+  const chats = ["secret", "other"].filter(k => kinds.has(k)).length;
+  $("#vn-stage").classList.toggle("has-side", chats > 0);
+  $("#vn-stage").classList.toggle("two-side", chats > 1);
+  N.upTo = -1; N.unread = { other: 0, secret: 0 }; closeNote(); setSide(null);
+  $$(".vn-chat-list").forEach(l => l.innerHTML = ""); $("#vn-notes").innerHTML = "";
 }
+
+/* ---------- 잡담·비밀 채팅창, 정보 쪽지 ---------- */
+function chatHtml(i, fresh){
+  const log = V.log, [t, s, text] = log.m[i], [name, color, narr] = log.sp[s], tab = log.tabs[t];
+  const quiet = !name || SYSTEM.test(name) || narr;
+  const many = kindOf(t) === "secret" && log.tabs.filter(x => x[1] === "secret").length > 1;
+  const tag = many ? `<span class="tg">${esc(tab[0])}</span>` : "";
+  if (quiet) return `<li class="q${fresh ? " fresh" : ""}">${tag}${deco(esc(text))}</li>`;
+  const me = N.mine.has(name.trim());
+  return `<li class="${me ? "mine" : ""}${fresh ? " fresh" : ""}"><span class="who" style="color:${readable(color)}">${esc(name)}${tag}</span><span class="bub">${deco(esc(text))}</span></li>`;
+}
+function noteHtml(i, fresh){
+  const log = V.log, [t, s] = log.m[i], [name] = log.sp[s];
+  return `<button type="button" class="vn-note${fresh ? " fresh" : ""}" data-note="${i}"><span class="ic" aria-hidden="true"></span><span class="t">쪽지</span><span class="w">${esc(!name || SYSTEM.test(name) ? log.tabs[t][0] : name)}</span></button>`;
+}
+/* 대사 번호 i 앞까지의 옆 내용을 보여 줌. 앞으로 한 줄씩 가면 새것만 붙이고, 뒤로 가거나 건너뛰면 다시 그림 */
+function showSide(i, last){
+  const until = last ? Infinity : i;                       // 마지막 대사에서는 뒤에 남은 것까지 전부
+  const lists = { other: $('.vn-chat[data-kind="other"] .vn-chat-list'), secret: $('.vn-chat[data-kind="secret"] .vn-chat-list') };
+  const forward = N.upTo >= 0 && until >= N.upTo;
+  const items = N.side.filter(k => k < until && (!forward || k >= N.upTo));
+  if (!forward){ lists.other.innerHTML = ""; lists.secret.innerHTML = ""; $("#vn-notes").innerHTML = ""; }
+  const recent = forward ? items : items.slice(-SIDE_MAX * 2);
+  const add = { other: [], secret: [], info: [] };
+  for (const k of recent) add[kindOf(V.log.m[k][0])].push(k);
+  for (const kind of ["other", "secret"]){
+    if (!add[kind].length) continue;
+    const list = lists[kind];
+    list.insertAdjacentHTML("beforeend", add[kind].slice(-SIDE_MAX).map(k => chatHtml(k, forward && motionOK())).join(""));
+    while (list.children.length > SIDE_MAX) list.firstElementChild.remove();
+    list.scrollTop = list.scrollHeight;
+    if (forward && N.openSide !== kind){ N.unread[kind] += add[kind].length; }
+  }
+  if (add.info.length){
+    const tray = $("#vn-notes");
+    tray.insertAdjacentHTML("beforeend", add.info.slice(-4).map(k => noteHtml(k, forward && motionOK())).join(""));
+    while (tray.children.length > 4) tray.firstElementChild.remove();
+  }
+  N.upTo = until === Infinity ? V.log.m.length : until;
+  for (const k of ["other", "secret"]){
+    const n = $(`.vn-sidebtn[data-side="${k}"] .n`);
+    n.textContent = N.unread[k] ? N.unread[k] : "";
+  }
+}
+function setSide(kind){                                         // 휴대폰: 채팅창을 버튼으로 열고 닫음
+  N.openSide = kind;
+  $("#vn-side")?.setAttribute("data-open", kind || "");
+  if (kind){ N.unread[kind] = 0; const n = $(`.vn-sidebtn[data-side="${kind}"] .n`); if (n) n.textContent = ""; const l = $(`.vn-chat[data-kind="${kind}"] .vn-chat-list`); l.scrollTop = l.scrollHeight; }
+  $$(".vn-sidebtn").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.side === kind)));
+}
+function openNote(i){
+  const log = V.log, [t, s, text] = log.m[i], [name, color, narr] = log.sp[s];
+  const who = !name || SYSTEM.test(name) || narr ? "" : `<p class="who" style="color:${readable(color)}">${esc(name)}</p>`;
+  const box = $("#vn-note-open");
+  const tn = log.tabs[t][0], tabName = /^(main|info|other|secret)$/i.test(tn) ? TAB_LABEL[log.tabs[t][1]] || tn : tn;
+  box.innerHTML = `<div class="paper"><p class="tab">${esc(tabName)}</p>${who}<div class="tx">${deco(esc(text))}</div>
+    <button type="button" class="btn small" data-vn="note-close">접기</button></div>`;
+  box.hidden = false;
+  $(`.vn-note[data-note="${i}"]`)?.classList.add("read");
+  setAuto(false);
+  box.querySelector("button").focus();
+}
+function closeNote(){ const b = $("#vn-note-open"); if (b && !b.hidden){ b.hidden = true; b.innerHTML = ""; } }
 
 /* 대사 번호 i 직전(같은 번호 포함)의 마지막 표시 */
 const markAt = (list, i) => { let k = -1; (list || []).forEach((b, j) => { if (b.at <= i) k = j; }); return k; };
@@ -226,6 +317,7 @@ function go(pos){
   typeText(tx);
 
   showStanding(isSys || isNarr ? "" : standingOf(s, f), s);
+  showSide(i, N.pos === N.lines.length - 1);
   showBg(i);
   syncBgm(i);
   preload(N.pos);
@@ -316,6 +408,10 @@ export function refreshNovel(){
 /* ---------- 조작 ---------- */
 document.addEventListener("click", e => {
   if (!N.on) return;
+  const note = e.target.closest("[data-note]");
+  if (note){ openNote(+note.dataset.note); return; }
+  const sideBtn = e.target.closest("[data-side]");
+  if (sideBtn){ setSide(N.openSide === sideBtn.dataset.side ? null : sideBtn.dataset.side); return; }
   const jump = e.target.closest("[data-vn-jump]");
   if (jump){ closeLogPanel(); go(+jump.dataset.vnJump); return; }
   const b = e.target.closest("[data-vn]");
@@ -327,12 +423,17 @@ document.addEventListener("click", e => {
     else if (act === "speed"){ N.speed = (N.speed + 1) % SPEEDS.length; savePref(); syncButtons(); if (N.auto && !N.typing) scheduleAuto(); }
     else if (act === "log") $("#vn-log").hidden ? openLogPanel() : closeLogPanel();
     else if (act === "log-close") closeLogPanel();
+    else if (act === "note-close") closeNote();
+    else if (act === "side-close") setSide(null);
     else if (act === "first"){ closeLogPanel(); go(0); }
     else if (act === "sound"){ N.sound = !N.sound; savePref(); syncButtons(); N.bgmKey = null; syncBgm(N.lines[N.pos] ?? 0); }
     return;
   }
-  // 무대(대사창 포함)를 누르면 다음. 지난 대사 창 안은 제외
-  if (e.target.closest("#vn-stage") && !e.target.closest("#vn-log")) next();
+  // 무대(대사창 포함)를 누르면 다음. 지난 대사·채팅창·쪽지는 제외. 쪽지가 펼쳐져 있으면 먼저 접음
+  if (e.target.closest("#vn-stage") && !e.target.closest("#vn-log, .vn-side, .vn-sidebtns, .vn-notes, #vn-note-open")){
+    if (!$("#vn-note-open").hidden){ closeNote(); return; }
+    next();
+  }
 });
 
 document.addEventListener("input", e => {
@@ -346,6 +447,9 @@ document.addEventListener("keydown", e => {
   if (tag === "INPUT" && e.target.id !== "vn-seek" || tag === "TEXTAREA" || tag === "SELECT") return;
   if (!e.target.closest?.("#log-vn") && e.target !== document.body) return;
   if (!$("#vn-log").hidden){ if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); closeLogPanel(); } return; }
+  if (e.key === "Escape" && !$("#vn-note-open").hidden){ e.preventDefault(); e.stopPropagation(); closeNote(); return; }
+  if (e.key === "Escape" && N.openSide){ e.preventDefault(); e.stopPropagation(); setSide(null); return; }
+  if (e.target.closest?.(".vn-side, .vn-notes, #vn-note-open")) return;
   if (e.target.id === "vn-seek" && (e.key === "ArrowLeft" || e.key === "ArrowRight")) return;
   if (e.target.tagName === "BUTTON" && (e.key === " " || e.key === "Enter")) return;   // 버튼은 버튼대로
   if ([" ", "Enter", "ArrowRight", "ArrowDown", "PageDown"].includes(e.key)){ e.preventDefault(); next(); }

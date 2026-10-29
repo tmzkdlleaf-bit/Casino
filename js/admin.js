@@ -488,10 +488,10 @@ export async function admSaveInventory(btn){
 /* =========================================================
    백업: 모든 표를 JSON 파일 하나로 내려받음 (이미지 파일 자체는 빠지고 경로만 들어감)
    ========================================================= */
-const BACKUP_TABLES = ["profiles", "characters", "inventory", "items", "chapters", "logs", "notices", "notice_categories",
+const BACKUP_TABLES = ["profiles", "characters", "inventory", "items", "chapters", "log_secrets", "logs", "notices", "notice_categories",
   "chip_ledger", "shop_requests", "chip_requests", "game_slots", "game_records",
   "roulette_rooms", "roulette_seats", "roulette_bets", "roulette_chat", "roulette_avatars", "bj_tables", "bj_chat"];
-const BACKUP_LABEL = { profiles: "멤버", characters: "캐릭터", inventory: "소지품", items: "상점 아이템", chapters: "지난 이야기", logs: "로그", notices: "공지", notice_categories: "공지 분류",
+const BACKUP_LABEL = { profiles: "멤버", characters: "캐릭터", inventory: "소지품", items: "상점 아이템", chapters: "지난 이야기", log_secrets: "기록 비밀 탭", logs: "로그", notices: "공지", notice_categories: "공지 분류",
   chip_ledger: "코인 기록", shop_requests: "구매 요청", chip_requests: "코인 정산 요청", game_slots: "게임 일정", game_records: "전적",
   roulette_rooms: "룰렛 방", roulette_seats: "룰렛 자리", roulette_bets: "룰렛 베팅", roulette_chat: "룰렛 채팅", roulette_avatars: "룰렛 자리 이미지",
   bj_tables: "블랙잭 테이블", bj_seats: "블랙잭 자리", bj_chat: "블랙잭 채팅" };
@@ -954,7 +954,10 @@ admPanel().addEventListener("click", e => {
   state.admDirty = true;
 });
 
-admPanel().addEventListener("change", e => { if (e.target.id === "log-file") logRead(e.target); });
+admPanel().addEventListener("change", e => {
+  if (e.target.id === "log-file") logRead(e.target);
+  if (e.target.name === "log-fmt"){ const w = $(`.log-who[data-t="${e.target.dataset.t}"]`); if (w) w.hidden = e.target.value !== "secret"; }
+});
 admPanel().addEventListener("change", e => {
   if (e.target.id !== "gimg-file") return;
   const f = e.target.files[0];
@@ -985,6 +988,7 @@ async function logRead(input){
   if (f.size > 60 * 1024 * 1024){ fieldError(input, "60MB 이하 파일만 올릴 수 있습니다."); return; }
   $("#log-status").textContent = "읽는 중…";
   const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261029g");
+  LOG.match = (await import("./logsecret.js?v=20261029g")).matchCharacters;
   const messages = parseLog(await f.text());
   $("#log-status").textContent = "";
   if (!messages.length){ fieldError(input, "대사를 찾지 못했습니다. 코코포리아에서 내보낸 로그 파일이 맞는지 확인해 주세요."); return; }
@@ -992,9 +996,10 @@ async function logRead(input){
   const tabs = LOG.info.tabs, sp = LOG.info.speakers;
   opts.innerHTML = `
     <p class="form-note">대사 ${messages.length.toLocaleString("ko-KR")}개 · 탭 ${tabs.length}개 · 화자 ${sp.length}명을 찾았습니다.</p>
-    <fieldset class="log-fs"><legend>저장할 탭</legend>
-      ${tabs.map((t, i) => `<label class="check"><input type="checkbox" name="log-tab" value="${i}" ${t.format === "secret" ? "" : "checked"}>${esc(t.name)} <span class="hint" style="margin:0">(${t.count.toLocaleString("ko-KR")})</span></label>`).join("")}
-      <p class="hint">비밀 탭은 처음에 빠져 있습니다. 잡담 탭은 저장되지만 보는 화면에서 처음엔 접혀 있습니다.</p>
+    <fieldset class="log-fs"><legend>저장할 탭과 종류</legend>
+      <div class="log-tabrows">${tabs.map((t, i) => logTabRow(t, i)).join("")}</div>
+      <p class="hint">메인: 노벨 모드 대사창 · 잡담: 노벨 모드 채팅창, 읽기 화면에서 처음엔 접힘 · 정보: 노벨 모드 쪽지 ·
+        비밀: 공개 기록 파일에서 빠지고, 체크한 캐릭터의 주인과 관리자만 봅니다. 캐릭터는 그 탭에서 말한 이름과 같은 사이트 캐릭터를 미리 골라 둡니다.</p>
     </fieldset>
     <fieldset class="log-fs"><legend>나레이션으로 보일 화자</legend>
       <p class="hint" style="margin-top:0">체크한 화자는 이름 없이 본문처럼 보입니다 (진행자·KP 등).</p>
@@ -1020,6 +1025,24 @@ async function logRead(input){
     </fieldset>
     <label class="check"><input type="checkbox" id="log-strip" checked>줄 처음·끝의 @표정 태그 지우기</label>`;
   btn.disabled = false;
+}
+
+const FMT_LABEL = { main: "메인", info: "정보", other: "잡담", secret: "비밀" };
+function logTabRow(t, i){
+  return `<div class="log-tabrow" data-t="${i}">
+    <label class="check"><input type="checkbox" name="log-tab" value="${i}" checked>${esc(t.name)} <span class="hint" style="margin:0">(${t.count.toLocaleString("ko-KR")})</span></label>
+    <select class="input log-fmt" name="log-fmt" data-t="${i}" aria-label="${esc(t.name)} 탭 종류">${Object.entries(FMT_LABEL).map(([v, l]) => `<option value="${v}" ${t.format === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+    <div class="log-who" data-t="${i}" ${t.format === "secret" ? "" : "hidden"}>${logWho(i)}</div>
+  </div>`;
+}
+/* 비밀 탭을 볼 캐릭터: 그 탭에서 말한 화자 이름과 맞는 사이트 캐릭터를 미리 체크 */
+function logWho(i){
+  const tab = LOG.info.tabs[i].name, chars = ALL();
+  if (!chars.length) return `<p class="hint">사이트에 캐릭터가 없습니다. 관리자만 볼 수 있게 저장됩니다.</p>`;
+  const names = [...new Set(LOG.messages.filter(m => m.tab === tab).map(m => m.name))];
+  const hit = new Set(LOG.match(names, chars));
+  return `<span class="log-who-l">볼 수 있는 캐릭터</span>${chars.map(c => `<label class="check"><input type="checkbox" name="log-who-${i}" value="${esc(c.uuid)}" ${hit.has(c.uuid) ? "checked" : ""}>${esc(c.name)}</label>`).join("")}
+    ${hit.size ? "" : `<span class="hint">이 탭의 화자와 이름이 같은 캐릭터가 없습니다. 아무도 고르지 않으면 관리자만 봅니다.</span>`}`;
 }
 
 function libSummary(extra = ""){
@@ -1096,16 +1119,22 @@ async function logSaveNow(id){
   if (!include.size){ $("#log-status").textContent = "저장할 탭을 하나 이상 골라 주세요."; return; }
   const row = (ADM.rows.chapters || []).find(r => r.id === id);
   if (row?.log_path && !confirm("이미 저장된 기록을 새 로그로 바꿉니다. 기록 화면에서 고친 대사와 BGM 구간은 사라집니다. 계속할까요?")) return;
-  const data = pack(LOG.messages, { include, narrators, stripTag: $("#log-strip").checked, src: LOG.name, library: LOG.library });
+  const formats = new Map($$('select[name="log-fmt"]').map(sel => [LOG.info.tabs[+sel.dataset.t].name, sel.value]));
+  const owners = new Map(LOG.info.tabs.map((t, i) => [t.name, $$(`input[name="log-who-${i}"]:checked`).map(x => x.value)]));
+  const data = pack(LOG.messages, { include, narrators, stripTag: $("#log-strip").checked, src: LOG.name, library: LOG.library, formats, owners });
   try {
     if (data.faces.length){
       const r = await backupFaces(data.faces, (d, n) => { $("#log-status").textContent = `표정 이미지 복사 중… ${d}/${n}`; });
       data.faces = r.faces;
       if (r.ok < data.faces.length) toast(`이미지 ${data.faces.length - r.ok}개는 코코포리아가 복사를 막아 원본 주소로 연결했습니다`);
     }
-    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+    // 비밀 탭은 공개 기록 파일에서 빼서 log_secrets 표로 (update-20.sql)
+    const { splitLog, saveSecrets } = await import("./logsecret.js?v=20261029g");
+    const { pub, secrets } = splitLog(data);
+    const blob = new Blob([JSON.stringify(pub)], { type: "application/json" });
     const path = `ch-${id}-${Date.now()}.json`;
-    $("#log-status").textContent = `저장 중… (${Math.ceil(blob.size / 1024).toLocaleString("ko-KR")}KB)`;
+    $("#log-status").textContent = `저장 중… (${Math.ceil(blob.size / 1024).toLocaleString("ko-KR")}KB${secrets.length ? ` · 비밀 탭 ${secrets.length}개 따로` : ""})`;
+    await saveSecrets(sb, id, secrets);
     const up = await sb.storage.from("logs").upload(path, blob, { contentType: "application/json", cacheControl: "31536000", upsert: false });
     if (up.error) throw up.error;
     const { error } = await sb.from("chapters").update({ log_path: path, updated_at: new Date().toISOString() }).eq("id", id);
@@ -1124,6 +1153,7 @@ async function logDelete(id){
   const { error } = await sb.from("chapters").update({ log_path: null, updated_at: new Date().toISOString() }).eq("id", id);
   if (error){ $("#log-status").textContent = errMsg(error); return; }
   sb.storage.from("logs").remove([row.log_path]);
+  import("./logsecret.js?v=20261029g").then(m => m.saveSecrets(sb, id, [])).catch(() => {});   // 붙어 있던 비밀 탭도
   toast("기록을 삭제했습니다");
   await admLoad("chapters"); admRenderCrud("chapters");
   refreshPublic();

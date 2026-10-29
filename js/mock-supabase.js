@@ -32,6 +32,13 @@
   let T;
   try { T = JSON.parse(localStorage.getItem(TABLE_KEY)) || SEED(); } catch (_) { T = SEED(); }
   const persist = () => { try { localStorage.setItem(TABLE_KEY, JSON.stringify(T)); } catch (_) {} };
+  /* 테스트 멤버 둘: '보는 사람'을 바꿔서 비밀 탭이 가려지는지 확인용 */
+  const MEMBERS = [
+    { id: "u-m1", email: "member1@titfortat777.invalid", display_name: "테스트 멤버 1", role: "member", reduce_motion: false },
+    { id: "u-m2", email: "member2@titfortat777.invalid", display_name: "테스트 멤버 2", role: "member", reduce_motion: false }
+  ];
+  for (const m of MEMBERS) if (!T.profiles.some(p => p.id === m.id)) T.profiles.push({ ...m, created_at: now() });
+  T.log_secrets ??= [];
 
   /* ---------- 파일 저장소: IndexedDB (없으면 메모리만) ---------- */
   const files = new Map();   // "버킷/경로" → blob URL
@@ -98,7 +105,15 @@
     then(ok, bad){ return READY.then(() => this.run()).then(ok, bad); }
     run(){
       const rows = T[this.t] || (T[this.t] = []);
-      const hit = r => this.f.every(fn => fn(r));
+      let hit = r => this.f.every(fn => fn(r));
+      if (this.t === "log_secrets"){
+        if (!session()) return { data: null, error: { code: "42501", message: "permission denied for table log_secrets" } };
+        if (this.mode !== "select" && !isAdmin()) return { data: null, error: { code: "42501", message: "new row violates row-level security policy" } };
+        if (!isAdmin()){
+          const mine = new Set(T.characters.filter(c => c.owner_id === viewer).map(c => String(c.id)));
+          const base = hit; hit = r => base(r) && (r.character_ids || []).some(id => mine.has(String(id)));
+        }
+      }
       let out = [];
       if (this.mode === "insert" || this.mode === "upsert"){
         const list = (Array.isArray(this.val) ? this.val : [this.val]).map(v => ({ ...v }));
@@ -133,13 +148,17 @@
   }
 
   /* ---------- 로그인 흉내: 처음엔 관리자로 로그인된 상태 ---------- */
-  const SIGN_KEY = "logtest-signed-out";
-  let signedOut = false;
-  try { signedOut = localStorage.getItem(SIGN_KEY) === "1"; } catch (_) {}
-  const session = () => signedOut ? null : { access_token: "test", user: { id: ADMIN.id, email: ADMIN.email } };
+  /* 보는 사람: 관리자 / 테스트 멤버 1·2 / 로그인 안 함 (테스트 표시줄에서 바꿈) */
+  const VIEW_KEY = "logtest-viewer";
+  let viewer = ADMIN.id;
+  try { const v = localStorage.getItem(VIEW_KEY); if (v !== null) viewer = v; } catch (_) {}
+  const who = () => T.profiles.find(p => p.id === viewer) || null;
+  const isAdmin = () => who()?.role === "admin";
+  const session = () => !viewer || !who() ? null : { access_token: "test", user: { id: viewer, email: who().email } };
   const listeners = [];
   const emit = ev => setTimeout(() => listeners.forEach(fn => fn(ev, session())), 0);
-  const setOut = v => { signedOut = v; try { localStorage.setItem(SIGN_KEY, v ? "1" : "0"); } catch (_) {} };
+  const setViewer = v => { viewer = v; try { localStorage.setItem(VIEW_KEY, v); } catch (_) {} };
+  window.logtestViewer = { get: () => viewer, set: v => { setViewer(v); location.reload(); }, list: () => [{ id: ADMIN.id, name: "관리자" }, ...MEMBERS.map(m => ({ id: m.id, name: m.display_name })), { id: "", name: "로그인 안 함" }] };
 
   const channel = () => { const c = { on(){ return c; }, subscribe(){ return c; }, send(){ return Promise.resolve("ok"); }, unsubscribe(){ return Promise.resolve("ok"); } }; return c; };
   const notHere = { data: null, error: { message: "테스트 사이트에서는 쓸 수 없는 기능입니다" } };
@@ -147,7 +166,12 @@
   function createClient(){
     return {
       from: t => new Query(t),
-      rpc: async () => ({ data: [], error: null }),
+      rpc: async (fn, a = {}) => {
+        await READY;
+        if (fn === "admin_set_owner"){ const c = T.characters.find(x => String(x.id) === String(a.p_character)); if (c){ c.owner_id = a.p_owner || null; persist(); } return { data: null, error: null }; }
+        if (fn === "admin_set_role"){ const p = T.profiles.find(x => x.id === a.p_user); if (p){ p.role = a.p_admin ? "admin" : "member"; persist(); } return { data: null, error: null }; }
+        return { data: [], error: null };
+      },
       channel, removeChannel(){}, removeAllChannels(){},
       functions: { invoke: async () => notHere },
       storage: {
@@ -169,8 +193,8 @@
         getSession: async () => ({ data: { session: session() }, error: null }),
         getUser: async () => ({ data: { user: session()?.user || null }, error: null }),
         onAuthStateChange: fn => { listeners.push(fn); fn("INITIAL_SESSION", session()); return { data: { subscription: { unsubscribe(){} } } }; },
-        signInWithPassword: async () => { setOut(false); emit("SIGNED_IN"); return { data: { session: session() }, error: null }; },
-        signOut: async () => { setOut(true); emit("SIGNED_OUT"); return { error: null }; },
+        signInWithPassword: async () => { setViewer(ADMIN.id); emit("SIGNED_IN"); return { data: { session: session() }, error: null }; },
+        signOut: async () => { setViewer(""); emit("SIGNED_OUT"); return { error: null }; },
         updateUser: async () => ({ data: {}, error: null }),
         resetPasswordForEmail: async () => ({ data: {}, error: null }),
         signUp: async () => notHere
@@ -184,10 +208,21 @@
 
   /* 처음 상태로 되돌리기 — 테스트 표시줄 버튼, 3초 안에 두 번 누르면 실행 */
   const reset = async () => {
-    try { localStorage.removeItem(TABLE_KEY); localStorage.removeItem(SIGN_KEY); } catch (_) {}
+    try { localStorage.removeItem(TABLE_KEY); localStorage.removeItem(VIEW_KEY); } catch (_) {}
     try { await new Promise(r => { const q = indexedDB.deleteDatabase("logtest-files"); idb?.close(); q.onsuccess = q.onerror = q.onblocked = () => r(); }); } catch (_) {}
     location.hash = ""; location.reload();
   };
+  /* 테스트 표시줄: 보는 사람 고르기 */
+  const bar = document.getElementById("logtest-bar");
+  if (bar){
+    const sel = document.createElement("select");
+    sel.id = "logtest-viewer"; sel.setAttribute("aria-label", "보는 사람");
+    sel.style.cssText = "font:inherit;color:#000;background:#ADCFEA;border:0;padding:1px 4px";
+    sel.innerHTML = window.logtestViewer.list().map(v => `<option value="${v.id}">${v.name}로 보기</option>`).join("");
+    sel.value = viewer;
+    sel.addEventListener("change", () => window.logtestViewer.set(sel.value));
+    bar.insertBefore(sel, document.getElementById("logtest-reset"));
+  }
   let armed = 0;
   document.addEventListener("click", e => {
     const b = e.target.closest("#logtest-reset");

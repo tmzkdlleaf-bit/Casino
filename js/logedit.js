@@ -243,8 +243,12 @@ async function save(){
   if (!c || !E.dirty) return;
   const row = await sb.from("chapters").select("id, log_path").eq("id", c.id).single();
   if (row.error) throw row.error;
-  log.n = log.m.length; log.v = 2;
-  const blob = new Blob([JSON.stringify(log)], { type: "application/json" });
+  if (!V.secretsOk) throw new Error("비밀 탭을 불러오지 못해서 저장하지 않았습니다. 새로고침한 뒤 다시 해 주세요.");   // 그대로 저장하면 비밀 탭이 지워짐
+  log.n = log.m.length; log.v = 3;
+  const { splitLog, saveSecrets } = await import("./logsecret.js?v=20261029g");
+  const { pub, secrets } = splitLog(log);            // 비밀 탭은 공개 파일에서 빼서 따로
+  await saveSecrets(sb, c.id, secrets);
+  const blob = new Blob([JSON.stringify(pub)], { type: "application/json" });
   const path = `ch-${c.id}-${Date.now()}.json`;
   const up = await sb.storage.from("logs").upload(path, blob, { contentType: "application/json", cacheControl: "31536000", upsert: false });
   if (up.error) throw up.error;

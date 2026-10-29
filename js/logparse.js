@@ -67,9 +67,9 @@ export function normalizeColor(css){
 export function guessTabFormat(tab){
   const t = String(tab).trim().toLowerCase();
   if (/^(main|메인|メイン|主要)$/.test(t)) return "main";
-  if (/^(info|정보|情報|信息)$/.test(t)) return "info";
-  if (/^(other|잡담|사담|雑談|闲聊)$/.test(t)) return "other";
-  if (/^(secret|비밀|秘匿|秘密)/.test(t)) return "secret";
+  if (/secret|비밀|시크릿|秘匿|秘密|밀담|귓속말|whisper/.test(t)) return "secret";   // "Ho2 비밀", "HO1 秘匿" 처럼 앞뒤에 붙어도
+  if (/info|정보|情報|信息|공지/.test(t)) return "info";
+  if (/other|잡담|사담|雑談|闲聊|ooc/.test(t)) return "other";
   return "main";
 }
 
@@ -105,7 +105,7 @@ function findFaceTag(text, faces){
 }
 
 /* 표정 결정 순서 (변환기와 같음): @태그 > 룸 채팅에 실제로 쓴 표정 > 직전 표정 > 기본 이미지 */
-export function pack(messages, { include, narrators, stripTag, src, library = [] }){
+export function pack(messages, { include, narrators, stripTag, src, library = [], formats = new Map(), owners = new Map() }){
   const lib = new Map(library.map(c => [c.name.trim(), c]));
   const tabIdx = new Map(), spIdx = new Map(), faceIdx = new Map(), tabs = [], sp = [], faces = [], m = [];
   const face = url => { if (!isImageUrl(url)) return -1; if (!faceIdx.has(url)){ faceIdx.set(url, faces.length); faces.push(url); } return faceIdx.get(url); };
@@ -126,7 +126,11 @@ export function pack(messages, { include, narrators, stripTag, src, library = []
     else if (lastFace[x.name] >= 0) f = lastFace[x.name];
     else if (c) f = face(c.iconUrl || c.faces[0]?.iconUrl);
     lastFace[x.name] = f;
-    if (!tabIdx.has(x.tab)){ tabIdx.set(x.tab, tabs.length); tabs.push([x.tab, guessTabFormat(x.tab)]); }
+    if (!tabIdx.has(x.tab)){
+      const fmt = formats.get(x.tab) || guessTabFormat(x.tab);
+      tabIdx.set(x.tab, tabs.length);
+      tabs.push(fmt === "secret" ? [x.tab, fmt, owners.get(x.tab) || []] : [x.tab, fmt]);   // 비밀 탭: 볼 수 있는 캐릭터
+    }
     const key = x.name + "\u0000" + x.color;
     if (!spIdx.has(key)){
       spIdx.set(key, sp.length);
@@ -136,7 +140,7 @@ export function pack(messages, { include, narrators, stripTag, src, library = []
   }
   // 표정 목록 중복 제거
   for (const s of sp) s[4] = [...new Set(s[4])].filter(i => i >= 0);
-  return { v: 2, src: src || "", n: m.length, tabs, faces, sp, m, bgm: [] };
+  return { v: 3, src: src || "", n: m.length, tabs, faces, sp, m, bgm: [] };   // v3: 탭 종류를 올린 사람이 정함
 }
 
 /* ---------- 스탠딩 데이터: 북마클릿 결과·코코포리아에서 복사한 캐릭터 데이터·룸 데이터(JSON) ---------- */

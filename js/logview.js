@@ -3,7 +3,9 @@
    가볍게: ① 기록은 작게 저장된 JSON 한 개 ② 화면에는 50묶음씩 나눠 붙이고, 첫 두 묶음만 바로 그린 뒤
    나머지는 브라우저가 한가할 때 이어 붙임 ③ 화면 밖 묶음은 content-visibility로 그리기를 건너뜀
    ========================================================= */
-import { publicUrl } from "./data.js?v=20261029g";
+import { publicUrl, sb } from "./data.js?v=20261029g";
+import { guessTabFormat } from "./logparse.js?v=20261029g";
+import { loadSecrets, mergeLog } from "./logsecret.js?v=20261029g";
 import { $, $$, esc, setTitle } from "./dom.js?v=20261029g";
 import { DATA, nav, state } from "./state.js?v=20261029g";
 import { ALL } from "./views.js?v=20261029g";
@@ -19,7 +21,7 @@ const WIDTHS = ["38rem", "48rem", "64rem"];
 let width = 1, big = false;
 try { const r = localStorage.getItem(WIDTH_KEY), v = +r; if (r !== null && v >= 0 && v < WIDTHS.length) width = v; big = localStorage.getItem(BIG_KEY) === "1"; } catch (_) {}
 
-export const V = { log: null, hidden: new Set(), job: 0, number: null, chapter: null, editing: false, mode: "read" };
+export const V = { log: null, hidden: new Set(), job: 0, number: null, chapter: null, editing: false, mode: "read", secretsOk: true };
 const MODE_KEY = "comu-log-mode";
 try { if (localStorage.getItem(MODE_KEY) === "novel") V.mode = "novel"; } catch (_) {}
 export const TAB_LABEL = { info: "정보", secret: "비밀", other: "잡담" };
@@ -211,6 +213,8 @@ async function applyMode(){
   $("#log-follow").hidden = vn || !(V.log?.bgm || []).some(b => b.kind === "audio");
   $("#log-edit").hidden = vn || !state.isAdmin || !V.log;
   $("#log-width").hidden = vn;
+  // 노벨에서는 잡담이 채팅창으로 나오므로, 직접 탭을 끈 적이 없으면 잡담 탭을 켬 (읽기 화면 기본값은 접힘)
+  if (vn && !V.tabsTouched && V.log){ let ch = false; V.log.tabs.forEach(([, f], t) => { if (f === "other" && V.hidden.delete(t)) ch = true; }); if (ch){ drawTabs(); render(); } }
   $('[data-page="log"]').classList.toggle("folded", false);
   const m = await novel();
   if (vn) m.openNovel(); else m.closeNovel();
@@ -246,8 +250,13 @@ export async function openLog(number){
     box.innerHTML = `<p class="empty-note" role="alert">기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>`;
     return;
   }
+  // 비밀 탭: 이 사람이 볼 수 있는 것만 DB가 내줌 (로그인 안 했으면 묻지 않음)
+  const sec = state.session && sb ? await loadSecrets(sb, c.id) : { rows: [], ok: true };
   if (V.number !== c.number || nav.current !== "log") return;          // 기다리는 사이 다른 화면으로 옮김
-  V.log = cache.get(c.log);
+  V.log = mergeLog(cache.get(c.log), sec.rows);
+  V.secretsOk = sec.ok; V.tabsTouched = false;
+  // 예전에 올린 기록: 'Ho2 비밀'처럼 이름 앞뒤에 붙은 탭은 메인으로 저장돼 있었음 → 이름으로 다시 짐작
+  if ((V.log.v || 2) < 3) for (const tab of V.log.tabs) if (tab[1] === "main"){ const g = guessTabFormat(tab[0]); if (g !== "main") tab[1] = g; }
   V.hidden = new Set(V.log.tabs.map(([, f], t) => f === "other" ? t : -1).filter(t => t >= 0));   // 잡담은 처음엔 접어 둠
   V.chapter = c;
   $("#log-meta").textContent = `대사 ${V.log.m.length.toLocaleString("ko-KR")}개`;
@@ -323,6 +332,7 @@ document.addEventListener("click", e => {
     const t = +tb.dataset.tab;
     V.hidden.has(t) ? V.hidden.delete(t) : V.hidden.add(t);
     tb.setAttribute("aria-pressed", String(!V.hidden.has(t)));
+    V.tabsTouched = true;
     tabCount();
     const pane = $("#log-pane"), top = pane.scrollTop;
     render();
