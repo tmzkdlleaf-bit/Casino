@@ -5,13 +5,13 @@
    - 흐름: 앉기 → 베팅(첫 베팅 20초 뒤 또는 모두 걸면 바로) → 자리 순서대로 카드 받기/멈추기/두 배 → 딜러 → 정산
    - 카드 더미와 딜러의 엎은 카드는 서버만 앎. 화면은 받은 카드만 그림
    ========================================================= */
-import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029d";
-import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029d";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029d";
-import { nav, state } from "./state.js?v=20261029d";
-import { ALL, balOf, myChars, renderAccount } from "./views.js?v=20261029d";
-import { sfx, setSfxVol } from "./sfx.js?v=20261029d";
-import { hotkeys, kbd, toolsFrame, toolsMenu } from "./gametools.js?v=20261029d";
+import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029e";
+import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029e";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029e";
+import { nav, state } from "./state.js?v=20261029e";
+import { ALL, balOf, myChars, renderAccount } from "./views.js?v=20261029e";
+import { sfx, setSfxVol } from "./sfx.js?v=20261029e";
+import { hotkeys, kbd, toolsFrame, toolsMenu } from "./gametools.js?v=20261029e";
 
 const BJ = {
   id: null, t: null, seats: [], avatars: new Map(), chan: null, live: false, poll: 0, tickT: 0, loading: null,
@@ -267,7 +267,7 @@ function finishAnim(){
   flushHeld();
   if (!BJ.t) return;
   render();
-  if (BJ.t.phase === "betting" && mySeat()?.result) import("./auth.js?v=20261029d").then(m => m.loadMine()).then(renderAccount);   // 정산 뒤 내 코인
+  if (BJ.t.phase === "betting" && mySeat()?.result) import("./auth.js?v=20261029e").then(m => m.loadMine()).then(renderAccount);   // 정산 뒤 내 코인
   const t = BJ.t, me = mySeat();
   if (t.phase === "betting" && me?.result && me.cards.length && BJ.soundRound !== t.round){
     BJ.soundRound = t.round;
@@ -549,7 +549,7 @@ async function act(btn){
       if (!(amt >= t.min_bet && amt <= t.max_bet)){ toast(`베팅은 ${n(t.min_bet)}~${n(t.max_bet)}입니다`); $("#bj-amt").focus(); return; }
       BJ.betAmt = amt;
       if (await call("bj_bet", { p_table: BJ.id, p_character: me.character_id, p_amount: amt })){
-        const { loadMine } = await import("./auth.js?v=20261029d"); loadMine().then(renderAccount);
+        const { loadMine } = await import("./auth.js?v=20261029e"); loadMine().then(renderAccount);
       }
     }
     else if (a === "hit"){ sfx("card"); await call("bj_hit", { p_table: BJ.id }); }

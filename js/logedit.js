@@ -4,11 +4,11 @@
    - BGM 표시를 누르면: 고치기 / 삭제
    - 고친 내용은 모아 두었다가 ‘변경 저장’ 한 번에 새 파일로 올림 (이전 파일은 지움)
    ========================================================= */
-import { publicUrl, refreshPublic, sb } from "./data.js?v=20261029d";
-import { $, $$, announce, esc, toast } from "./dom.js?v=20261029d";
-import { errMsg, withBusy } from "./forms.js?v=20261029d";
-import { V, faceSrc, render, stopAudio } from "./logview.js?v=20261029d";
-import { state } from "./state.js?v=20261029d";
+import { publicUrl, refreshPublic, sb } from "./data.js?v=20261029e";
+import { $, $$, announce, esc, toast } from "./dom.js?v=20261029e";
+import { errMsg, withBusy } from "./forms.js?v=20261029e";
+import { V, faceSrc, render, stopAudio } from "./logview.js?v=20261029e";
+import { state } from "./state.js?v=20261029e";
 
 const E = { dirty: 0, i: -1, k: -1 };
 

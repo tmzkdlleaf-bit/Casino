@@ -1721,3 +1721,36 @@ img.px{image-rendering:pixelated; image-rendering:crisp-edges; object-fit:contai
   .bj-spot .chip{--size:1.25rem; margin-top:-1rem}
 }
 @property --p{syntax:"<number>"; inherits:true; initial-value:1}
+
+/* 블랙잭: 높이가 낮은 화면에서도 자리(얼굴·이름)가 테이블 안에 들어오게
+   - 바닥 글씨는 줄을 차지하지 않고 가운데에 깔림
+   - 화면 높이에 맞춰 카드·얼굴 크기를 줄임 */
+.bj-table{grid-template-rows:auto minmax(0,1fr)}
+.bj-felt{position:absolute; left:50%; top:clamp(7.6rem, 34%, 11rem); translate:-50% 0; z-index:0; margin:0}
+.bj-dealer, .bj-seats{position:relative; z-index:1}
+.bj-seat{gap:.25rem}
+.bj-seat .av{width:clamp(2.5rem, min(4.2vw, 6vh), 3.6rem)}
+.bj-spot{width:2.5rem; height:2.5rem}
+.bj-spot .chip{--size:1.3rem; margin-top:-1rem}
+@media (max-height:900px){
+  .bj-table .pc{width:2.7rem; height:3.8rem; margin-left:-1.35rem}
+  .bj-table .pc i{font-size:1.25rem}
+  .bj-table .pc b{font-size:.75rem}
+  .bj-hw, .bj-hw .bj-cards, .bj-cards:empty{min-height:3.8rem}
+  .bj-tot{right:calc(50% - 2.8rem)}
+  .bj-table{padding-top:.8rem; padding-bottom:1rem}
+}
+@media (max-height:760px){
+  .bj-spot{width:2rem; height:2rem}
+  .bj-spot .chip{--size:1.05rem; margin-top:-.85rem}
+  .bj-seat .nm{font-size:.75rem}
+}
+/* 높이가 낮으면 바닥 글씨는 범위만 오른쪽 위(카드 더미 아래)에 */
+@media (max-height:820px) and (min-width:701px){
+  .bj-felt{top:4.4rem; left:auto; right:clamp(1rem, 3vw, 2rem); translate:none; width:auto}
+  .bj-felt svg{display:none}
+}
+@media (max-width:700px){
+  .bj-table{grid-template-rows:auto auto minmax(0,1fr)}
+  .bj-felt{position:static; translate:none; width:92%; justify-self:center}
+}
