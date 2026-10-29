@@ -1,4 +1,4 @@
-import { CALM_KEY, SUITS } from "./config.js?v=20261029e";
+import { CALM_KEY, SUITS } from "./config.js?v=20261029f";
 
 export const mqReduce = matchMedia("(prefers-reduced-motion: reduce)");
 

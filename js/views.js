@@ -1,9 +1,9 @@
-import { CONFIG, SUITS, idOf } from "./config.js?v=20261029e";
-import { EXTRA, RECORDS, USE_DB, sb } from "./data.js?v=20261029e";
-import { $, $$, chipAmt, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261029e";
-import { initShow, layoutCast } from "./effects.js?v=20261029e";
-import { buyHtml, myReqHtml } from "./shop.js?v=20261029e";
-import { DATA, nav, state } from "./state.js?v=20261029e";
+import { CONFIG, SUITS, idOf } from "./config.js?v=20261029f";
+import { EXTRA, RECORDS, USE_DB, sb } from "./data.js?v=20261029f";
+import { $, $$, chipAmt, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261029f";
+import { initShow, layoutCast } from "./effects.js?v=20261029f";
+import { buyHtml, myReqHtml } from "./shop.js?v=20261029f";
+import { DATA, nav, state } from "./state.js?v=20261029f";
 
 /* ---------- render ---------- */
 export const timeTag = (label, iso) => `<time${iso ? ` datetime="${esc(iso)}"` : ""}>${esc(label)}</time>`;

@@ -5,13 +5,13 @@
    - 흐름: 앉기 → 베팅(첫 베팅 20초 뒤 또는 모두 걸면 바로) → 자리 순서대로 카드 받기/멈추기/두 배 → 딜러 → 정산
    - 카드 더미와 딜러의 엎은 카드는 서버만 앎. 화면은 받은 카드만 그림
    ========================================================= */
-import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029e";
-import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029e";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029e";
-import { nav, state } from "./state.js?v=20261029e";
-import { ALL, balOf, myChars, renderAccount } from "./views.js?v=20261029e";
-import { sfx, setSfxVol } from "./sfx.js?v=20261029e";
-import { hotkeys, kbd, toolsFrame, toolsMenu } from "./gametools.js?v=20261029e";
+import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029f";
+import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029f";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029f";
+import { nav, state } from "./state.js?v=20261029f";
+import { ALL, balOf, myChars, renderAccount } from "./views.js?v=20261029f";
+import { sfx, setSfxVol } from "./sfx.js?v=20261029f";
+import { hotkeys, kbd, toolsFrame, toolsMenu } from "./gametools.js?v=20261029f";
 
 const BJ = {
   id: null, t: null, seats: [], avatars: new Map(), chan: null, live: false, poll: 0, tickT: 0, loading: null,
@@ -267,7 +267,7 @@ function finishAnim(){
   flushHeld();
   if (!BJ.t) return;
   render();
-  if (BJ.t.phase === "betting" && mySeat()?.result) import("./auth.js?v=20261029e").then(m => m.loadMine()).then(renderAccount);   // 정산 뒤 내 코인
+  if (BJ.t.phase === "betting" && mySeat()?.result) import("./auth.js?v=20261029f").then(m => m.loadMine()).then(renderAccount);   // 정산 뒤 내 코인
   const t = BJ.t, me = mySeat();
   if (t.phase === "betting" && me?.result && me.cards.length && BJ.soundRound !== t.round){
     BJ.soundRound = t.round;
@@ -486,9 +486,15 @@ function tick(){
 }
 
 /* ---------- 채팅 ---------- */
+// 채팅 얼굴: 말한 캐릭터 (update-18 뒤엔 data.char, 그 전 채팅은 이름으로 찾음)
+function chatFace(m){
+  const c = (m.data?.char && ALL().find(x => x.uuid === m.data.char)) || ALL().find(x => x.name === m.name);
+  const src = c ? avatarOf(c) : "";
+  return `<span class="cf" aria-hidden="true">${src ? `<img src="${esc(src)}" alt="" decoding="async" loading="lazy">` : `<span>${esc((m.name || "?").slice(0, 1))}</span>`}</span>`;
+}
 const hhmm = iso => { const d = new Date(iso); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
 function chatLi(m){
-  if (m.kind === "chat") return `<li class="c"><b>${esc(m.name)}<time datetime="${esc(m.created_at)}">${hhmm(m.created_at)}</time></b><span>${esc(m.body)}</span></li>`;
+  if (m.kind === "chat") return `<li class="c">${chatFace(m)}<div class="bub"><b>${esc(m.name)}<time datetime="${esc(m.created_at)}">${hhmm(m.created_at)}</time></b><span>${esc(m.body)}</span></div></li>`;
   if (m.kind === "result") return `<li class="s res">${esc(m.body)}</li>`;
   return `<li class="s">${esc(m.body)}</li>`;
 }
@@ -549,7 +555,7 @@ async function act(btn){
       if (!(amt >= t.min_bet && amt <= t.max_bet)){ toast(`베팅은 ${n(t.min_bet)}~${n(t.max_bet)}입니다`); $("#bj-amt").focus(); return; }
       BJ.betAmt = amt;
       if (await call("bj_bet", { p_table: BJ.id, p_character: me.character_id, p_amount: amt })){
-        const { loadMine } = await import("./auth.js?v=20261029e"); loadMine().then(renderAccount);
+        const { loadMine } = await import("./auth.js?v=20261029f"); loadMine().then(renderAccount);
       }
     }
     else if (a === "hit"){ sfx("card"); await call("bj_hit", { p_table: BJ.id }); }

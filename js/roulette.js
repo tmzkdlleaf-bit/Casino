@@ -5,13 +5,13 @@
    - 탄 위치는 서버만 앎. 화면은 서버가 돌려준 결과(채팅의 'shot' 기록)를 보고 효과만 그림
    - 실시간 연결이 끊겨도 5초마다 다시 불러와 따라감
    ========================================================= */
-import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029e";
-import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029e";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029e";
-import { motionOK, nav, state } from "./state.js?v=20261029e";
-import { ALL, balOf, myChars } from "./views.js?v=20261029e";
-import { sfx, setSfxVol } from "./sfx.js?v=20261029e";
-import { hotkeys, kbd, toolsFrame, toolsMenu } from "./gametools.js?v=20261029e";
+import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029f";
+import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029f";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029f";
+import { motionOK, nav, state } from "./state.js?v=20261029f";
+import { ALL, balOf, myChars } from "./views.js?v=20261029f";
+import { sfx, setSfxVol } from "./sfx.js?v=20261029f";
+import { hotkeys, kbd, toolsFrame, toolsMenu } from "./gametools.js?v=20261029f";
 
 /* ---------- 전기 충격기 (도트 그림) — 오른쪽을 향함, 한 칸 = 1 ---------- */
 const GUN = ["........................................", "....KKKKKKKKKKKKKKKKKKKKKKKKK...........", "...KSSSSSSSSSSSSSSSSSSSSSSSSSK..........", "..KLLLLLLLLLLLLLLLLLLLLLLLLLLLKKKKKKKK..", "..KLBBYYBYYBYYBBBBBBBBBBBBBBBKPPPPPPPK..", "..KLBBBBBBBBBBBBBBBBBBBBBBBBBKPQQQQQPKWW", "..KDBBBBBBBBBBBBBBBBBBBBBBBBBKPPPPPPPK..", "..KDDDDDDDDDDDDDDDDDDDDDDDDDDKPQQQQQPKWW", "..KKKKKKDDDDDDDKKKKKKKKKKKKKKKPPPPPPPK..", ".......KGGGGGKDK....K.......KKKKKKKKK...", "......KGgGGGKKDK...K....................", "......KGGGGGK.KMK..K....................", ".....KGgGGGK...KMKK.....................", ".....KGGGGGK....KK......................", "....KGgGGGK.............................", "....KGGGGGK.............................", "....KKKKKKK............................."];
@@ -407,9 +407,15 @@ function renderFelt(){
 }
 
 /* ---------- 채팅 ---------- */
+// 채팅 얼굴: 말한 캐릭터 (update-18 뒤엔 data.char, 그 전 채팅은 이름으로 찾음)
+function chatFace(m){
+  const c = (m.data?.char && ALL().find(x => x.uuid === m.data.char)) || ALL().find(x => x.name === m.name);
+  const src = c ? avatarOf(c) : "";
+  return `<span class="cf" aria-hidden="true">${src ? `<img src="${esc(src)}" alt="" decoding="async" loading="lazy">` : `<span>${esc((m.name || "?").slice(0, 1))}</span>`}</span>`;
+}
 const hhmm = iso => { const d = new Date(iso); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
 function chatLi(m){
-  if (m.kind === "chat") return `<li class="c"><b>${esc(m.name)}<time datetime="${esc(m.created_at)}">${hhmm(m.created_at)}</time></b><span>${esc(m.body)}</span></li>`;
+  if (m.kind === "chat") return `<li class="c">${chatFace(m)}<div class="bub"><b>${esc(m.name)}<time datetime="${esc(m.created_at)}">${hhmm(m.created_at)}</time></b><span>${esc(m.body)}</span></div></li>`;
   if (m.kind === "shot") return `<li class="sh ${m.data?.live ? "live" : "blank"}">${m.data?.live ? `<span class="k" aria-hidden="true">⚡</span>` : ""}${esc(m.body)}</li>`;
   return `<li class="s">${esc(m.body)}</li>`;
 }
@@ -683,7 +689,7 @@ $("#rl-ava-form").addEventListener("submit", async e => {
   const cid = $("#rl-ava-char").value, old = RL.avatars.get(cid)?.path;
   await withBusy($('button[type="submit"]', e.target), async () => {
     try {
-      const { toWebP, extOf } = await import("./img.js?v=20261029e");
+      const { toWebP, extOf } = await import("./img.js?v=20261029f");
       const blob = await toWebP(avaFile, 512), path = `${cid}/${Date.now()}.${extOf(blob)}`;
       const up = await sb.storage.from("roulette").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
       if (up.error) throw up.error;
