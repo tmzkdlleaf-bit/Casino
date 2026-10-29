@@ -16,7 +16,7 @@ const E = { dirty: 0, i: -1, k: -1 };
 function bar(){
   let b = $("#log-editbar");
   if (!b){
-    $(".log-box").insertAdjacentHTML("afterbegin", `
+    $(".log-bar").insertAdjacentHTML("afterend", `
       <div class="log-editbar" id="log-editbar" role="region" aria-label="기록 편집">
         <span id="log-dirty" role="status">대사나 배경·BGM 표시를 누르면 고칠 수 있습니다.</span>
         <span class="grow"></span>

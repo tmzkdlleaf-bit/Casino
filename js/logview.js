@@ -12,7 +12,12 @@ const cache = new Map();          // 주소 → 기록 JSON
 const SIZE_KEY = "comu-log-size";
 const SIZES = [.9375, 1, 1.0625, 1.1875, 1.3125];
 let size = 2;
-try { const v = +localStorage.getItem(SIZE_KEY); if (v >= 0 && v < SIZES.length) size = v; } catch (_) {}
+try { const r = localStorage.getItem(SIZE_KEY), v = +r; if (r !== null && v >= 0 && v < SIZES.length) size = v; } catch (_) {}   // 저장값이 없으면 기본 크기
+/* 본문 폭: 좁게·보통·넓게 / 크게 보기(사이트 메뉴·제목 숨김) — 이 기기에 기억 */
+const WIDTH_KEY = "comu-log-width", BIG_KEY = "comu-log-big";
+const WIDTHS = ["38rem", "48rem", "64rem"];
+let width = 1, big = false;
+try { const r = localStorage.getItem(WIDTH_KEY), v = +r; if (r !== null && v >= 0 && v < WIDTHS.length) width = v; big = localStorage.getItem(BIG_KEY) === "1"; } catch (_) {}
 
 export const V = { log: null, hidden: new Set(), job: 0, number: null, chapter: null, editing: false, mode: "read" };
 const MODE_KEY = "comu-log-mode";
@@ -147,10 +152,53 @@ function drawTabs(){
     const label = /^(main|info|other|secret)$/i.test(name) ? { main: "메인", ...TAB_LABEL }[format] : name;
     return `<button type="button" data-tab="${t}" aria-pressed="${!V.hidden.has(t)}">${esc(label)}<span class="num"> ${n.toLocaleString("ko-KR")}</span></button>`;
   }).join("");
-  $("#log-tabs").hidden = log.tabs.length < 2;
+  $("#log-tabs-btn").hidden = log.tabs.length < 2;
+  tabCount();
+}
+function tabCount(){ const n = V.log?.tabs.length || 0; $("#log-tabs-n").textContent = `${n - [...V.hidden].filter(t => t < n).length}/${n}`; }
+function tabsPop(open){
+  const pop = $("#log-tabs"), btn = $("#log-tabs-btn");
+  pop.hidden = !open; btn.setAttribute("aria-expanded", String(open));
+  if (open){ const r = btn.getBoundingClientRect(), box = $(".log-box").getBoundingClientRect(); pop.style.left = Math.max(8, r.left - box.left) + "px"; pop.style.top = (r.bottom - box.top + 6) + "px"; pop.querySelector("button")?.focus(); }
 }
 
-function applySize(){ $("#log-body").style.setProperty("--lg-fs", SIZES[size] + "rem"); $("#log-vn").style.setProperty("--lg-fs", SIZES[size] + "rem"); }
+function applySize(){
+  $("#log-body").style.setProperty("--lg-fs", SIZES[size] + "rem"); $("#log-vn").style.setProperty("--lg-fs", SIZES[size] + "rem");
+  $$(".log-size button").forEach(b => b.disabled = (b.dataset.size === "-1" && size === 0) || (b.dataset.size === "1" && size === SIZES.length - 1));
+}
+function applyWidth(){
+  $("#log-body").style.setProperty("--lg-w", WIDTHS[width]);
+  $$("#log-width button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.w === width)));
+}
+/* 크게 보기: 아래 메뉴와 제목을 숨기고 기록 창이 브라우저 화면을 채움 */
+function applyBig(){
+  document.body.classList.toggle("log-big", big && nav.current === "log");
+  $("#log-big").setAttribute("aria-pressed", String(big));
+  $("#log-big").textContent = big ? "크게 보기 끝" : "크게 보기";
+}
+export const setBig = on => { big = on; try { localStorage.setItem(BIG_KEY, on ? "1" : "0"); } catch (_) {} applyBig(); };
+/* 전체 화면: 기록 화면(읽기·노벨)을 모니터 전체로 */
+function toggleFull(){
+  const sec = $('[data-page="log"]');
+  if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  else sec.requestFullscreen?.().catch(() => { const b = $("#log-full"); b.disabled = true; b.title = "이 브라우저에서는 전체 화면을 쓸 수 없습니다"; });
+}
+document.addEventListener("fullscreenchange", () => {
+  const on = document.fullscreenElement === $('[data-page="log"]');
+  $("#log-full").textContent = on ? "전체 화면 끝" : "전체 화면";
+  $("#log-full").setAttribute("aria-pressed", String(on));
+});
+if (!document.documentElement.requestFullscreen) $("#log-full").hidden = true;   // 아이폰 등
+
+/* 스크롤하면 위쪽(제목 줄) 접기 — 내려 읽는 중엔 접고, 위로 올리거나 맨 위면 다시 펼침 */
+let lastTop = 0;
+$("#log-pane").addEventListener("scroll", e => {
+  const top = e.target.scrollTop, page = $('[data-page="log"]');
+  if (top < 40) page.classList.remove("folded");
+  else if (top > lastTop + 12) page.classList.add("folded");
+  else if (top < lastTop - 60) page.classList.remove("folded");
+  if (Math.abs(top - lastTop) > 12 || top < 40) lastTop = top;
+}, { passive: true });
 
 /* ---------- 읽기 / 노벨 ---------- */
 const novel = () => import("./novel.js?v=20261029g");
@@ -162,9 +210,11 @@ async function applyMode(){
   $(".log-box").classList.toggle("is-vn", vn);
   $("#log-follow").hidden = vn || !(V.log?.bgm || []).some(b => b.kind === "audio");
   $("#log-edit").hidden = vn || !state.isAdmin || !V.log;
+  $("#log-width").hidden = vn;
+  $('[data-page="log"]').classList.toggle("folded", false);
   const m = await novel();
   if (vn) m.openNovel(); else m.closeNovel();
-  const tools = $(".log-tools"); if (tools) tools.scrollLeft = 0;     // 휴대폰: 버튼 줄이 옆으로 밀려 ‘읽기’가 가려지지 않게
+  const bar = $(".log-bar"); if (bar) bar.scrollLeft = 0;     // 휴대폰: 버튼 줄이 옆으로 밀려 ‘읽기’가 가려지지 않게
 }
 
 /* ---------- 여닫기 ---------- */
@@ -176,14 +226,15 @@ export async function openLog(number){
   $("#log-title").textContent = c.title;
   setTitle(`제${c.number}화 ${c.title}`);
   $("#log-meta").textContent = "";
-  $("#log-tabs").innerHTML = "";
-  applySize();
+  $("#log-tabs").innerHTML = ""; tabsPop(false); $("#log-tabs-btn").hidden = true;
+  $('[data-page="log"]').classList.remove("folded");
+  applySize(); applyWidth(); applyBig();
   const box = $("#log-body");
   $("#log-edit").hidden = true; $("#log-follow").hidden = true;
   $("#log-mode").hidden = true; $("#log-pane").hidden = false; $("#log-vn").hidden = true; $(".log-box").classList.remove("is-vn");
   import("./novel.js?v=20261029g").then(m => m.closeNovel()).catch(() => {});
   stopAudio(); V.editing = false; box.classList.remove("editing");
-  if (!c.log){ box.innerHTML = `<p class="empty-note">이 회차에는 아직 진행 기록이 없습니다.</p>`; $("#log-tabs").hidden = true; return; }
+  if (!c.log){ box.innerHTML = `<p class="empty-note">이 회차에는 아직 진행 기록이 없습니다.</p>`; return; }
   box.innerHTML = `<p class="empty-note" role="status">기록을 불러오는 중…</p>`;
   try {
     if (!cache.has(c.log)){
@@ -263,7 +314,7 @@ document.addEventListener("scroll", e => {
   if (e.target.id !== "log-pane" || !P.follow) return;
   clearTimeout(P.timer); P.timer = setTimeout(follow, 250);
 }, true);
-addEventListener("hashchange", () => { if (!location.hash.startsWith("#story/")){ stopAudio(); novel().then(m => m.closeNovel()); P.follow = false; $("#log-follow")?.setAttribute("aria-pressed", "false"); } });
+addEventListener("hashchange", () => { if (!location.hash.startsWith("#story/")){ stopAudio(); novel().then(m => m.closeNovel()); document.body.classList.remove("log-big"); if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {}); P.follow = false; $("#log-follow")?.setAttribute("aria-pressed", "false"); } });
 
 /* ---------- 조작 ---------- */
 document.addEventListener("click", e => {
@@ -272,6 +323,7 @@ document.addEventListener("click", e => {
     const t = +tb.dataset.tab;
     V.hidden.has(t) ? V.hidden.delete(t) : V.hidden.add(t);
     tb.setAttribute("aria-pressed", String(!V.hidden.has(t)));
+    tabCount();
     const pane = $("#log-pane"), top = pane.scrollTop;
     render();
     pane.scrollTop = Math.min(top, pane.scrollHeight);
@@ -302,12 +354,23 @@ document.addEventListener("click", e => {
     applyMode();
     return;
   }
+  if (e.target.closest("#log-tabs-btn")){ tabsPop($("#log-tabs").hidden); return; }
+  if (!$("#log-tabs").hidden && !e.target.closest("#log-tabs")) tabsPop(false);
+  const wb = e.target.closest("#log-width button");
+  if (wb){ width = +wb.dataset.w; try { localStorage.setItem(WIDTH_KEY, String(width)); } catch (_) {} applyWidth(); return; }
+  if (e.target.closest("#log-big")){ setBig(!big); return; }
+  if (e.target.closest("#log-full")){ toggleFull(); return; }
   if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261029g").then(m => m.toggleEdit()); return; }
   const sz = e.target.closest(".log-size button");
   if (sz){
     size = Math.max(0, Math.min(SIZES.length - 1, size + +sz.dataset.size));
     try { localStorage.setItem(SIZE_KEY, String(size)); } catch (_) {}
     applySize();
-    $$(".log-size button").forEach(b => b.disabled = (b.dataset.size === "-1" && size === 0) || (b.dataset.size === "1" && size === SIZES.length - 1));
   }
+});
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape" || nav.current !== "log" || document.querySelector("dialog[open]")) return;
+  // 여기서 처리한 Esc는 사이트 전체의 ‘Esc = 목록으로’까지 가지 않게 막음
+  if (!$("#log-tabs").hidden){ e.stopPropagation(); tabsPop(false); $("#log-tabs-btn").focus(); return; }
+  if (big && !document.fullscreenElement && !$("#vn-log:not([hidden])")){ e.stopPropagation(); setBig(false); }
 });

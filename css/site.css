@@ -664,19 +664,52 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 
 /* ---------- 진행 기록 (코코포리아 로그) — 읽기 편하게: 본문 폭 제한·넉넉한 줄 간격·이름 색 보정 ---------- */
 .timeline .log-link{margin-top:.75rem}
-.log-id{display:grid; gap:.1rem; min-width:0}
-.log-id .link-back{justify-self:start; min-height:2rem}
-.log-title{font-size:clamp(2rem, min(4.6vw, 7.5vh), 3.75rem); line-height:1.15}
-.log-tools{display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.5rem}
-.log-tabs button[aria-pressed="true"]{background:var(--velvet); color:var(--ivory)}
-.log-tabs button[aria-pressed="false"]{text-decoration:line-through; text-decoration-color:rgba(238,243,250,.35)}
-.log-tabs .num{font-size:.8125rem; color:var(--text-2)}
-.log-size button{min-width:2.6rem; padding-inline:.7rem; font-family:var(--f-serif); font-weight:700}
-.log-size button[data-size="-1"]{font-size:.8125rem} .log-size button[data-size="1"]{font-size:1.0625rem}
+/* 기록 화면: 위는 제목 한 줄, 나머지는 전부 기록 창(맨 위 도구 막대 포함) */
+.log-page{gap:.7rem; padding-top:clamp(.75rem, 2.4vh, 1.5rem); transition:padding .3s var(--ease)}
+.log-head{display:flex; flex-wrap:wrap; align-items:baseline; gap:.2rem 1rem; min-width:0; max-height:8rem; overflow:hidden; padding-bottom:.55rem; border-bottom:1px solid var(--line);
+  transition:max-height .35s var(--ease), padding .35s var(--ease), opacity .25s, border-color .25s}
+.log-head .link-back{min-height:2rem; font-size:var(--s-1)}
+.log-ep{margin:0; color:var(--smoke); font-size:var(--s-1); font-variant-numeric:tabular-nums}
+.log-head .log-title{font-size:clamp(1.375rem, 2.4vw, 2rem); line-height:1.25; letter-spacing:-.01em; min-width:0; overflow-wrap:anywhere}
+.log-meta{margin:0 0 0 auto; color:var(--smoke); font-size:var(--s-1)}
+/* 내려 읽는 중에는 제목 줄을 접음 */
+.log-page.folded{gap:0; padding-top:.5rem}
+.log-page.folded .log-head{max-height:0; padding-bottom:0; opacity:0; border-color:transparent}
+/* 도구 막대 */
+.log-box{position:relative; padding:0; grid-row:2}   /* 제목 줄을 숨겨도 기록 창은 늘 ‘남은 높이 전부’ 칸에 */
+.log-bar{display:flex; align-items:center; gap:.45rem; padding:.5rem .7rem; border-bottom:1px solid var(--line); overflow-x:auto; scrollbar-width:none}
+.log-bar::-webkit-scrollbar{display:none}
+.log-bar > *{flex:none}
+.log-bar .grow{flex:1 1 0; min-width:.25rem}
+.log-bar .seg{padding:.2rem}
+.log-bar .seg button{min-height:2.1rem; padding:.25rem .85rem; font-size:.875rem}
+.log-bar .btn.small{min-height:2.5rem; padding-inline:.85rem}
+.log-mode button[aria-pressed="true"], .log-width button[aria-pressed="true"]{background:var(--velvet); color:var(--ivory)}
+.log-size button{min-width:2.4rem; padding-inline:.6rem !important; font-family:var(--f-serif); font-weight:700}
+.log-size button[data-size="-1"]{font-size:.8125rem !important} .log-size button[data-size="1"]{font-size:1.0625rem !important}
 .log-size button:disabled{opacity:.35; cursor:default}
-.log-box{padding:0}
+.log-tabbtn{gap:.35rem}
+.log-tabbtn .num{color:var(--text-2); font-size:.8125rem; font-variant-numeric:tabular-nums}
+.log-tabbtn[aria-expanded="true"]{border-color:var(--gold)}
+/* 탭 고르기 목록 */
+.log-tabs-pop{position:absolute; z-index:8; display:grid; gap:.15rem; min-width:14rem; max-width:min(24rem, calc(100% - 1rem)); max-height:min(60vh, 28rem); overflow:auto; padding:.4rem;
+  border:1px solid var(--line-strong); border-radius:4px; background:var(--black-2); box-shadow:0 12px 30px rgba(0,0,0,.55)}
+.log-tabs-pop button{display:flex; align-items:center; gap:.7rem; min-height:2.6rem; padding:0 .8rem; border:0; border-radius:3px; background:none; color:var(--ivory); font:inherit; font-size:.9375rem; text-align:left; cursor:pointer}
+.log-tabs-pop button:hover{background:rgba(238,243,250,.06)}
+.log-tabs-pop button::before{content:""; flex:none; width:.95rem; height:.95rem; border:1.5px solid var(--line-strong); border-radius:2px}
+.log-tabs-pop button[aria-pressed="true"]::before{border-color:var(--velvet); background:var(--velvet) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2l2.3 2.3 4.7-5' fill='none' stroke='%23fff' stroke-width='1.8'/%3E%3C/svg%3E") center/80% no-repeat}
+.log-tabs-pop button[aria-pressed="false"]{color:var(--smoke)}
+.log-tabs-pop .num{margin-left:auto; font-size:.8125rem; color:var(--text-2); font-variant-numeric:tabular-nums}
+/* 크게 보기: 아래 메뉴·제목 줄을 숨기고 기록 창이 브라우저를 채움 */
+body.log-big .dock{display:none}
+body.log-big main{inset:0}
+body.log-big .log-page{padding:max(.5rem, env(safe-area-inset-top)) max(.5rem, env(safe-area-inset-right)) max(.5rem, env(safe-area-inset-bottom)) max(.5rem, env(safe-area-inset-left)); gap:0}
+body.log-big .log-head{display:none}
+/* 전체 화면 */
+.log-page:fullscreen{padding:.5rem; gap:0; background:linear-gradient(180deg, #000 0%, #0E1B45 70%, #1D367B 100%)}
+.log-page:fullscreen .log-head{display:none}
 .log-box > .pane{margin:0; padding:1.25rem clamp(1rem, 4vw, 3rem) 3rem}
-.lg-body{--lg-fs:1.0625rem; max-width:46rem; margin:0 auto; font-size:var(--lg-fs); line-height:1.85}
+.lg-body{--lg-fs:1.0625rem; max-width:var(--lg-w, 48rem); margin:0 auto; font-size:var(--lg-fs); line-height:1.85}
 .lg-chunk{content-visibility:auto; contain-intrinsic-size:auto 1800px}   /* 화면 밖 묶음은 그리지 않음 */
 .lg{display:grid; grid-template-columns:2.5rem minmax(0, 1fr); gap:.9rem; padding:.95rem 0; border-top:1px solid var(--line-2)}
 .lg-chunk:first-child > .lg:first-child{border-top:0}
@@ -724,8 +757,6 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 .lg-bgimg.none{padding:.4rem .9rem; border-style:dotted}
 .lg-bgimg.none .t::before{content:""}
 /* ---------- 비주얼 노벨 모드 — 코코포리아처럼 왼쪽에 말하는 사람 한 명, 아래 대사창 ---------- */
-.log-mode{overflow:visible}
-.log-mode button[aria-pressed="true"]{background:var(--velvet); color:var(--ivory)}
 .vn{--lg-fs:1.0625rem; flex:1; min-height:0; display:grid; grid-template-rows:minmax(0,1fr) auto; gap:.6rem; padding:.6rem}
 .vn-stage{position:relative; width:100%; height:100%; min-height:0; overflow:hidden; border:1px solid var(--line); border-radius:var(--r);
   background:radial-gradient(ellipse 80% 60% at 30% 100%, rgba(93,151,217,.28), transparent 70%), linear-gradient(180deg, var(--black-2), var(--felt-deep)); cursor:pointer; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent}
@@ -777,7 +808,6 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 .vn-seek .num{font-variant-numeric:tabular-nums; white-space:nowrap}
 .vn-yt{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; border:0}
 /* 전체 화면: 무대가 화면을 채움 */
-.vn:fullscreen{padding:1rem; background:var(--black)}
 @media (max-width:760px){
   .vn-st{height:66%; max-width:72%; left:0; bottom:22%}
   .vn-box{min-height:34%; max-height:52%; padding:1.4rem 1rem .9rem}
@@ -808,9 +838,9 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 .face-pick input:checked + img, .face-pick input:checked + .ph{border-color:var(--gold)}
 .face-pick input:focus-visible + img, .face-pick input:focus-visible + .ph{outline:2px solid var(--focus); outline-offset:2px}
 @media (max-width:760px){
-  .log-tools{justify-content:flex-start; flex-wrap:nowrap; max-width:100%; overflow-x:auto; scrollbar-width:none}
-  .log-tools .seg{flex:none}
-  .log-size button{min-width:2.2rem; padding-inline:.5rem}
+  .log-head .link-back{display:none}
+  .log-head .log-title{font-size:1.25rem}
+  .log-bar{padding:.4rem .5rem}
   .lg{grid-template-columns:2rem minmax(0,1fr); gap:.7rem}
   .lg-av{width:2rem; height:2rem}
 }

@@ -55,7 +55,6 @@ function build(){
         <button class="btn small" type="button" data-vn="speed" aria-label="속도 바꾸기"></button>
         <button class="btn small" type="button" data-vn="log">지난 대사</button>
         <button class="btn small log-btn" type="button" data-vn="sound" aria-pressed="false">BGM</button>
-        <button class="btn small" type="button" data-vn="full">전체 화면</button>
       </div>
       <label class="vn-seek"><span class="sr">대사 위치</span><input type="range" id="vn-seek" min="1" max="1" value="1"><span class="num" id="vn-pos"></span></label>
     </div>`;
@@ -304,7 +303,6 @@ export function closeNovel(){
   if (!N.on) return;
   N.on = false;
   stopTyping(); setAuto(false); stopVnAudio(); N.bgmKey = null;
-  if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
 }
 /* 탭을 켜고 끄면 목록만 다시 만들고 같은 대사 근처에서 이어 감 */
 export function refreshNovel(){
@@ -331,11 +329,6 @@ document.addEventListener("click", e => {
     else if (act === "log-close") closeLogPanel();
     else if (act === "first"){ closeLogPanel(); go(0); }
     else if (act === "sound"){ N.sound = !N.sound; savePref(); syncButtons(); N.bgmKey = null; syncBgm(N.lines[N.pos] ?? 0); }
-    else if (act === "full"){
-      const el = $("#log-vn");
-      if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
-      else el.requestFullscreen?.().catch(() => { b.disabled = true; b.title = "이 화면에서는 전체 화면을 쓸 수 없습니다"; });
-    }
     return;
   }
   // 무대(대사창 포함)를 누르면 다음. 지난 대사 창 안은 제외
@@ -352,15 +345,11 @@ document.addEventListener("keydown", e => {
   const tag = e.target.tagName;
   if (tag === "INPUT" && e.target.id !== "vn-seek" || tag === "TEXTAREA" || tag === "SELECT") return;
   if (!e.target.closest?.("#log-vn") && e.target !== document.body) return;
-  if (!$("#vn-log").hidden){ if (e.key === "Escape"){ e.preventDefault(); closeLogPanel(); } return; }
+  if (!$("#vn-log").hidden){ if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); closeLogPanel(); } return; }
   if (e.target.id === "vn-seek" && (e.key === "ArrowLeft" || e.key === "ArrowRight")) return;
   if (e.target.tagName === "BUTTON" && (e.key === " " || e.key === "Enter")) return;   // 버튼은 버튼대로
   if ([" ", "Enter", "ArrowRight", "ArrowDown", "PageDown"].includes(e.key)){ e.preventDefault(); next(); }
   else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(e.key)){ e.preventDefault(); setAuto(false); prev(); }
   else if (e.key === "a" || e.key === "A") setAuto(!N.auto);
   else if (e.key === "l" || e.key === "L") openLogPanel();
-});
-
-document.addEventListener("fullscreenchange", () => {
-  const b = $('[data-vn="full"]'); if (b) b.textContent = document.fullscreenElement ? "전체 화면 끝내기" : "전체 화면";
 });
