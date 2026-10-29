@@ -108,13 +108,14 @@ function collect(){
         <button type="button" class="vn-chat-x" data-vn="side-close" aria-label="닫기">×</button>
       </header>
       ${ts.map(t => `<div class="vn-chat f-${fmtOf(t)}" data-t="${t}" role="tabpanel" ${t === act ? "" : "hidden"}><ol class="vn-chat-list"></ol></div>`).join("")}
+      <button type="button" class="vn-strip" data-fold="${g}" aria-label="${label} 묶음 펴기"><span class="lb">${label}</span><span class="n"></span></button>
     </section>`;
   }).join("");
   $("#vn-side").innerHTML = html;
   const gs = GROUPS.filter(([g]) => N.active[g] != null);
   $("#vn-sidebtns").innerHTML = gs.map(([g, label]) => `<button type="button" class="vn-sidebtn g-${g}" data-side="${g}">${label} <span class="n"></span></button>`).join("");
   $("#vn-stage").classList.toggle("has-side", gs.length > 0);
-  $("#vn-stage").classList.toggle("two-side", gs.length > 1);
+  sideLayout();
   for (const q of N.queue) clearTimeout(q.timer); N.queue = [];
   N.upTo = -1; N.unread = {}; setSide(null);
 }
@@ -147,11 +148,20 @@ function chatHtml(i, fresh){
   return `<li class="${me ? "mine" : ""}${cls}"><span class="who" style="color:${readable(color)}">${esc(name)}</span><span class="row"><span class="bub">${deco(esc(text))}</span>${time}</span></li>`;
 }
 const toBottom = list => { list.scrollTop = list.scrollHeight; };    // 새 메시지가 오면 늘 맨 아래(최신)로
+/* 오른쪽 폭: 펴진 묶음 수에 맞춰 넓이를 정하고, 접힌 묶음은 얇은 세로 띠만 차지 → 남는 자리 없이 대사창이 넓어짐 */
+function sideLayout(){
+  const st = $("#vn-stage"), all = $$(".vn-grp"), open = all.filter(el => el.dataset.folded !== "true").length;
+  st.classList.remove("open-0", "open-1", "open-2");
+  st.classList.add("open-" + open);
+  st.style.setProperty("--fold-n", all.length - open);
+  st.style.setProperty("--gap-n", Math.max(0, all.length - 1));
+}
 function badge(t){
   const n = N.unread[t] || 0;
   const m = $(`.vn-mark[data-mark="${t}"] .n`); if (m) m.textContent = n ? n : "";
   const g = groupOf(t), sum = Object.entries(N.unread).filter(([k, v]) => v && groupOf(+k) === g).reduce((a, [, v]) => a + v, 0);
   const b = $(`.vn-sidebtn[data-side="${g}"] .n`); if (b) b.textContent = sum ? sum : "";
+  const sp = $(`.vn-grp[data-g="${g}"] .vn-strip .n`); if (sp) sp.textContent = sum ? sum : "";
 }
 /* 지금 눈에 보이는 탭인지: 묶음이 펴져 있고, 그 책갈피가 골라져 있고, (휴대폰이면) 그 묶음이 열려 있을 때 */
 const visible = t => { const g = groupOf(t), el = grp(g); return el && el.dataset.folded !== "true" && N.active[g] === t && (!isNarrow() || N.openSide === g); };
@@ -203,6 +213,7 @@ function toggleFold(g){
   if (fold){ el.dataset.folded = "true"; SP.fold = [...new Set([...SP.fold, g])]; }
   else { delete el.dataset.folded; SP.fold = SP.fold.filter(x => x !== g); seen(N.active[g]); }
   el.querySelector(".vn-fold").setAttribute("aria-expanded", String(!fold));
+  sideLayout();
   saveSP();
 }
 /* 책갈피: 묶음 안에서 탭 바꾸기 */
