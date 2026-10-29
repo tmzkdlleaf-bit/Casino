@@ -5,13 +5,13 @@
    - 탄 위치는 서버만 앎. 화면은 서버가 돌려준 결과(채팅의 'shot' 기록)를 보고 효과만 그림
    - 실시간 연결이 끊겨도 5초마다 다시 불러와 따라감
    ========================================================= */
-import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029f";
-import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029f";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029f";
-import { motionOK, nav, state } from "./state.js?v=20261029f";
-import { ALL, balOf, myChars } from "./views.js?v=20261029f";
-import { sfx, setSfxVol } from "./sfx.js?v=20261029f";
-import { hotkeys, kbd, toolsFrame, toolsMenu } from "./gametools.js?v=20261029f";
+import { CURRENCY, USE_DB, publicUrl, sb } from "./data.js?v=20261029g";
+import { $, $$, CUR, announce, chipAmt, curOf, esc, setTitle, toast } from "./dom.js?v=20261029g";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261029g";
+import { motionOK, nav, state } from "./state.js?v=20261029g";
+import { ALL, balOf, myChars } from "./views.js?v=20261029g";
+import { sfx, setSfxVol } from "./sfx.js?v=20261029g";
+import { hotkeys, kbd, toolsFrame, toolsMenu } from "./gametools.js?v=20261029g";
 
 /* ---------- 전기 충격기 (도트 그림) — 오른쪽을 향함, 한 칸 = 1 ---------- */
 const GUN = ["........................................", "....KKKKKKKKKKKKKKKKKKKKKKKKK...........", "...KSSSSSSSSSSSSSSSSSSSSSSSSSK..........", "..KLLLLLLLLLLLLLLLLLLLLLLLLLLLKKKKKKKK..", "..KLBBYYBYYBYYBBBBBBBBBBBBBBBKPPPPPPPK..", "..KLBBBBBBBBBBBBBBBBBBBBBBBBBKPQQQQQPKWW", "..KDBBBBBBBBBBBBBBBBBBBBBBBBBKPPPPPPPK..", "..KDDDDDDDDDDDDDDDDDDDDDDDDDDKPQQQQQPKWW", "..KKKKKKDDDDDDDKKKKKKKKKKKKKKKPPPPPPPK..", ".......KGGGGGKDK....K.......KKKKKKKKK...", "......KGgGGGKKDK...K....................", "......KGGGGGK.KMK..K....................", ".....KGgGGGK...KMKK.....................", ".....KGGGGGK....KK......................", "....KGgGGGK.............................", "....KGGGGGK.............................", "....KKKKKKK............................."];
@@ -58,6 +58,8 @@ const ctlSeat = () => {
 };
 const canAct = () => !!ctlSeat();
 const isMyTurn = () => { const r = RL.room, me = mySeat(); return !!(r && me && r.status === "playing" && r.turn_seat === me.seat && me.alive); };
+// '나에게 쏜 뒤' 방: 차례의 첫 발은 나에게만
+const selfFirst = () => { const r = RL.room; return !!(r && r.status === "playing" && r.pass_rule !== "free" && !r.self_survived); };
 const betOpen = () => RL.room?.status === "playing" && RL.seats.every(s => s.alive);
 
 /* =========================================================
@@ -220,7 +222,7 @@ function render(){
   // 움직일 차례가 아니면 겨냥 초기화, 내 차례(또는 관리자의 더미 차례)면 기본은 그 자리 자신
   const ctl = ctlSeat();
   if (!ctl){ RL.target = null; RL.ctlSeat = null; }
-  else if (RL.ctlSeat !== ctl.seat || RL.target == null || !seatAt(RL.target)?.alive){ RL.target = ctl.seat; RL.ctlSeat = ctl.seat; }
+  else if (RL.ctlSeat !== ctl.seat || RL.target == null || !seatAt(RL.target)?.alive || selfFirst()){ RL.target = ctl.seat; RL.ctlSeat = ctl.seat; }
 
   const t = $("#rl-title");
   if (t.textContent !== r.title) t.textContent = r.title;
@@ -247,7 +249,7 @@ function autoDummy(){
     const r = RL.room;
     if (r.self_survived && Math.random() < .35){ await call("roulette_pass", { p_room: RL.id }); load(true); return; }
     const others = RL.seats.filter(x => x.alive && x.seat !== ctl.seat);
-    const t = Math.random() < .6 || !others.length ? ctl.seat : others[Math.floor(Math.random() * others.length)].seat;
+    const t = selfFirst() || Math.random() < .6 || !others.length ? ctl.seat : others[Math.floor(Math.random() * others.length)].seat;
     const res = await call("roulette_shoot", { p_room: RL.id, p_target: t });
     if (res && typeof res === "object"){ const key = `${res.round}:${res.shot_no}`; if (!RL.fxSeen.has(key)){ RL.fxSeen.add(key); fx(res); } }
     load(true);
@@ -289,8 +291,8 @@ function renderRing(){
       : `<div class="rl-seat empty${up}" style="${pos}" data-seat="${i}" data-ang="${ang}" aria-label="빈 자리"><span class="av"></span></div>`;
     const c = seatChar(s), src = avatarOf(c), isMe = me && me.seat === i;
     const turn = r.status === "playing" && r.turn_seat === i, win = r.status === "finished" && r.winner_seat === i;
-    const can = (my && s.alive) || (admin && !isMe);
-    const label = `${c.name}${c.dummy ? " (더미)" : ""}${isMe ? " (나)" : ""}${!s.alive ? ", 탈락" : ""}${turn ? ", 지금 차례" : ""}${win ? ", 우승" : ""}${my && s.alive ? (i === ctl.seat ? " — 자기 자신에게 겨누기" : " — 이 자리에 겨누기") : admin && !isMe ? " — 자리 비우기" : ""}`;
+    const can = (my && s.alive && (!selfFirst() || i === ctl.seat)) || (admin && !isMe);
+    const label = `${c.name}${c.dummy ? " (더미)" : ""}${isMe ? " (나)" : ""}${!s.alive ? ", 탈락" : ""}${turn ? ", 지금 차례" : ""}${win ? ", 우승" : ""}${my && s.alive ? (i === ctl.seat ? " — 자기 자신에게 겨누기" : selfFirst() ? "" : " — 이 자리에 겨누기") : admin && !isMe ? " — 자리 비우기" : ""}`;
     return `<button type="button" class="rl-seat${up}${c.dummy ? " dummy" : ""}${s.alive ? "" : " dead"}${turn ? " turn" : ""}${isMe ? " me" : ""}${win ? " win" : ""}${RL.target === i ? " aimed" : ""}"
       style="${pos}" data-seat="${i}" data-ang="${ang}" ${can ? "" : `aria-disabled="true"`} aria-pressed="${RL.target === i}" aria-label="${esc(label)}">
       <span class="av">${src ? `<img src="${esc(src)}" alt="" decoding="async" draggable="false">` : `<span class="ph">${esc(c.name.slice(0, 1))}</span>`}<span class="x" aria-hidden="true"></span>${turn && TURN.ok ? `<span class="tm" aria-hidden="true"></span>` : ""}</span>
@@ -374,7 +376,8 @@ function renderBar(){
     html = `${put ? `<p class="rl-note bet-res">${chipAmt(put, r.currency)} → ${chipAmt(got, r.currency)}</p>` : ""}<a class="btn" href="#game">방 목록으로</a>`;
   }
   // 방장: 시작은 아래 버튼 줄에 (나머지는 메뉴)
-  if (state.isAdmin && r.status === "waiting") html += `<button class="btn rl-act host" type="button" data-act="start" data-key="n"${RL.seats.length < 2 ? " disabled" : ""}>게임 시작${kbd("n")}</button>`;
+  // 자리가 다 차면 불이 들어옴 (2명 이상이면 누를 수는 있음)
+  if (state.isAdmin && r.status === "waiting") html += `<button class="btn rl-act ${RL.seats.length >= r.max_seats ? "shoot" : "host"}" type="button" data-act="start" data-key="n"${RL.seats.length < 2 ? " disabled" : ""}>게임 시작${kbd("n")}</button>`;
   bar.innerHTML = html;
   if (keep) $(`[data-act="${keep}"]`, bar)?.focus();
 }
@@ -689,7 +692,7 @@ $("#rl-ava-form").addEventListener("submit", async e => {
   const cid = $("#rl-ava-char").value, old = RL.avatars.get(cid)?.path;
   await withBusy($('button[type="submit"]', e.target), async () => {
     try {
-      const { toWebP, extOf } = await import("./img.js?v=20261029f");
+      const { toWebP, extOf } = await import("./img.js?v=20261029g");
       const blob = await toWebP(avaFile, 512), path = `${cid}/${Date.now()}.${extOf(blob)}`;
       const up = await sb.storage.from("roulette").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
       if (up.error) throw up.error;
