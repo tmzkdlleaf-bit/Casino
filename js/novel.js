@@ -69,12 +69,16 @@ function build(){
 /* 메인 탭 → 왼쪽 대사창(한 줄씩 넘김), 그 밖의 탭 → 오른쪽에 탭마다 메시지 창 (지나갈 때 하나씩 올라옴) */
 const fmtOf = t => V.log.tabs[t]?.[1] || "main";
 const tabLabel = t => { const [n, f] = V.log.tabs[t]; return /^(main|info|other|secret)$/i.test(n) ? TAB_LABEL[f] || n : n; };
-const FOLD_KEY = "comu-vn-fold";
-let folded = new Set();
-try { folded = new Set(JSON.parse(localStorage.getItem(FOLD_KEY) || "[]")); } catch (_) {}
-const saveFold = () => { try { localStorage.setItem(FOLD_KEY, JSON.stringify([...folded])); } catch (_) {} };
-const ORDER = { secret: 0, other: 1, info: 2, main: 3 };     // 위에서부터: 비밀 · 잡담 · 정보
+/* 오른쪽은 두 묶음: 안쪽(왼쪽)=비밀 탭들, 바깥쪽(오른쪽)=잡담과 그 밖의 탭들. 묶음 위의 책갈피로 탭을 오감 */
+const GROUPS = [["secret", "비밀"], ["rest", "잡담"]];
+const groupOf = t => fmtOf(t) === "secret" ? "secret" : "rest";
+const ORDER = { other: 0, info: 1, secret: 0, main: 2 };     // 잡담 묶음 안 책갈피 순서: 잡담 → 정보 → 그 밖
+const SIDE_KEY = "comu-vn-side";                           // { fold:[묶음], pick:{묶음: 탭 이름} } — 이 기기에 기억
+let SP = { fold: [], pick: {} };
+try { SP = { fold: [], pick: {}, ...JSON.parse(localStorage.getItem(SIDE_KEY) || "{}") }; } catch (_) {}
+const saveSP = () => { try { localStorage.setItem(SIDE_KEY, JSON.stringify(SP)); } catch (_) {} };
 const win = t => $(`.vn-chat[data-t="${t}"]`);
+const grp = g => $(`.vn-grp[data-g="${g}"]`);
 
 function collect(){
   const log = V.log;
@@ -84,16 +88,31 @@ function collect(){
   // 내 캐릭터 이름: 채팅창에서 오른쪽 말풍선으로
   const mine = new Set(state.mine.map(m => m.uuid));
   N.mine = new Set(ALL().filter(c => mine.has(c.uuid)).map(c => c.name.trim()));
-  // 메인 밖의 탭마다 창 하나 (이 사람에게 보이는 탭만)
-  const tabs = [...new Set(N.side.map(i => log.m[i][0]))].sort((a, b) => ORDER[fmtOf(a)] - ORDER[fmtOf(b)] || a - b);
-  $("#vn-side").innerHTML = tabs.map(t => `
-    <section class="vn-chat f-${fmtOf(t)}" data-t="${t}" ${folded.has(log.tabs[t][0]) ? 'data-folded="true"' : ""}>
-      <header><button type="button" class="vn-chat-h" data-fold="${t}" aria-expanded="${!folded.has(log.tabs[t][0])}"><span class="dot" aria-hidden="true"></span><span class="nm">${esc(tabLabel(t))}</span><span class="n"></span><span class="arw" aria-hidden="true">▾</span></button>
-        <button type="button" class="vn-chat-x" data-vn="side-close" aria-label="닫기">×</button></header>
-      <ol class="vn-chat-list"></ol>
-    </section>`).join("");
-  $("#vn-sidebtns").innerHTML = tabs.map(t => `<button type="button" class="vn-sidebtn f-${fmtOf(t)}" data-side="${t}">${esc(tabLabel(t))} <span class="n"></span></button>`).join("");
-  $("#vn-stage").classList.toggle("has-side", tabs.length > 0);
+  // 이 사람에게 보이는 메인 밖의 탭을 두 묶음으로
+  // 비밀은 이름·번호 순(Ho1, Ho2, HO3…), 잡담 묶음은 잡담 → 정보 → 그 밖 (같은 종류끼리는 처음 나온 순)
+  const tabs = [...new Set(N.side.map(i => log.m[i][0]))].sort((a, b) => ORDER[fmtOf(a)] - ORDER[fmtOf(b)]
+    || (fmtOf(a) === "secret" ? log.tabs[a][0].localeCompare(log.tabs[b][0], "ko", { numeric: true, sensitivity: "base" }) : 0) || a - b);
+  N.active = {};
+  const html = GROUPS.map(([g, label]) => {
+    const ts = tabs.filter(t => groupOf(t) === g);
+    if (!ts.length) return "";
+    const want = ts.find(t => log.tabs[t][0] === SP.pick[g]);
+    const act = want ?? ts[0];
+    N.active[g] = act;
+    return `<section class="vn-grp g-${g}" data-g="${g}" ${SP.fold.includes(g) ? 'data-folded="true"' : ""} aria-label="${label} 묶음">
+      <header>
+        <div class="vn-marks" role="tablist">${ts.map(t => `<button type="button" role="tab" class="vn-mark f-${fmtOf(t)}" data-mark="${t}" aria-selected="${t === act}">${esc(tabLabel(t))}<span class="n"></span></button>`).join("")}</div>
+        <button type="button" class="vn-fold" data-fold="${g}" aria-expanded="${!SP.fold.includes(g)}" aria-label="${label} 묶음 접기·펴기"><span aria-hidden="true">▾</span></button>
+        <button type="button" class="vn-chat-x" data-vn="side-close" aria-label="닫기">×</button>
+      </header>
+      ${ts.map(t => `<div class="vn-chat f-${fmtOf(t)}" data-t="${t}" role="tabpanel" ${t === act ? "" : "hidden"}><ol class="vn-chat-list"></ol></div>`).join("")}
+    </section>`;
+  }).join("");
+  $("#vn-side").innerHTML = html;
+  const gs = GROUPS.filter(([g]) => N.active[g] != null);
+  $("#vn-sidebtns").innerHTML = gs.map(([g, label]) => `<button type="button" class="vn-sidebtn g-${g}" data-side="${g}">${label} <span class="n"></span></button>`).join("");
+  $("#vn-stage").classList.toggle("has-side", gs.length > 0);
+  $("#vn-stage").classList.toggle("two-side", gs.length > 1);
   for (const q of N.queue) clearTimeout(q.timer); N.queue = [];
   N.upTo = -1; N.unread = {}; setSide(null);
 }
@@ -114,8 +133,12 @@ function chatHtml(i, fresh){
 const toBottom = list => { list.scrollTop = list.scrollHeight; };    // 새 메시지가 오면 늘 맨 아래(최신)로
 function badge(t){
   const n = N.unread[t] || 0;
-  for (const el of $$(`.vn-chat[data-t="${t}"] .vn-chat-h .n, .vn-sidebtn[data-side="${t}"] .n`)) el.textContent = n ? n : "";
+  const m = $(`.vn-mark[data-mark="${t}"] .n`); if (m) m.textContent = n ? n : "";
+  const g = groupOf(t), sum = Object.entries(N.unread).filter(([k, v]) => v && groupOf(+k) === g).reduce((a, [, v]) => a + v, 0);
+  const b = $(`.vn-sidebtn[data-side="${g}"] .n`); if (b) b.textContent = sum ? sum : "";
 }
+/* 지금 눈에 보이는 탭인지: 묶음이 펴져 있고, 그 책갈피가 골라져 있고, (휴대폰이면) 그 묶음이 열려 있을 때 */
+const visible = t => { const g = groupOf(t), el = grp(g); return el && el.dataset.folded !== "true" && N.active[g] === t && (!isNarrow() || N.openSide === g); };
 function appendSide(k, fresh){
   const t = V.log.m[k][0], w = win(t);
   if (!w) return;
@@ -123,8 +146,7 @@ function appendSide(k, fresh){
   list.insertAdjacentHTML("beforeend", chatHtml(k, fresh));
   while (list.children.length > SIDE_MAX) list.firstElementChild.remove();
   toBottom(list);
-  const seen = w.dataset.folded !== "true" && (!isNarrow() || N.openSide === String(t));
-  if (fresh && !seen){ N.unread[t] = (N.unread[t] || 0) + 1; badge(t); }
+  if (fresh && !visible(t)){ N.unread[t] = (N.unread[t] || 0) + 1; badge(t); }
 }
 const isNarrow = () => getComputedStyle($("#vn-sidebtns")).display !== "none";   // 휴대폰처럼 좁으면 버튼으로 엶
 function flushQueue(){                                     // 아직 안 올라온 것을 바로 붙임 (다음 대사로 넘어갈 때)
@@ -159,19 +181,31 @@ function showSide(i, last, step){
   }
   N.upTo = until === Infinity ? V.log.m.length : until;
 }
-/* 창 접고 펴기 (넓은 화면) — 탭 이름으로 이 기기에 기억 */
-function toggleFold(t){
-  const w = win(t), name = V.log.tabs[t][0], fold = w.dataset.folded !== "true";
-  if (fold){ w.dataset.folded = "true"; folded.add(name); } else { delete w.dataset.folded; folded.delete(name); N.unread[t] = 0; badge(t); toBottom(w.querySelector(".vn-chat-list")); }
-  w.querySelector(".vn-chat-h").setAttribute("aria-expanded", String(!fold));
-  saveFold();
+/* 묶음 접고 펴기 (넓은 화면) — 이 기기에 기억 */
+function toggleFold(g){
+  const el = grp(g), fold = el.dataset.folded !== "true";
+  if (fold){ el.dataset.folded = "true"; SP.fold = [...new Set([...SP.fold, g])]; }
+  else { delete el.dataset.folded; SP.fold = SP.fold.filter(x => x !== g); seen(N.active[g]); }
+  el.querySelector(".vn-fold").setAttribute("aria-expanded", String(!fold));
+  saveSP();
 }
-/* 휴대폰: 탭 버튼으로 창을 하나씩 열고 닫음 */
-function setSide(t){
-  N.openSide = t == null ? null : String(t);
+/* 책갈피: 묶음 안에서 탭 바꾸기 */
+function pickTab(t){
+  const g = groupOf(t), el = grp(g);
+  N.active[g] = t;
+  el.querySelectorAll(".vn-chat").forEach(w => { w.hidden = +w.dataset.t !== t; });
+  el.querySelectorAll(".vn-mark").forEach(b => b.setAttribute("aria-selected", String(+b.dataset.mark === t)));
+  if (el.dataset.folded === "true") toggleFold(g);
+  SP.pick[g] = V.log.tabs[t][0]; saveSP();
+  seen(t);
+}
+function seen(t){ if (t == null) return; N.unread[t] = 0; badge(t); const l = win(t)?.querySelector(".vn-chat-list"); if (l) toBottom(l); }
+/* 휴대폰: 묶음 버튼으로 하나씩 열고 닫음 */
+function setSide(g){
+  N.openSide = g || null;
   $("#vn-side")?.setAttribute("data-open", N.openSide ?? "");
-  $$(".vn-chat").forEach(w => w.classList.toggle("is-open", w.dataset.t === N.openSide));
-  if (N.openSide != null){ N.unread[t] = 0; badge(t); const l = win(t)?.querySelector(".vn-chat-list"); if (l) toBottom(l); }
+  $$(".vn-grp").forEach(el => el.classList.toggle("is-open", el.dataset.g === N.openSide));
+  if (N.openSide) seen(N.active[N.openSide]);
   $$(".vn-sidebtn").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.side === N.openSide)));
 }
 
@@ -428,8 +462,10 @@ document.addEventListener("click", e => {
   if (!N.on) return;
   const note = e.target.closest("[data-note]");
   if (note){ const p = note.nextElementSibling, open = p.hidden; p.hidden = !open; note.setAttribute("aria-expanded", String(open)); note.classList.add("read"); if (open) setAuto(false); return; }
+  const mark = e.target.closest("[data-mark]");
+  if (mark){ pickTab(+mark.dataset.mark); return; }
   const fold = e.target.closest("[data-fold]");
-  if (fold){ if (isNarrow()) setSide(null); else toggleFold(+fold.dataset.fold); return; }
+  if (fold){ if (isNarrow()) setSide(null); else toggleFold(fold.dataset.fold); return; }
   const sideBtn = e.target.closest("[data-side]");
   if (sideBtn){ setSide(N.openSide === sideBtn.dataset.side ? null : sideBtn.dataset.side); return; }
   const jump = e.target.closest("[data-vn-jump]");
