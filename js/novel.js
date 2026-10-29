@@ -22,7 +22,7 @@ const VOL = .4;
 const N = {
   on: false, lines: [], pos: 0, typing: false, auto: false, speed: 1, sound: false,
   tTimer: 0, aTimer: 0, nodes: null, bgKey: null, bgmKey: null, audio: null, faceKey: null, bgFlip: 0,
-  side: [], upTo: -1, mine: new Set(), unread: { other: 0, secret: 0 }, openSide: null
+  side: [], upTo: -1, mine: new Set(), unread: { other: 0, secret: 0 }, openSide: null, queue: []
 };
 const SIDE_MAX = 120;      // 채팅창에 남겨 두는 메시지 수
 try { const p = JSON.parse(localStorage.getItem(PREF_KEY) || "{}"); if (p.speed >= 0 && p.speed < 3) N.speed = p.speed; N.sound = !!p.sound; } catch (_) {}
@@ -93,52 +93,76 @@ function collect(){
   const chats = ["secret", "other"].filter(k => kinds.has(k)).length;
   $("#vn-stage").classList.toggle("has-side", chats > 0);
   $("#vn-stage").classList.toggle("two-side", chats > 1);
+  for (const q of N.queue) clearTimeout(q.timer); N.queue = [];
   N.upTo = -1; N.unread = { other: 0, secret: 0 }; closeNote(); setSide(null);
   $$(".vn-chat-list").forEach(l => l.innerHTML = ""); $("#vn-notes").innerHTML = "";
 }
 
 /* ---------- 잡담·비밀 채팅창, 정보 쪽지 ---------- */
+const hhmm = sec => { if (!sec) return ""; const d = new Date(sec * 1000); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
 function chatHtml(i, fresh){
-  const log = V.log, [t, s, text] = log.m[i], [name, color, narr] = log.sp[s], tab = log.tabs[t];
+  const log = V.log, [t, s, text, , tm] = log.m[i], [name, color, narr] = log.sp[s], tab = log.tabs[t];
+  const time = tm ? `<time class="tm">${hhmm(tm)}</time>` : "";
   const quiet = !name || SYSTEM.test(name) || narr;
   const many = kindOf(t) === "secret" && log.tabs.filter(x => x[1] === "secret").length > 1;
   const tag = many ? `<span class="tg">${esc(tab[0])}</span>` : "";
-  if (quiet) return `<li class="q${fresh ? " fresh" : ""}">${tag}${deco(esc(text))}</li>`;
+  if (quiet) return `<li class="q${fresh ? " fresh" : ""}">${tag}${deco(esc(text))}${time}</li>`;
   const me = N.mine.has(name.trim());
-  return `<li class="${me ? "mine" : ""}${fresh ? " fresh" : ""}"><span class="who" style="color:${readable(color)}">${esc(name)}${tag}</span><span class="bub">${deco(esc(text))}</span></li>`;
+  return `<li class="${me ? "mine" : ""}${fresh ? " fresh" : ""}"><span class="who" style="color:${readable(color)}">${esc(name)}${tag}</span><span class="row"><span class="bub">${deco(esc(text))}</span>${time}</span></li>`;
 }
 function noteHtml(i, fresh){
   const log = V.log, [t, s] = log.m[i], [name] = log.sp[s];
   return `<button type="button" class="vn-note${fresh ? " fresh" : ""}" data-note="${i}"><span class="ic" aria-hidden="true"></span><span class="t">쪽지</span><span class="w">${esc(!name || SYSTEM.test(name) ? log.tabs[t][0] : name)}</span></button>`;
 }
-/* 대사 번호 i 앞까지의 옆 내용을 보여 줌. 앞으로 한 줄씩 가면 새것만 붙이고, 뒤로 가거나 건너뛰면 다시 그림 */
+/* 대사 번호 i 앞까지의 옆 내용을 보여 줌
+   - 앞으로 한 줄 가면: 그 사이에 올라온 것만 한 개씩 차례로 (보낸 시간이 있으면 실제 간격에 맞춰, 없으면 일정하게)
+   - 뒤로 가거나 건너뛰면: 그 위치까지를 한 번에 다시 그림 */
+const lists = () => ({ other: $('.vn-chat[data-kind="other"] .vn-chat-list'), secret: $('.vn-chat[data-kind="secret"] .vn-chat-list') });
+function appendSide(k, fresh, L = lists()){
+  const kind = kindOf(V.log.m[k][0]);
+  if (kind === "info"){
+    const tray = $("#vn-notes");
+    tray.insertAdjacentHTML("beforeend", noteHtml(k, fresh));
+    while (tray.children.length > 4) tray.firstElementChild.remove();
+    return;
+  }
+  const list = L[kind];
+  list.insertAdjacentHTML("beforeend", chatHtml(k, fresh));
+  while (list.children.length > SIDE_MAX) list.firstElementChild.remove();
+  if (fresh || list.scrollHeight - list.scrollTop - list.clientHeight < 120) list.scrollTop = list.scrollHeight;
+  if (fresh && N.openSide !== kind){ N.unread[kind]++; const n = $(`.vn-sidebtn[data-side="${kind}"] .n`); if (n) n.textContent = N.unread[kind]; }
+}
+function flushQueue(){                                     // 아직 안 올라온 것을 바로 붙임 (다음 대사로 넘어갈 때)
+  for (const q of N.queue || []){ clearTimeout(q.timer); if (!q.done) appendSide(q.k, false); }
+  N.queue = [];
+}
 function showSide(i, last){
   const until = last ? Infinity : i;                       // 마지막 대사에서는 뒤에 남은 것까지 전부
-  const lists = { other: $('.vn-chat[data-kind="other"] .vn-chat-list'), secret: $('.vn-chat[data-kind="secret"] .vn-chat-list') };
   const forward = N.upTo >= 0 && until >= N.upTo;
-  const items = N.side.filter(k => k < until && (!forward || k >= N.upTo));
-  if (!forward){ lists.other.innerHTML = ""; lists.secret.innerHTML = ""; $("#vn-notes").innerHTML = ""; }
-  const recent = forward ? items : items.slice(-SIDE_MAX * 2);
-  const add = { other: [], secret: [], info: [] };
-  for (const k of recent) add[kindOf(V.log.m[k][0])].push(k);
-  for (const kind of ["other", "secret"]){
-    if (!add[kind].length) continue;
-    const list = lists[kind];
-    list.insertAdjacentHTML("beforeend", add[kind].slice(-SIDE_MAX).map(k => chatHtml(k, forward && motionOK())).join(""));
-    while (list.children.length > SIDE_MAX) list.firstElementChild.remove();
-    list.scrollTop = list.scrollHeight;
-    if (forward && N.openSide !== kind){ N.unread[kind] += add[kind].length; }
-  }
-  if (add.info.length){
-    const tray = $("#vn-notes");
-    tray.insertAdjacentHTML("beforeend", add.info.slice(-4).map(k => noteHtml(k, forward && motionOK())).join(""));
-    while (tray.children.length > 4) tray.firstElementChild.remove();
+  flushQueue();
+  if (!forward){
+    const L = lists();
+    L.other.innerHTML = ""; L.secret.innerHTML = ""; $("#vn-notes").innerHTML = "";
+    const items = N.side.filter(k => k < until);
+    const keep = { other: SIDE_MAX, secret: SIDE_MAX, info: 4 }, pick = [];
+    for (let j = items.length - 1; j >= 0; j--){ const kd = kindOf(V.log.m[items[j]][0]); if (keep[kd]-- > 0) pick.push(items[j]); }
+    pick.reverse().forEach(k => appendSide(k, false, L));
+    Object.values(L).forEach(l => { l.scrollTop = l.scrollHeight; });
+  } else {
+    const items = N.side.filter(k => k >= N.upTo && k < until);
+    const prevMain = N.pos > 0 ? V.log.m[N.lines[N.pos - 1]]?.[4] : 0;
+    let delay = 0, lastT = prevMain || 0;
+    N.queue = items.map(k => {
+      const t = V.log.m[k][4];
+      // 실제 간격 g초 → 0.25~1.5초, 시간이 없으면 0.45초씩
+      delay += !motionOK() ? 0 : t && lastT ? 250 + Math.min(1250, Math.max(0, t - lastT) * 60) : 450;
+      if (t) lastT = t;
+      const q = { k, done: false };
+      q.timer = setTimeout(() => { q.done = true; appendSide(k, motionOK()); }, delay);
+      return q;
+    });
   }
   N.upTo = until === Infinity ? V.log.m.length : until;
-  for (const k of ["other", "secret"]){
-    const n = $(`.vn-sidebtn[data-side="${k}"] .n`);
-    n.textContent = N.unread[k] ? N.unread[k] : "";
-  }
 }
 function setSide(kind){                                         // 휴대폰: 채팅창을 버튼으로 열고 닫음
   N.openSide = kind;
@@ -395,6 +419,7 @@ export function closeNovel(){
   if (!N.on) return;
   N.on = false;
   stopTyping(); setAuto(false); stopVnAudio(); N.bgmKey = null;
+  for (const q of N.queue) clearTimeout(q.timer); N.queue = [];
 }
 /* 탭을 켜고 끄면 목록만 다시 만들고 같은 대사 근처에서 이어 감 */
 export function refreshNovel(){

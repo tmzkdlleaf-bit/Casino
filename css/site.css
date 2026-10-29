@@ -820,7 +820,12 @@ body.log-big .log-head{display:none}
 .vn-chat-list .who{display:flex; align-items:center; gap:.35rem; font-weight:600; font-size:.85em}
 .vn-chat-list .tg{padding:0 .4em; border:1px solid currentColor; border-radius:3px; font-size:.75em; font-weight:400; opacity:.75}
 .vn-chat-list .bub{max-width:92%; padding:.4rem .7rem; border-radius:3px 12px 12px 12px; background:rgba(238,243,250,.1); color:var(--ivory); white-space:pre-line; overflow-wrap:anywhere}
+.vn-chat-list .row{display:flex; align-items:flex-end; gap:.35rem; max-width:100%}
+.vn-chat-list .row .bub{max-width:none; min-width:0}
+.vn-chat-list .tm{flex:none; font-size:.72em; color:var(--smoke); font-variant-numeric:tabular-nums}
+.vn-chat-list li.q .tm{margin-left:.4rem}
 .vn-chat-list li.mine{justify-items:end}
+.vn-chat-list li.mine .row{flex-direction:row-reverse}
 .vn-chat-list li.mine .bub{border-radius:12px 3px 12px 12px; background:var(--velvet)}
 .vn-chat[data-kind="secret"] .bub{background:rgba(239,26,114,.2)}
 .vn-chat-list li.q{justify-items:center; color:var(--smoke); font-size:.9em; text-align:center; white-space:pre-line}

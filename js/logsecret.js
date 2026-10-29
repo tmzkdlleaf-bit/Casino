@@ -28,17 +28,17 @@ export function splitLog(log){
   if (!log.tabs.some(isSecret)) return { pub: log, secrets: [] };
   const P = picker(log), pubTabs = [], tabMap = new Map(), rows = new Map(), pubIdx = [];
   const m = [];
-  log.m.forEach(([t, s, text, f = -1], i) => {
+  log.m.forEach(([t, s, text, f = -1, tm], i) => {
     pubIdx[i] = m.length;                                   // 이 대사 앞까지 공개 대사가 몇 개인지
     const tab = log.tabs[t];
     if (isSecret(tab)){
       if (!rows.has(t)) rows.set(t, { tab, P: picker(log), m: [] });
       const r = rows.get(t);
-      r.m.push([m.length, r.P.speaker(s), text, r.P.face(f), i]);
+      r.m.push(tm ? [m.length, r.P.speaker(s), text, r.P.face(f), i, tm] : [m.length, r.P.speaker(s), text, r.P.face(f), i]);
       return;
     }
     if (!tabMap.has(t)){ tabMap.set(t, pubTabs.length); pubTabs.push([tab[0], tab[1]]); }
-    m.push([tabMap.get(t), P.speaker(s), text, P.face(f)]);
+    m.push(tm ? [tabMap.get(t), P.speaker(s), text, P.face(f), tm] : [tabMap.get(t), P.speaker(s), text, P.face(f)]);
   });
   const at = i => i >= log.m.length ? m.length : pubIdx[i];
   const pub = {
@@ -67,7 +67,7 @@ export function mergeLog(pub, rows){
     const fOff = log.faces.length, sOff = log.sp.length;
     log.faces.push(...(d.faces || []));
     for (const [name, color, narr, def = -1, list = []] of d.sp || []) log.sp.push([name, color, narr, def >= 0 ? def + fOff : -1, list.map(f => f + fOff)]);
-    for (const [at, s, text, f = -1, o = 0] of d.m) extra.push({ at, o, row: [t, s + sOff, text, f >= 0 ? f + fOff : -1] });
+    for (const [at, s, text, f = -1, o = 0, tm] of d.m) extra.push({ at, o, row: tm ? [t, s + sOff, text, f >= 0 ? f + fOff : -1, tm] : [t, s + sOff, text, f >= 0 ? f + fOff : -1] });
   }
   extra.sort((a, b) => a.at - b.at || a.o - b.o);
   const m = [], pos = [];

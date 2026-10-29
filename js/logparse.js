@@ -8,7 +8,7 @@
        tabs:[[이름, 형식]],
        faces:[이미지 주소 또는 logs 버킷 경로],
        sp:[[이름, 색, 나레이션(0/1), 기본 표정 번호(-1=없음), [쓸 수 있는 표정 번호…]]],
-       m:[[탭번호, 화자번호, 본문, 표정 번호(-1=없음)]],
+       m:[[탭번호, 화자번호, 본문, 표정 번호(-1=없음), 보낸 시간(초, 있을 때만)]],
        bgm:[{ at:대사 번호, kind:"audio"|"youtube"|"stop", url, title, start }] }
    ========================================================= */
 
@@ -110,7 +110,7 @@ export function pack(messages, { include, narrators, stripTag, src, library = []
   const tabIdx = new Map(), spIdx = new Map(), faceIdx = new Map(), tabs = [], sp = [], faces = [], m = [];
   const face = url => { if (!isImageUrl(url)) return -1; if (!faceIdx.has(url)){ faceIdx.set(url, faces.length); faces.push(url); } return faceIdx.get(url); };
   const lastFace = {};
-  for (const x of messages){
+  for (const x of orderByTime(messages)){
     if (!include.has(x.tab)) continue;
     const c = lib.get(x.name.trim());
     const cFaces = c ? [{ label: "", iconUrl: c.iconUrl }, ...c.faces].filter(f => isImageUrl(f.iconUrl)) : [];
@@ -136,7 +136,7 @@ export function pack(messages, { include, narrators, stripTag, src, library = []
       spIdx.set(key, sp.length);
       sp.push([x.name, x.color, narrators.has(x.name) ? 1 : 0, c ? face(c.iconUrl || c.faces[0]?.iconUrl) : -1, cFaces.map(ff => face(ff.iconUrl))]);
     }
-    m.push([tabIdx.get(x.tab), spIdx.get(key), text, f]);
+    m.push(x.time ? [tabIdx.get(x.tab), spIdx.get(key), text, f, x.time] : [tabIdx.get(x.tab), spIdx.get(key), text, f]);   // 5번째: 보낸 시간(초), 룸 채팅으로 맞춘 경우만
   }
   // 표정 목록 중복 제거
   for (const s of sp) s[4] = [...new Set(s[4])].filter(i => i >= 0);
@@ -258,18 +258,33 @@ export async function loadRoom(roomId, { withLog = true, onStatus = () => {} } =
   return { characters, roomMsgs };
 }
 
-/* 로그의 대사와 룸 채팅을 순서대로 맞춰 대사마다 실제로 쓴 표정을 붙임 */
+/* 로그의 대사와 룸 채팅을 맞춰 대사마다 실제로 쓴 표정과 보낸 시간을 붙임
+   같은 화자·같은 본문끼리 시간 순서대로 짝지음 (파일 안 순서가 실제 시간과 달라도 맞출 수 있게) */
 export function alignRoomFaces(messages, roomMsgs){
   const norm = s => s.replace(/\s+/g, "");
-  let j = 0, matched = 0;
+  const pool = new Map();
+  for (const r of roomMsgs){ const k = r.name + "\u0000" + norm(r.text); if (!pool.has(k)) pool.set(k, []); pool.get(k).push(r); }
+  let matched = 0;
   for (const m of messages){
-    const text = norm(m.text);
-    for (let k = j; k < Math.min(roomMsgs.length, j + 300); k++){
-      const r = roomMsgs[k];
-      if (r.name === m.name && norm(r.text) === text){ m.roomFace = r.roomFace; j = k + 1; matched++; break; }
-    }
+    const q = pool.get(m.name + "\u0000" + norm(m.text));
+    const r = q?.shift();
+    if (!r) continue;
+    m.roomFace = r.roomFace;
+    const t = Date.parse(r.time);
+    if (t) m.time = Math.round(t / 1000);       // 초 단위
+    matched++;
   }
   return matched;
+}
+
+/* 시간이 붙은 대사가 절반 이상이면 실제 시간 순서로 다시 줄 세움. 시간이 없는 줄은 바로 앞 줄의 시간을 따름 */
+export function orderByTime(messages){
+  const timed = messages.filter(m => m.time).length;
+  if (timed < messages.length / 2) return messages;
+  let last = 0;
+  const keyed = messages.map((m, i) => { if (m.time) last = m.time; return { m, t: m.time || last, i }; });
+  keyed.sort((a, b) => a.t - b.t || a.i - b.i);
+  return keyed.map(k => k.m);
 }
 
 export function youtubeInfo(url, start){

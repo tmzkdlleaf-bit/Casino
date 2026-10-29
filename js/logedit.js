@@ -104,7 +104,8 @@ function applyLine(d){
   const text = $("#ln-text", d).value.replace(/\r/g, "").trim();
   if (!text){ $("#ln-text", d).focus(); return false; }
   const face = +($('input[name="face"]:checked', d)?.value ?? -1);
-  const next = [+$("#ln-tab", d).value, +$("#ln-sp", d).value, text, face], prev = log.m[i];
+  const prev = log.m[i], next = [+$("#ln-tab", d).value, +$("#ln-sp", d).value, text, face];
+  if (prev[4]) next.push(prev[4]);                                   // 보낸 시간은 그대로 둠
   if (prev.length === next.length && prev.every((v, k) => v === next[k]) && prev[2] !== "(새 대사)") return true;   // 바뀐 게 없으면 그대로
   log.m[i] = next;
   if (V.hidden.has(next[0])) V.hidden.delete(next[0]);
