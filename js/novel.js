@@ -68,6 +68,8 @@ function build(){
 /* ---------- 지금 보이는 탭의 대사 목록 ---------- */
 /* 메인 탭 → 왼쪽 대사창(한 줄씩 넘김), 그 밖의 탭 → 오른쪽에 탭마다 메시지 창 (지나갈 때 하나씩 올라옴) */
 const fmtOf = t => V.log.tabs[t]?.[1] || "main";
+/* 책갈피가 많을 때 고르지 않은 책갈피에 쓰는 짧은 이름: "Ho1 비밀" → "Ho1", 그 밖에는 앞 두 글자 */
+const shortLabel = t => { const n = tabLabel(t), m = n.match(/^\s*(ho\s*\d+|pc\s*\d+|\d+)/i); return m ? m[1].replace(/\s+/g, "") : [...n.replace(/\s+/g, "")].slice(0, 2).join(""); };
 const tabLabel = t => { const [n, f] = V.log.tabs[t]; return /^(main|info|other|secret)$/i.test(n) ? TAB_LABEL[f] || n : n; };
 /* 오른쪽은 두 묶음: 안쪽(왼쪽)=비밀 탭들, 바깥쪽(오른쪽)=잡담과 그 밖의 탭들. 묶음 위의 책갈피로 탭을 오감 */
 const GROUPS = [["secret", "비밀"], ["rest", "잡담"]];
@@ -101,7 +103,7 @@ function collect(){
     N.active[g] = act;
     return `<section class="vn-grp g-${g}" data-g="${g}" ${SP.fold.includes(g) ? 'data-folded="true"' : ""} aria-label="${label} 묶음">
       <header>
-        <div class="vn-marks" role="tablist">${ts.map(t => `<button type="button" role="tab" class="vn-mark f-${fmtOf(t)}" data-mark="${t}" aria-selected="${t === act}">${esc(tabLabel(t))}<span class="n"></span></button>`).join("")}</div>
+        <div class="vn-marks${ts.length > 3 ? " dense" : ""}" role="tablist">${ts.map(t => `<button type="button" role="tab" class="vn-mark f-${fmtOf(t)}" data-mark="${t}" aria-selected="${t === act}" title="${esc(tabLabel(t))}"><span class="nm">${esc(tabLabel(t))}</span><span class="sh">${esc(shortLabel(t))}</span><span class="n"></span></button>`).join("")}</div>
         <button type="button" class="vn-fold" data-fold="${g}" aria-expanded="${!SP.fold.includes(g)}" aria-label="${label} 묶음 접기·펴기"><span aria-hidden="true">▾</span></button>
         <button type="button" class="vn-chat-x" data-vn="side-close" aria-label="닫기">×</button>
       </header>
@@ -118,14 +120,28 @@ function collect(){
 }
 
 /* ---------- 메시지 창 ---------- */
+/* 정보 미리보기 제목: [제목]·【제목】처럼 맨 앞 괄호가 있으면 그 안의 말, 아니면 첫 줄의 첫 문장 (길면 자름) */
+function previewOf(text){
+  const plain = String(text).replace(/\*\*?|\{#[0-9a-fA-F]{3,6}\||\}/g, "").trim();
+  let rest = plain;
+  const br = plain.match(/^[\[【『「〈《(]([^\]】』」〉》)\n]{1,30})[\]】』」〉》)]\s*/);
+  if (br){
+    // [정보]·[공지]처럼 탭 이름 같은 말이면 건너뛰고 뒤 문장을 제목으로
+    if (!/^(정보|info|공지|안내|알림|메모|note)$/i.test(br[1].trim()) && plain.length > br[0].length) return br[1].trim();
+    rest = plain.slice(br[0].length);
+  }
+  const line = rest.split("\n").find(l => l.trim()) || "";
+  const sent = (line.match(/^.+?[.!?。！？…](?=\s|$)/) || [line])[0].trim();
+  return [...sent].length > 28 ? [...sent].slice(0, 27).join("") + "…" : sent || "정보";
+}
 const hhmm = sec => { if (!sec) return ""; const d = new Date(sec * 1000); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
 function chatHtml(i, fresh){
   const log = V.log, [t, s, text, , tm] = log.m[i], [name, color, narr] = log.sp[s];
   const time = tm ? `<time class="tm">${hhmm(tm)}</time>` : "";
   const quiet = !name || SYSTEM.test(name) || narr;
   const cls = fresh ? " fresh" : "";
-  // 정보 탭: 접힌 쪽지 — 누르면 그 자리에서 펼침
-  if (fmtOf(t) === "info") return `<li class="note${cls}"><button type="button" class="vn-note" data-note aria-expanded="false"><span class="ic" aria-hidden="true"></span><span class="t">쪽지</span><span class="w">${quiet ? "" : esc(name)}</span>${time}</button><div class="paper" hidden>${deco(esc(text))}</div></li>`;
+  // 정보 탭: 제목(첫 단어나 첫 문장)만 보이고, 누르면 그 자리에서 전문을 펼침
+  if (fmtOf(t) === "info") return `<li class="info${cls}"><button type="button" class="vn-info" data-note aria-expanded="false"><span class="ttl">${esc(previewOf(text))}</span>${time}<span class="arw" aria-hidden="true">▸</span></button><div class="body" hidden>${quiet ? "" : `<p class="who" style="color:${readable(color)}">${esc(name)}</p>`}${deco(esc(text))}</div></li>`;
   if (quiet) return `<li class="q${cls}">${deco(esc(text))}${time}</li>`;
   const me = N.mine.has(name.trim());
   return `<li class="${me ? "mine" : ""}${cls}"><span class="who" style="color:${readable(color)}">${esc(name)}</span><span class="row"><span class="bub">${deco(esc(text))}</span>${time}</span></li>`;
@@ -461,7 +477,7 @@ export function refreshNovel(){
 document.addEventListener("click", e => {
   if (!N.on) return;
   const note = e.target.closest("[data-note]");
-  if (note){ const p = note.nextElementSibling, open = p.hidden; p.hidden = !open; note.setAttribute("aria-expanded", String(open)); note.classList.add("read"); if (open) setAuto(false); return; }
+  if (note){ const p = note.nextElementSibling, open = p.hidden; p.hidden = !open; note.setAttribute("aria-expanded", String(open)); note.classList.add("read"); if (open){ setAuto(false); const l = note.closest(".vn-chat-list"); if (l && note.closest("li") === l.lastElementChild) toBottom(l); } return; }
   const mark = e.target.closest("[data-mark]");
   if (mark){ pickTab(+mark.dataset.mark); return; }
   const fold = e.target.closest("[data-fold]");

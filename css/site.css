@@ -813,9 +813,18 @@ body.log-big .log-head{display:none}
 .vn-grp header{display:flex; align-items:flex-end; gap:.2rem; padding:.45rem .45rem 0; border-bottom:1px solid color-mix(in srgb, var(--band) 45%, transparent); background:rgba(0,0,0,.25)}
 .vn-grp[data-folded="true"] header{border-bottom:0; padding-bottom:.45rem}
 /* 책갈피 */
-.vn-marks{flex:1; min-width:0; display:flex; flex-wrap:wrap; gap:.2rem}   /* 책갈피가 많으면 두 줄로 */
-.vn-mark{position:relative; flex:none; display:inline-flex; align-items:center; gap:.3rem; min-height:2.2rem; padding:0 .65rem; border:1px solid transparent; border-bottom:0; border-radius:6px 6px 0 0; background:rgba(238,243,250,.05); color:var(--smoke); font:inherit; font-family:var(--f-serif); font-weight:700; font-size:.8125rem; white-space:nowrap; cursor:pointer}
+.vn-marks{flex:1; min-width:0; display:flex; gap:.15rem; overflow:hidden}   /* 한 줄. 많으면 책갈피마다 줄어들고 이름은 잘림 (전체 이름은 마우스를 올리면) */
+.vn-mark{position:relative; flex:0 1 auto; min-width:2.6rem; display:inline-flex; align-items:center; justify-content:center; gap:.3rem; min-height:2.2rem; padding:0 .6rem; border:1px solid transparent; border-bottom:0; border-radius:6px 6px 0 0; background:rgba(238,243,250,.05); color:var(--smoke); font:inherit; font-family:var(--f-serif); font-weight:700; font-size:.8125rem; white-space:nowrap; cursor:pointer}
 .vn-mark:hover{color:var(--ivory)}
+.vn-mark .nm{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.vn-mark .sh{display:none}
+.vn-mark .n{flex:none}
+/* 책갈피가 넷 이상: 모두 같은 폭으로 나눠 갖고 짧은 이름(Ho1…)만. 전체 이름은 마우스를 올리면 */
+.vn-marks.dense .vn-mark{flex:1 1 0; min-width:0; padding:0 .3rem; font-size:.78rem}
+.vn-marks.dense .vn-mark .nm{display:none}
+.vn-marks.dense .vn-mark .sh{display:block; min-width:0; overflow:hidden; text-overflow:clip; white-space:nowrap}
+.vn-marks.dense .vn-mark{gap:0}
+.vn-marks.dense .vn-mark .n:not(:empty){position:absolute; top:.15rem; right:.15rem; min-width:0; width:.5rem; height:.5rem; padding:0; font-size:0}   /* 좁을 땐 새 메시지 수 대신 점 */
 .vn-mark[aria-selected="true"]{background:rgba(6,10,30,.95); border-color:color-mix(in srgb, var(--band) 60%, transparent); color:var(--ivory); margin-bottom:-1px; padding-bottom:1px}
 .vn-grp.g-secret .vn-mark[aria-selected="true"]{background:rgba(40,6,26,1); color:var(--red-text)}
 .vn-mark.f-info[aria-selected="true"]{color:var(--gold)}
@@ -842,17 +851,19 @@ body.log-big .log-head{display:none}
 .vn-chat-list li.q .tm{margin-left:.4rem}
 .vn-chat-list li.fresh{animation:vn-pop .3s var(--ease) both}
 @keyframes vn-pop{from{opacity:0; transform:translateY(.6rem)} to{opacity:1; transform:none}}
-/* 정보: 접힌 쪽지, 누르면 그 자리에서 펼침 */
-.vn-chat-list li.note{justify-items:stretch}
-.vn-note{position:relative; display:flex; align-items:center; gap:.5rem; width:fit-content; min-height:2.4rem; padding:.3rem .8rem .3rem .6rem; border:1px solid rgba(93,151,217,.7); border-radius:3px; background:#ECE6D6; color:#1D367B; font:inherit; font-size:.95em; box-shadow:2px 3px 0 rgba(0,0,0,.35); transform:rotate(-1deg); cursor:pointer}
-.vn-note:hover, .vn-note[aria-expanded="true"]{transform:none}
-.vn-note .ic{width:1rem; height:.75rem; border:1.5px solid currentColor; border-radius:1px; background:linear-gradient(160deg, transparent 45%, currentColor 46% 54%, transparent 55%)}
-.vn-note .t{font-weight:700}
-.vn-note .w{color:#5D6A8C; font-size:.85em}
-.vn-note .tm{color:#5D6A8C}
-.vn-note:not(.read)::after{content:""; position:absolute; top:-.3rem; right:-.3rem; width:.6rem; height:.6rem; border-radius:50%; background:var(--velvet); box-shadow:0 0 0 2px var(--black-2)}
-.vn-chat-list .paper{margin-top:.35rem; padding:.8rem 1rem; border-radius:3px; background:#F2EDDF; color:#1A2140; line-height:1.75; white-space:pre-line; overflow-wrap:anywhere; box-shadow:2px 3px 0 rgba(0,0,0,.35); animation:vn-unfold .25s var(--ease) both}
-@keyframes vn-unfold{from{opacity:0; transform:scaleY(.5); transform-origin:top}}
+/* 정보: 제목(첫 단어·문장) 한 줄, 누르면 그 자리에서 전문 */
+.vn-chat-list li.info{justify-items:stretch; grid-template-columns:minmax(0,1fr); width:100%}
+.vn-info{position:relative; display:flex; align-items:center; gap:.5rem; width:100%; min-height:2.5rem; padding:.35rem .7rem .35rem .8rem; border:1px solid rgba(93,151,217,.45); border-left:3px solid #5D97D9; border-radius:3px 6px 6px 3px; background:rgba(29,54,123,.45); color:var(--ivory); font:inherit; text-align:left; cursor:pointer}
+.vn-info:hover{background:rgba(29,54,123,.7)}
+.vn-info .ttl{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600}
+.vn-info .tm{flex:none}
+.vn-info .arw{flex:none; color:var(--gold); font-size:.8em; transition:transform .2s}
+.vn-info[aria-expanded="true"] .arw{transform:rotate(90deg)}
+.vn-info:not(.read)::before{content:""; position:absolute; top:.45rem; right:.4rem; width:.45rem; height:.45rem; border-radius:50%; background:var(--velvet)}
+.vn-info:not(.read) .arw{margin-right:.5rem}
+.vn-chat-list li.info .body{margin-top:.3rem; padding:.7rem .9rem; border-left:3px solid rgba(93,151,217,.5); background:rgba(14,27,69,.6); color:rgba(238,243,250,.92); line-height:1.75; white-space:pre-line; overflow-wrap:anywhere; animation:vn-unfold .2s var(--ease) both}
+.vn-chat-list li.info .body .who{margin:0 0 .2rem; font-weight:600; font-size:.9em}
+@keyframes vn-unfold{from{opacity:0; transform:translateY(-.3rem)}}
 /* 휴대폰·좁은 무대: 묶음은 버튼(비밀·잡담)으로 하나씩 열기 */
 .vn-sidebtns{display:none}
 @container (min-width: 761px) and (max-width: 1100px){
@@ -874,7 +885,7 @@ body.log-big .log-head{display:none}
   .vn-side[data-open] .vn-fold{display:none}
   .vn-side[data-open] .vn-chat-x{display:block}
 }
-@media (prefers-reduced-motion:reduce){ .vn-chat-list li.fresh, .vn-chat-list .paper{animation:none} }
+@media (prefers-reduced-motion:reduce){ .vn-chat-list li.fresh, .vn-chat-list li.info .body{animation:none} }
 /* 지난 대사 */
 .vn-log{position:absolute; inset:0; z-index:5; display:grid; grid-template-rows:auto minmax(0,1fr); background:rgba(4,7,20,.95); cursor:default}
 .vn-log-head{display:flex; align-items:center; gap:.5rem; padding:.7rem 1rem; border-bottom:1px solid var(--line)}
