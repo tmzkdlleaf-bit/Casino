@@ -1,0 +1,4 @@
+/* Galmuri (SIL OFL 1.1, Lee Minseo) — 테스트 사이트용으로 필요한 글꼴만 */
+@font-face{font-family:Galmuri11;font-weight:400;font-display:swap;src:url('Galmuri11.woff2') format('woff2')}
+@font-face{font-family:Galmuri11;font-weight:700;font-display:swap;src:url('Galmuri11-Bold.woff2') format('woff2')}
+@font-face{font-family:Galmuri9;font-weight:400;font-display:swap;src:url('Galmuri9.woff2') format('woff2')}

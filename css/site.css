@@ -701,15 +701,6 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 .lg.f-other{font-size:.9em; grid-template-columns:2rem minmax(0,1fr)}
 .lg.f-other .lg-av{width:2rem; height:2rem}
 .lg.f-other .lg-b > p:not(.lg-n){color:var(--text-2)}
-/* 다이스 */
-.lg-dice{display:flex; flex-wrap:wrap; align-items:baseline; gap:.2em .55em; width:fit-content; max-width:100%; margin:.3em 0 !important; padding:.2em .85em; border:1px solid var(--line); border-radius:4px; background:var(--black-3); font-size:.9em; white-space:normal !important}
-.lg-dice .cmd{color:var(--smoke); font-size:.9em}
-.lg-dice .arr{color:var(--smoke)}
-.lg-dice .res{font-weight:600; color:var(--ivory)}
-.lg-dice.g-critical{border-color:rgba(173,207,234,.7)} .lg-dice.g-critical .res{color:var(--gold)}
-.lg-dice.g-success .res{color:var(--green-hi)}
-.lg-dice.g-failure .res{color:var(--smoke)}
-.lg-dice.g-fumble{border-color:rgba(255,127,176,.6)} .lg-dice.g-fumble .res{color:var(--red-text)}
 /* 스탠딩 표정: 얼굴이 보이게 위쪽을 잘라 씀 */
 .lg-av.st{width:3.25rem; height:3.25rem; border-radius:4px; margin-top:.1rem}
 .lg-av.st img{object-position:50% 8%}
@@ -726,15 +717,89 @@ button.slot[aria-pressed="true"]{border-color:var(--gold); box-shadow:inset 0 0 
 .yt-slot:empty{display:none}
 .yt-slot iframe{display:block; width:min(100%, 26rem); aspect-ratio:16/9; border:0; border-radius:3px}
 .log-btn[aria-pressed="true"]{background:var(--velvet); border-color:var(--velvet)}
+/* 배경 표시 (읽기 화면에서는 견본만) */
+.lg-bgimg{display:flex; align-items:center; gap:.7rem; margin:1rem 0; padding:.4rem .9rem .4rem .4rem; border:1px dashed rgba(173,207,234,.4); border-radius:4px; font-size:.85em; color:var(--text-2)}
+.lg-bgimg img{width:4.5rem; aspect-ratio:16/9; object-fit:cover; border-radius:2px}
+.lg-bgimg .t::before{content:"배경 · "; color:var(--smoke)}
+.lg-bgimg.none{padding:.4rem .9rem; border-style:dotted}
+.lg-bgimg.none .t::before{content:""}
+/* ---------- 비주얼 노벨 모드 — 코코포리아처럼 왼쪽에 말하는 사람 한 명, 아래 대사창 ---------- */
+.log-mode{overflow:visible}
+.log-mode button[aria-pressed="true"]{background:var(--velvet); color:var(--ivory)}
+.vn{--lg-fs:1.0625rem; flex:1; min-height:0; display:grid; grid-template-rows:minmax(0,1fr) auto; gap:.6rem; padding:.6rem}
+.vn-stage{position:relative; width:100%; height:100%; min-height:0; overflow:hidden; border:1px solid var(--line); border-radius:var(--r);
+  background:radial-gradient(ellipse 80% 60% at 30% 100%, rgba(93,151,217,.28), transparent 70%), linear-gradient(180deg, var(--black-2), var(--felt-deep)); cursor:pointer; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent}
+.vn-stage:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
+.vn-bg img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .9s var(--ease-io)}
+.vn-bg img.on{opacity:1}
+.vn-stage.has-bg::after{content:""; position:absolute; inset:auto 0 0; height:45%; background:linear-gradient(transparent, rgba(4,7,20,.55)); pointer-events:none}
+/* 스탠딩: 왼쪽 아래, 발끝이 대사창 뒤로 */
+.vn-st{position:absolute; left:3%; bottom:0; z-index:2; height:94%; max-width:44%; display:flex; align-items:flex-end; opacity:0; transition:opacity .25s}
+.vn-st.on{opacity:1}
+.vn-st img{height:100%; width:auto; max-width:100%; object-fit:contain; object-position:left bottom; filter:drop-shadow(0 .5rem 1.5rem rgba(0,0,0,.45))}
+.vn-st.enter img{animation:vn-in .35s var(--ease) both}
+.vn-st.change img{animation:vn-swap .22s ease-out both}
+@keyframes vn-in{from{opacity:0; transform:translateX(-1.25rem)} to{opacity:1; transform:none}}
+@keyframes vn-swap{from{opacity:.35} to{opacity:1}}
+/* 대사창 */
+.vn-box{position:absolute; left:2%; right:2%; bottom:3%; z-index:3; display:flex; flex-direction:column; min-height:29%; max-height:48%; padding:1.6rem clamp(1rem, 3vw, 2.25rem) 1.1rem;
+  border:1px solid rgba(173,207,234,.45); border-radius:var(--r); background:rgba(6,10,30,.86); box-shadow:inset 0 0 0 1px rgba(173,207,234,.08), 0 0 24px rgba(93,151,217,.18)}
+.vn-name{position:absolute; top:-1px; left:clamp(1rem, 3vw, 2.25rem); transform:translateY(-55%); display:flex; align-items:center; gap:.5rem; margin:0; padding:.2rem .9rem;
+  border:1px solid color-mix(in srgb, var(--c, var(--gold)) 70%, transparent); border-radius:3px; background:var(--black-2); font-family:var(--f-serif); font-weight:700; font-size:calc(var(--lg-fs) * .95); line-height:1.5; color:var(--c, var(--ivory))}
+.vn-name .lg-tab{font-size:.7rem}
+.vn-text{flex:1; min-height:3.6em; overflow:auto; scrollbar-width:thin; margin:0; font-size:calc(var(--lg-fs) * 1.08); line-height:1.8; color:var(--ivory); white-space:pre-line; overflow-wrap:anywhere}
+.vn-text strong{font-weight:700} .vn-text em{font-style:italic}
+.vn-box.narr .vn-text{color:var(--text-2)}
+.vn-box.sys .vn-text{font-size:calc(var(--lg-fs) * .9); color:var(--smoke); text-align:center}
+.vn-box.f-info{border-color:rgba(93,151,217,.6); background:rgba(14,27,69,.9)}
+.vn-box.f-secret{border-color:rgba(255,127,176,.55); background:rgba(60,8,36,.88)}
+.vn-box.f-other .vn-text{font-size:calc(var(--lg-fs) * .95); color:var(--text-2)}
+.vn-more{position:absolute; right:1rem; bottom:.55rem; font-size:.7rem; color:var(--gold); opacity:0}
+.vn-more.on{opacity:1; animation:vn-blink 1.1s steps(2, end) infinite}
+@keyframes vn-blink{50%{opacity:.2}}
+/* 지난 대사 */
+.vn-log{position:absolute; inset:0; z-index:5; display:grid; grid-template-rows:auto minmax(0,1fr); background:rgba(4,7,20,.95); cursor:default}
+.vn-log-head{display:flex; align-items:center; gap:.5rem; padding:.7rem 1rem; border-bottom:1px solid var(--line)}
+.vn-log-head .grow{flex:1}
+.vn-log-list{margin:0; padding:.5rem clamp(.75rem, 3vw, 2rem) 1.5rem; list-style:none; overflow:auto; font-size:calc(var(--lg-fs) * .92)}
+.vn-log-list li.more{padding:.6rem 0; color:var(--smoke); font-size:.85em}
+.vn-log-list button{display:grid; grid-template-columns:7.5rem minmax(0,1fr); gap:.8rem; width:100%; padding:.5rem .6rem; border:0; border-radius:3px; background:none; color:inherit; font:inherit; text-align:left; cursor:pointer}
+.vn-log-list button:hover{background:rgba(238,243,250,.06)}
+.vn-log-list [aria-current="true"] button{background:rgba(239,26,114,.16); box-shadow:inset 2px 0 0 var(--velvet)}
+.vn-log-list .n{font-family:var(--f-serif); font-weight:700; overflow-wrap:anywhere}
+.vn-log-list .t{grid-column:2; color:rgba(238,243,250,.88); white-space:pre-line; overflow-wrap:anywhere; line-height:1.7}
+.vn-log-list .t.q{color:var(--text-2)}
+/* 조작 줄 */
+.vn-ctl{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.5rem 1rem}
+.vn-ctl-main{display:flex; flex-wrap:wrap; gap:.4rem}
+.vn-seek{display:flex; align-items:center; gap:.7rem; flex:1 1 14rem; max-width:26rem; font-size:var(--s-1); color:var(--text-2)}
+.vn-seek input{flex:1; min-width:0; accent-color:var(--velvet)}
+.vn-seek .num{font-variant-numeric:tabular-nums; white-space:nowrap}
+.vn-yt{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; border:0}
+/* 전체 화면: 무대가 화면을 채움 */
+.vn:fullscreen{padding:1rem; background:var(--black)}
+@media (max-width:760px){
+  .vn-st{height:66%; max-width:72%; left:0; bottom:22%}
+  .vn-box{min-height:34%; max-height:52%; padding:1.4rem 1rem .9rem}
+  .vn-text{font-size:var(--lg-fs); line-height:1.75}
+  .vn-log-list button{grid-template-columns:minmax(0,1fr); gap:.1rem}
+  .vn-log-list .t{grid-column:1}
+  .vn-ctl-main .btn{padding-inline:.7rem}
+  .vn-seek{max-width:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .vn-bg img, .vn-st{transition:none} .vn-st img{animation:none !important} .vn-more.on{animation:none}
+}
 /* 편집 모드 */
 .log-editbar{position:sticky; top:0; z-index:3; display:flex; flex-wrap:wrap; align-items:center; gap:.5rem 1rem; padding:.6rem 1rem; border-bottom:1px solid var(--line); border-radius:var(--r) var(--r) 0 0; background:var(--black-2); font-size:var(--s-1); color:var(--text-2)}
 .log-editbar .grow{flex:1}
-.lg-body.editing [data-i], .lg-body.editing .lg-bgm{cursor:pointer; border-radius:2px; transition:background .2s, box-shadow .2s}
-.lg-body.editing [data-i]:hover, .lg-body.editing .lg-bgm:hover{background:rgba(238,243,250,.06); box-shadow:0 0 0 1px var(--line-strong)}
+.lg-body.editing [data-i], .lg-body.editing .lg-bgm, .lg-body.editing .lg-bgimg{cursor:pointer; border-radius:2px; transition:background .2s, box-shadow .2s}
+.lg-body.editing [data-i]:hover, .lg-body.editing .lg-bgm:hover, .lg-body.editing .lg-bgimg:hover{background:rgba(238,243,250,.06); box-shadow:0 0 0 1px var(--line-strong)}
 .lg-body .just{background:rgba(173,207,234,.14) !important; box-shadow:0 0 0 1px var(--gold)}
 .dlg{width:min(40rem, calc(100vw - 2rem)); max-height:calc(100dvh - 2rem); overflow:auto; padding:1.5rem; border:1px solid var(--line-strong); border-radius:var(--r); background:var(--black-2); color:var(--ivory)}
 .dlg::backdrop{background:rgba(0,0,0,.6)}
 .dlg .row2{display:grid; grid-template-columns:1fr 1fr; gap:1rem}
+.bg-prev{display:block; width:100%; max-height:12rem; object-fit:cover; margin:.25rem 0 .75rem; border-radius:3px}
 .face-pick{display:flex; flex-wrap:wrap; gap:.4rem; margin:0; padding:.6rem .7rem; border:1px solid var(--line); border-radius:4px; max-height:12rem; overflow:auto}
 .face-pick legend{padding:0 .3rem; font-size:.9375rem; font-weight:500}
 .face-pick label{position:relative; cursor:pointer}

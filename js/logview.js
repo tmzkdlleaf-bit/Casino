@@ -14,27 +14,10 @@ const SIZES = [.9375, 1, 1.0625, 1.1875, 1.3125];
 let size = 2;
 try { const v = +localStorage.getItem(SIZE_KEY); if (v >= 0 && v < SIZES.length) size = v; } catch (_) {}
 
-export const V = { log: null, hidden: new Set(), job: 0, number: null, chapter: null, editing: false };
-const TAB_LABEL = { info: "정보", secret: "비밀", other: "잡담" };
-
-/* ---------- 다이스 (나비코코 변환기와 같은 규칙) ---------- */
-function parseDice(text){
-  if (text.includes("\n") || !/[＞→]/.test(text)) return null;
-  const parts = text.split(/\s*[＞]\s*/);
-  if (parts.length < 2) return null;
-  const command = parts[0];
-  if (!/\d*[dD]\d+|CCB?|CC\b|SCCB|RES|choice|x\d/i.test(command)) return null;
-  const result = parts[parts.length - 1];
-  return { command, result, grade: gradeDice(result) };
-}
-function gradeDice(result){
-  const r = result.toLowerCase();
-  if (/펌블|대실패|치명적\s*실패|ファンブル|致命的失敗|fumble/.test(r)) return "fumble";
-  if (/크리티컬|대성공|결정적\s*성공|クリティカル|決定的成功|スペシャル|critical|special/.test(r)) return "critical";
-  if (/실패|失敗|failure/.test(r)) return "failure";
-  if (/성공|成功|success/.test(r)) return "success";
-  return "neutral";
-}
+export const V = { log: null, hidden: new Set(), job: 0, number: null, chapter: null, editing: false, mode: "read" };
+const MODE_KEY = "comu-log-mode";
+try { if (localStorage.getItem(MODE_KEY) === "novel") V.mode = "novel"; } catch (_) {}
+export const TAB_LABEL = { info: "정보", secret: "비밀", other: "잡담" };
 
 /* ---------- 이름 색: 어두운 창 위에서 4.5:1 이상 보이도록 밝힘 ---------- */
 const lum = hex => {
@@ -43,7 +26,7 @@ const lum = hex => {
 };
 const BG_L = lum("#161C4E");   // 기록 창 배경(유리 패널)보다 살짝 밝게 잡아 여유를 둠
 const colorCache = new Map();
-function readable(hex){
+export function readable(hex){
   if (!/^#[0-9a-f]{6}$/i.test(hex)) return "#E6EEFB";
   if (colorCache.has(hex)) return colorCache.get(hex);
   let [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)), out = hex;
@@ -55,35 +38,36 @@ function readable(hex){
   return out;
 }
 
-/* ---------- 묶음 만들기: 같은 사람이 같은 탭·같은 표정으로 이어 말하면 한 덩어리. BGM 표시가 있으면 거기서 끊음 ---------- */
-const SYSTEM = /^(system|시스템|システム)$/i;
+/* ---------- 묶음 만들기: 같은 사람이 같은 탭·같은 표정으로 이어 말하면 한 덩어리. 배경·BGM 표시가 있으면 거기서 끊음 ---------- */
+export const SYSTEM = /^(system|시스템|システム)$/i;
 function groups(log){
   const out = [], marks = new Map();
-  (log.bgm || []).forEach((b, k) => { if (!marks.has(b.at)) marks.set(b.at, []); marks.get(b.at).push(k); });
+  const add = (at, g) => { if (!marks.has(at)) marks.set(at, []); marks.get(at).push(g); };
+  (log.bg || []).forEach((b, k) => add(b.at, { bg: k }));
+  (log.bgm || []).forEach((b, k) => add(b.at, { bgm: k }));
   let last = null;
   log.m.forEach(([t, s, text, f = -1], i) => {
-    if (marks.has(i)){ for (const k of marks.get(i)) out.push({ bgm: k }); last = null; }
+    if (marks.has(i)){ out.push(...marks.get(i)); last = null; }
     if (V.hidden.has(t)) return;
     if (last && last.t === t && last.s === s && last.f === f){ last.lines.push(i); return; }
     last = { t, s, f, lines: [i] };
     out.push(last);
   });
-  for (const [at, ks] of marks) if (at >= log.m.length) for (const k of ks) out.push({ bgm: k });   // 맨 끝에 붙은 표시
+  for (const [at, gs] of marks) if (at >= log.m.length) out.push(...gs);   // 맨 끝에 붙은 표시
   return out;
 }
 
 export const faceSrc = (log, f) => { const u = f >= 0 && log.faces?.[f]; return !u ? "" : /^(https?:|data:)/.test(u) ? u : publicUrl("logs", u); };
+export const imgSrc = u => !u ? "" : /^(https?:|data:|blob:)/.test(u) ? u : publicUrl("logs", u);
 export const audioSrc = u => !u ? "" : /^https?:/.test(u) ? u : publicUrl("logs", u);
-const ytId = u => (String(u || "").match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/) || [])[1];
+export const ytId = u => (String(u || "").match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/) || [])[1];
 
 function para(text, i){
-  const d = parseDice(text);
-  if (d) return `<p class="lg-dice g-${d.grade}" data-i="${i}"><span class="cmd">${esc(d.command)}</span><span class="arr" aria-hidden="true">›</span><span class="res">${esc(d.result)}</span></p>`;
   return `<p data-i="${i}">${deco(esc(text))}</p>`;
 }
 
 /* 꾸밈 문법 (나비코코 변환기와 같은 표기): **굵게**, *기울임*, {#색|글자}. 이미 이스케이프된 글에만 적용 */
-function deco(h){
+export function deco(h){
   if (!/[*{]/.test(h)) return h;
   return h
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
@@ -104,7 +88,16 @@ function bgmHtml(k, log){
     <button class="btn small" type="button" data-bgm-play="${k}" aria-pressed="${P.k === k && P.playing}">${P.k === k && P.playing ? "멈춤" : "재생"}<span class="sr"> — ${title}</span></button></div>`;
 }
 
+/* 배경 표시: 읽기 화면에서는 작은 견본만 (비주얼 노벨 모드에서 실제 배경으로 깔림) */
+function bgHtml(k, log){
+  const b = log.bg[k], src = imgSrc(b.url);
+  return src
+    ? `<div class="lg-bgimg" data-bk="${k}"><img src="${esc(src)}" alt="" loading="lazy" decoding="async"><span class="t">${esc(b.title || "배경")}</span></div>`
+    : `<div class="lg-bgimg none" data-bk="${k}"><span class="t">배경 없음</span></div>`;
+}
+
 function groupHtml(g, log, faces){
+  if ("bg" in g) return bgHtml(g.bg, log);
   if ("bgm" in g) return bgmHtml(g.bgm, log);
   const [tab, format] = log.tabs[g.t], [name, color, narr] = log.sp[g.s];
   const body = g.lines.map(i => para(log.m[i][2], i)).join("");
@@ -157,7 +150,22 @@ function drawTabs(){
   $("#log-tabs").hidden = log.tabs.length < 2;
 }
 
-function applySize(){ $("#log-body").style.setProperty("--lg-fs", SIZES[size] + "rem"); }
+function applySize(){ $("#log-body").style.setProperty("--lg-fs", SIZES[size] + "rem"); $("#log-vn").style.setProperty("--lg-fs", SIZES[size] + "rem"); }
+
+/* ---------- 읽기 / 노벨 ---------- */
+const novel = () => import("./novel.js?v=20261029g");
+async function applyMode(){
+  const vn = V.mode === "novel" && !!V.log && !V.editing;
+  $$("#log-mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === (vn ? "novel" : "read"))));
+  $("#log-pane").hidden = vn;
+  $("#log-vn").hidden = !vn;
+  $(".log-box").classList.toggle("is-vn", vn);
+  $("#log-follow").hidden = vn || !(V.log?.bgm || []).some(b => b.kind === "audio");
+  $("#log-edit").hidden = vn || !state.isAdmin || !V.log;
+  const m = await novel();
+  if (vn) m.openNovel(); else m.closeNovel();
+  const tools = $(".log-tools"); if (tools) tools.scrollLeft = 0;     // 휴대폰: 버튼 줄이 옆으로 밀려 ‘읽기’가 가려지지 않게
+}
 
 /* ---------- 여닫기 ---------- */
 export async function openLog(number){
@@ -172,6 +180,8 @@ export async function openLog(number){
   applySize();
   const box = $("#log-body");
   $("#log-edit").hidden = true; $("#log-follow").hidden = true;
+  $("#log-mode").hidden = true; $("#log-pane").hidden = false; $("#log-vn").hidden = true; $(".log-box").classList.remove("is-vn");
+  import("./novel.js?v=20261029g").then(m => m.closeNovel()).catch(() => {});
   stopAudio(); V.editing = false; box.classList.remove("editing");
   if (!c.log){ box.innerHTML = `<p class="empty-note">이 회차에는 아직 진행 기록이 없습니다.</p>`; $("#log-tabs").hidden = true; return; }
   box.innerHTML = `<p class="empty-note" role="status">기록을 불러오는 중…</p>`;
@@ -192,8 +202,10 @@ export async function openLog(number){
   $("#log-meta").textContent = `대사 ${V.log.m.length.toLocaleString("ko-KR")}개`;
   $("#log-edit").hidden = !state.isAdmin;
   $("#log-follow").hidden = !(V.log.bgm || []).some(b => b.kind === "audio");
+  $("#log-mode").hidden = false;
   drawTabs();
   render();
+  if (V.mode === "novel") applyMode();
 }
 
 /* ---------- 구간 BGM ----------
@@ -251,7 +263,7 @@ document.addEventListener("scroll", e => {
   if (e.target.id !== "log-pane" || !P.follow) return;
   clearTimeout(P.timer); P.timer = setTimeout(follow, 250);
 }, true);
-addEventListener("hashchange", () => { if (!location.hash.startsWith("#story/")){ stopAudio(); P.follow = false; $("#log-follow")?.setAttribute("aria-pressed", "false"); } });
+addEventListener("hashchange", () => { if (!location.hash.startsWith("#story/")){ stopAudio(); novel().then(m => m.closeNovel()); P.follow = false; $("#log-follow")?.setAttribute("aria-pressed", "false"); } });
 
 /* ---------- 조작 ---------- */
 document.addEventListener("click", e => {
@@ -263,6 +275,7 @@ document.addEventListener("click", e => {
     const pane = $("#log-pane"), top = pane.scrollTop;
     render();
     pane.scrollTop = Math.min(top, pane.scrollHeight);
+    if (V.mode === "novel") novel().then(m => m.refreshNovel());
     return;
   }
   const pb = e.target.closest("[data-bgm-play]");
@@ -279,6 +292,14 @@ document.addEventListener("click", e => {
     P.follow = !P.follow;
     $("#log-follow").setAttribute("aria-pressed", String(P.follow));
     P.follow ? follow() : stopAudio();
+    return;
+  }
+  const md = e.target.closest("#log-mode button");
+  if (md && V.log){
+    if (V.editing) return;
+    V.mode = md.dataset.mode;
+    try { localStorage.setItem(MODE_KEY, V.mode); } catch (_) {}
+    applyMode();
     return;
   }
   if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261029g").then(m => m.toggleEdit()); return; }

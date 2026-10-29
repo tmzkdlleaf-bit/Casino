@@ -7,7 +7,8 @@
 import { publicUrl, refreshPublic, sb } from "./data.js?v=20261029g";
 import { $, $$, announce, esc, toast } from "./dom.js?v=20261029g";
 import { errMsg, withBusy } from "./forms.js?v=20261029g";
-import { V, faceSrc, render, stopAudio } from "./logview.js?v=20261029g";
+import { V, faceSrc, imgSrc, render, stopAudio } from "./logview.js?v=20261029g";
+import { extOf, toWebP } from "./img.js?v=20261029g";
 import { state } from "./state.js?v=20261029g";
 
 const E = { dirty: 0, i: -1, k: -1 };
@@ -17,7 +18,7 @@ function bar(){
   if (!b){
     $(".log-box").insertAdjacentHTML("afterbegin", `
       <div class="log-editbar" id="log-editbar" role="region" aria-label="기록 편집">
-        <span id="log-dirty" role="status">대사나 BGM 표시를 누르면 고칠 수 있습니다.</span>
+        <span id="log-dirty" role="status">대사나 배경·BGM 표시를 누르면 고칠 수 있습니다.</span>
         <span class="grow"></span>
         <button class="btn small" type="button" id="log-add-end">맨 끝에 대사 추가</button>
         <button class="btn small primary" type="button" id="log-save" disabled>변경 저장</button>
@@ -30,7 +31,7 @@ const dirty = n => {
   E.dirty += n;
   state.admDirty = E.dirty > 0;
   $("#log-save").disabled = !E.dirty;
-  $("#log-dirty").textContent = E.dirty ? `저장하지 않은 변경 ${E.dirty}건` : "대사나 BGM 표시를 누르면 고칠 수 있습니다.";
+  $("#log-dirty").textContent = E.dirty ? `저장하지 않은 변경 ${E.dirty}건` : "대사나 배경·BGM 표시를 누르면 고칠 수 있습니다.";
 };
 
 export function toggleEdit(){
@@ -78,6 +79,7 @@ function lineDialog(i, isNew = false){
         <button class="btn primary" type="submit" value="apply">적용</button>
         <button class="btn" type="button" data-act="below">아래에 새 대사</button>
         <button class="btn" type="button" data-act="bgm">여기부터 BGM</button>
+        <button class="btn" type="button" data-act="bg">여기부터 배경</button>
         <button class="btn danger" type="button" data-act="del">삭제</button>
         <button class="btn" type="button" data-act="close">닫기</button>
       </div>
@@ -86,8 +88,8 @@ function lineDialog(i, isNew = false){
   $("#ln-text", d).focus();
 }
 
-/* 대사 번호가 바뀌면 BGM 표시 위치도 같이 밀고 당김 */
-const shiftBgm = (from, by) => { for (const b of V.log.bgm || []) if (b.at > from) b.at += by; };
+/* 대사 번호가 바뀌면 BGM·배경 표시 위치도 같이 밀고 당김 */
+const shiftBgm = (from, by) => { for (const b of [...(V.log.bgm || []), ...(V.log.bg || [])]) if (b.at > from) b.at += by; };
 
 function rerender(at){
   const pane = $("#log-pane");
@@ -139,6 +141,66 @@ function bgmDialog(k, at){
   const sync = () => { const v = $('input[name="kind"]:checked', d)?.value || "file"; $$("[data-for]", d).forEach(el => el.hidden = !el.dataset.for.split(" ").includes(v)); };
   if (!$('input[name="kind"]:checked', d)) $('input[value="file"]', d).checked = true;
   d.addEventListener("change", sync); sync();
+}
+
+/* ---------- 배경 표시 ---------- */
+function bgDialog(k, at){
+  const b = k >= 0 ? V.log.bg[k] : { at, url: "", title: "" };
+  const kind = k < 0 ? "file" : !b.url ? "none" : /^https?:/.test(b.url) ? "url" : "file";
+  E.bk = k; E.at = b.at;
+  const cur = imgSrc(b.url);
+  const d = dialog("dlg-bg", `
+    <form method="dialog" class="form" id="bgimg-form">
+      <h2 class="card-h">${k >= 0 ? "배경 표시 고치기" : "여기부터 배경"}</h2>
+      <p class="hint">비주얼 노벨 모드에서 이 표시부터 다음 배경 표시 전까지 이 배경이 깔립니다.</p>
+      ${cur ? `<img class="bg-prev" src="${esc(cur)}" alt="지금 배경">` : ""}
+      <fieldset class="log-fs"><legend>종류</legend>
+        <label class="check"><input type="radio" name="bgkind" value="file" ${kind === "file" ? "checked" : ""}>이미지 파일 올리기</label>
+        <label class="check"><input type="radio" name="bgkind" value="url" ${kind === "url" ? "checked" : ""}>이미지 주소</label>
+        <label class="check"><input type="radio" name="bgkind" value="none" ${kind === "none" ? "checked" : ""}>배경 없음 (사이트 배경)</label>
+      </fieldset>
+      <div class="field" data-for="file"><label for="bgi-file">이미지 파일</label><input type="file" id="bgi-file" accept="image/*">
+        <span class="hint">${kind === "file" && b.url ? "지금 이미지를 그대로 쓰려면 비워 두세요. " : ""}긴 변 1920px로 줄여서 저장합니다</span></div>
+      <div class="field" data-for="url"><label for="bgi-url">주소</label><input class="input" type="url" id="bgi-url" value="${esc(/^https?:/.test(b.url) ? b.url : "")}" placeholder="https://…"></div>
+      <div class="field" data-for="file url"><label for="bgi-title">이름 (선택)</label><input class="input" type="text" id="bgi-title" maxlength="60" value="${esc(b.title || "")}" placeholder="예: 로비"></div>
+      <p class="form-error" id="bgi-err" role="alert" hidden></p>
+      <div class="form-actions">
+        <button class="btn primary" type="submit" value="apply">적용</button>
+        ${k >= 0 ? `<button class="btn danger" type="button" data-act="bg-del">삭제</button>` : ""}
+        <button class="btn" type="button" data-act="close">닫기</button>
+      </div>
+    </form>`);
+  const sync = () => { const v = $('input[name="bgkind"]:checked', d).value; $$("[data-for]", d).forEach(el => el.hidden = !el.dataset.for.split(" ").includes(v)); };
+  d.addEventListener("change", sync); sync();
+}
+
+async function applyBg(d){
+  const err = m => { const el = $("#bgi-err", d); el.textContent = m; el.hidden = !m; };
+  const kind = $('input[name="bgkind"]:checked', d).value, cur = E.bk >= 0 ? V.log.bg[E.bk] : null;
+  const b = { at: E.at, url: "", title: kind === "none" ? "" : $("#bgi-title", d).value.trim() };
+  if (kind === "file"){
+    const f = $("#bgi-file", d).files[0];
+    if (!f){
+      if (cur?.url && !/^https?:/.test(cur.url)) b.url = cur.url;
+      else return err("이미지 파일을 골라 주세요."), false;
+    } else {
+      let blob;
+      try { blob = await toWebP(f, 1920); } catch (e){ return err(e.message), false; }
+      const path = `bg/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extOf(blob)}`;
+      const up = await sb.storage.from("logs").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
+      if (up.error) return err(errMsg(up.error)), false;
+      b.url = path;
+      if (!b.title) b.title = f.name.replace(/\.[^.]+$/, "");
+    }
+  } else if (kind === "url"){
+    b.url = $("#bgi-url", d).value.trim();
+    if (!/^https:\/\//.test(b.url)) return err("https:// 로 시작하는 이미지 주소를 넣어 주세요."), false;
+  }
+  V.log.bg = V.log.bg || [];
+  if (E.bk >= 0) V.log.bg[E.bk] = b; else V.log.bg.push(b);
+  V.log.bg.sort((x, y) => x.at - y.at);
+  dirty(1);
+  return true;
 }
 
 const ytOk = u => /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)[A-Za-z0-9_-]{11}/.test(u);
@@ -205,6 +267,8 @@ document.addEventListener("click", async e => {
     V.log.m.push([last[0], last[1], "(새 대사)", -1]);
     return lineDialog(V.log.m.length - 1, true);
   }
+  const bgMark = t.closest("#log-body .lg-bgimg");
+  if (bgMark){ e.preventDefault(); e.stopPropagation(); return bgDialog(+bgMark.dataset.bk); }
   const mark = t.closest("#log-body .lg-bgm");
   if (mark){ e.preventDefault(); e.stopPropagation(); return bgmDialog(+mark.dataset.k); }
   const line = t.closest("#log-body [data-i]");
@@ -228,6 +292,8 @@ document.addEventListener("click", async e => {
     rerender(E.i); lineDialog(E.i + 1, true); return;
   }
   if (act === "bgm"){ if (!applyLine(d)) return; d.close(); rerender(E.i); return bgmDialog(-1, E.i); }
+  if (act === "bg"){ if (!applyLine(d)) return; d.close(); rerender(E.i); return bgDialog(-1, E.i); }
+  if (act === "bg-del"){ V.log.bg.splice(E.bk, 1); dirty(1); d.close(); rerender(E.at); return; }
   if (act === "bgm-del"){ V.log.bgm.splice(E.k, 1); dirty(1); d.close(); rerender(E.at); return; }
 }, true);
 
@@ -236,6 +302,11 @@ document.addEventListener("submit", async e => {
   if (f.id === "line-form"){
     e.preventDefault();
     if (applyLine(f.closest("dialog"))){ f.closest("dialog").close(); rerender(E.i); }
+  }
+  if (f.id === "bgimg-form"){
+    e.preventDefault();
+    const btn = $('button[type="submit"]', f);
+    await withBusy(btn, async () => { if (await applyBg(f.closest("dialog"))){ f.closest("dialog").close(); rerender(E.at); } });
   }
   if (f.id === "bgm-form"){
     e.preventDefault();
