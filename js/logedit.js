@@ -4,12 +4,12 @@
    - BGM 표시를 누르면: 고치기 / 삭제
    - 고친 내용은 모아 두었다가 ‘변경 저장’ 한 번에 새 파일로 올림 (이전 파일은 지움)
    ========================================================= */
-import { publicUrl, refreshPublic, sb } from "./data.js?v=20261029g";
-import { $, $$, announce, esc, toast } from "./dom.js?v=20261029g";
-import { errMsg, withBusy } from "./forms.js?v=20261029g";
-import { V, faceSrc, imgSrc, render, stopAudio } from "./logview.js?v=20261029g";
-import { extOf, toWebP } from "./img.js?v=20261029g";
-import { state } from "./state.js?v=20261029g";
+import { publicUrl, refreshPublic, sb } from "./data.js?v=20261030a";
+import { $, $$, announce, esc, toast } from "./dom.js?v=20261030a";
+import { errMsg, withBusy } from "./forms.js?v=20261030a";
+import { V, faceSrc, imgSrc, render, stopAudio } from "./logview.js?v=20261030a";
+import { extOf, toWebP } from "./img.js?v=20261030a";
+import { state } from "./state.js?v=20261030a";
 
 const E = { dirty: 0, i: -1, k: -1 };
 
@@ -246,7 +246,7 @@ async function save(){
   if (row.error) throw row.error;
   if (!V.secretsOk) throw new Error("비밀 탭을 불러오지 못해서 저장하지 않았습니다. 새로고침한 뒤 다시 해 주세요.");   // 그대로 저장하면 비밀 탭이 지워짐
   log.n = log.m.length; log.v = 3;
-  const { splitLog, saveSecrets } = await import("./logsecret.js?v=20261029g");
+  const { splitLog, saveSecrets } = await import("./logsecret.js?v=20261030a");
   const { pub, secrets } = splitLog(log);            // 비밀 탭은 공개 파일에서 빼서 따로
   await saveSecrets(sb, c.id, secrets);
   const blob = new Blob([JSON.stringify(pub)], { type: "application/json" });

@@ -5,10 +5,10 @@
    - 편집에서 넣은 배경·BGM 표시를 대사 위치에 맞춰 따라감
    - 읽던 위치는 회차마다 이 기기에 기억
    ========================================================= */
-import { $, $$, esc } from "./dom.js?v=20261029g";
-import { motionOK, state } from "./state.js?v=20261029g";
-import { ALL } from "./views.js?v=20261029g";
-import { SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId } from "./logview.js?v=20261029g";
+import { $, $$, esc } from "./dom.js?v=20261030a";
+import { motionOK, state } from "./state.js?v=20261030a";
+import { ALL } from "./views.js?v=20261030a";
+import { SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId } from "./logview.js?v=20261030a";
 
 const SPEEDS = [
   { label: "느리게", char: 55, wait: 2600, per: 70 },
