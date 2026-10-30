@@ -5,10 +5,10 @@
    - 편집에서 넣은 배경·BGM 표시를 대사 위치에 맞춰 따라감
    - 읽던 위치는 회차마다 이 기기에 기억
    ========================================================= */
-import { $, $$, esc } from "./dom.js?v=20261030g";
-import { motionOK, state } from "./state.js?v=20261030g";
-import { ALL } from "./views.js?v=20261030g";
-import { LV, SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId, ytVolume } from "./logview.js?v=20261030g";
+import { $, $$, esc } from "./dom.js?v=20261030i";
+import { motionOK, state } from "./state.js?v=20261030i";
+import { ALL } from "./views.js?v=20261030i";
+import { LV, SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId, ytVolume } from "./logview.js?v=20261030i";
 
 const SPEEDS = [
   { label: "느리게", char: 55, wait: 2600, per: 70 },
@@ -53,7 +53,6 @@ function build(){
           <button class="vc" type="button" data-vn="auto" aria-pressed="false">자동</button>
           <button class="vc" type="button" data-vn="speed" aria-label="속도 바꾸기"></button>
           <button class="vc" type="button" data-vn="log">지난 대사</button>
-          <span class="vn-snd"><button class="vc" type="button" data-vn="sound" aria-pressed="false">BGM</button><input class="vol" type="range" min="0" max="100" step="1" aria-label="BGM 볼륨" hidden></span>
           <span class="grow"></span>
           <button class="vc save" type="button" data-vn="save" hidden disabled>저장</button>
           <label class="vn-seek"><span class="sr">대사 위치</span><input type="range" id="vn-seek" min="1" max="1" value="1"><span class="num" id="vn-pos"></span></label>
@@ -433,10 +432,8 @@ function syncButtons(){
   a.setAttribute("aria-pressed", String(N.auto));
   a.textContent = N.auto ? "자동 ■" : "자동";
   $('[data-vn="speed"]').textContent = SPEEDS[N.speed].label;
-  const snd = $('[data-vn="sound"]');
-  snd.setAttribute("aria-pressed", String(N.sound));
-  snd.hidden = !(V.log?.bgm || []).some(b => b.kind !== "stop");
-  const vol = $(".vn-snd .vol"); vol.hidden = snd.hidden || !N.sound; vol.value = Math.round(LV.v * 100); vol.style.setProperty("--p", vol.value + "%");
+  $("#log-follow")?.setAttribute("aria-pressed", String(N.sound && N.on));
+
 }
 
 /* ---------- 편집 (관리자): 지금 대사 위치에 배경·BGM 넣기, 대사 고치기, 저장 ---------- */
@@ -461,6 +458,9 @@ document.addEventListener("comu:log-dirty", e => {
   const n = e.detail || 0;
   b.disabled = !n; b.textContent = n ? `변경 ${n}건 저장` : "저장";
 });
+
+/* 위 막대의 BGM 버튼 (logview.js가 부름) */
+export function toggleSound(){ N.sound = !N.sound; savePref(); N.bgmKey = null; syncBgm(N.lines[N.pos] ?? 0); return N.sound; }
 
 /* ---------- 여닫기 (logview.js가 부름) ---------- */
 export function openNovel(){
@@ -518,7 +518,7 @@ document.addEventListener("click", e => {
     else if (act === "ed-bg" || act === "ed-bgm" || act === "ed-line" || act === "save"){
       setAuto(false);
       const i = N.lines[N.pos];
-      import("./logedit.js?v=20261030g").then(m => act === "save" ? m.saveEdits() : act === "ed-line" ? m.editLineAt(i) : act === "ed-bg" ? m.editBgAt(i) : m.editBgmAt(i));
+      import("./logedit.js?v=20261030i").then(m => act === "save" ? m.saveEdits() : act === "ed-line" ? m.editLineAt(i) : act === "ed-bg" ? m.editBgAt(i) : m.editBgmAt(i));
     }
     else if (act === "sound"){ N.sound = !N.sound; savePref(); syncButtons(); N.bgmKey = null; syncBgm(N.lines[N.pos] ?? 0); }
     return;

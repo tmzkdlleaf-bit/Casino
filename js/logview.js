@@ -3,12 +3,12 @@
    가볍게: ① 기록은 작게 저장된 JSON 한 개 ② 화면에는 50묶음씩 나눠 붙이고, 첫 두 묶음만 바로 그린 뒤
    나머지는 브라우저가 한가할 때 이어 붙임 ③ 화면 밖 묶음은 content-visibility로 그리기를 건너뜀
    ========================================================= */
-import { publicUrl, sb } from "./data.js?v=20261030g";
-import { guessTabFormat } from "./logparse.js?v=20261030g";
-import { loadSecrets, mergeLog } from "./logsecret.js?v=20261030g";
-import { $, $$, esc, setTitle } from "./dom.js?v=20261030g";
-import { DATA, nav, state } from "./state.js?v=20261030g";
-import { ALL } from "./views.js?v=20261030g";
+import { publicUrl, sb } from "./data.js?v=20261030i";
+import { guessTabFormat } from "./logparse.js?v=20261030i";
+import { loadSecrets, mergeLog } from "./logsecret.js?v=20261030i";
+import { $, $$, esc, setTitle } from "./dom.js?v=20261030i";
+import { DATA, nav, state } from "./state.js?v=20261030i";
+import { ALL } from "./views.js?v=20261030i";
 
 const cache = new Map();          // 주소 → 기록 JSON
 const SIZE_KEY = "comu-log-size";
@@ -220,7 +220,7 @@ document.addEventListener("click", e => {
 });
 
 /* ---------- 읽기 / 노벨 ---------- */
-const novel = () => import("./novel.js?v=20261030g");
+const novel = () => import("./novel.js?v=20261030i");
 async function applyMode(){
   const vn = V.mode === "novel" && !!V.log;
   $$("#log-mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === (vn ? "novel" : "read"))));
@@ -228,12 +228,12 @@ async function applyMode(){
   $("#log-vn").hidden = !vn;
   $(".log-box").classList.toggle("is-vn", vn);
   $("#log-rail").hidden = vn || !(V.log?.bg || []).some(b => b.url);
-  $("#log-follow").hidden = vn || !(V.log?.bgm || []).some(b => b.kind === "audio");
+  P.follow = false; stopAudio(); $("#log-follow").setAttribute("aria-pressed", "false");   // 모드를 바꾸면 BGM은 꺼진 상태에서 시작
   syncVol(vn);
   $("#log-edit").hidden = !state.isAdmin || !V.log;     // 편집은 읽기·노벨 둘 다에서
   const eb = $("#log-editbar"); if (eb) eb.hidden = vn || !V.editing;
   document.body.classList.toggle("vn-on", vn);
-  $("#log-width").hidden = vn;
+  $$("#log-width button").forEach(b => { b.disabled = vn; });   // 노벨에서는 쓸 일이 없지만 자리는 그대로
   // 노벨에서는 잡담이 채팅창으로 나오므로, 직접 탭을 끈 적이 없으면 잡담 탭을 켬 (읽기 화면 기본값은 접힘)
   if (vn && !V.tabsTouched && V.log){ let ch = false; V.log.tabs.forEach(([, f], t) => { if (f === "other" && V.hidden.delete(t)) ch = true; }); if (ch){ drawTabs(); render(); } }
   $('[data-page="log"]').classList.toggle("folded", false);
@@ -255,9 +255,9 @@ export async function openLog(number){
   $('[data-page="log"]').classList.remove("folded");
   applySize(); applyWidth(); applyBig();
   const box = $("#log-body");
-  $("#log-edit").hidden = true; $("#log-follow").hidden = true; $("#log-vol").hidden = true;
+  $("#log-edit").hidden = true; $("#log-snd").hidden = true;
   $("#log-mode").hidden = true; $("#log-pane").hidden = false; $("#log-vn").hidden = true; $(".log-box").classList.remove("is-vn");
-  import("./novel.js?v=20261030g").then(m => m.closeNovel()).catch(() => {});
+  import("./novel.js?v=20261030i").then(m => m.closeNovel()).catch(() => {});
   stopAudio(); V.editing = false; box.classList.remove("editing"); document.body.classList.remove("vn-on");
   $("#log-edit").textContent = "편집"; $("#log-edit").setAttribute("aria-pressed", "false"); { const eb = $("#log-editbar"); if (eb) eb.hidden = true; }
   if (!c.log){ box.innerHTML = `<p class="empty-note">이 회차에는 아직 진행 기록이 없습니다.</p>`; return; }
@@ -283,7 +283,7 @@ export async function openLog(number){
   V.chapter = c;
   $("#log-meta").textContent = `대사 ${V.log.m.length.toLocaleString("ko-KR")}개`;
   $("#log-edit").hidden = !state.isAdmin;
-  $("#log-follow").hidden = !(V.log.bgm || []).some(b => b.kind === "audio");
+
   syncVol(false);
   $("#log-mode").hidden = false;
   drawTabs();
@@ -305,13 +305,13 @@ export function setVolume(v){
   try { localStorage.setItem(VOL_KEY, String(LV.v)); } catch (_) {}
   if (P.audio && P.playing){ clearInterval(P.audio._f); P.audio.volume = LV.v; }
   document.querySelectorAll("iframe.yt-vol").forEach(ytVolume);
-  document.querySelectorAll("input.vol").forEach(i => { i.value = Math.round(LV.v * 100); i.style.setProperty("--p", Math.round(LV.v * 100) + "%"); });
+  document.querySelectorAll("input.vol").forEach(i => { i.value = Math.round(LV.v * 100); i.style.setProperty("--vol", Math.round(LV.v * 100) + "%"); });
   document.dispatchEvent(new CustomEvent("comu:log-vol", { detail: LV.v }));
 }
 document.addEventListener("input", e => { if (e.target.matches?.("input.vol")) setVolume(+e.target.value / 100); });
 const VOL = () => LV.v;
 /* 읽기 화면: 기록에 BGM 표시가 있으면 볼륨 막대를 보임 (노벨은 대사창 안 BGM 버튼 옆) */
-function syncVol(vn){ const v = $("#log-vol"); if (!v) return; v.hidden = vn || !(V.log?.bgm || []).some(b => b.kind !== "stop"); v.value = Math.round(LV.v * 100); v.style.setProperty("--p", v.value + "%"); }
+function syncVol(vn){ const v = $("#log-vol"); if (!v) return; $("#log-snd").hidden = !(V.log?.bgm || []).some(b => b.kind !== "stop"); v.value = Math.round(LV.v * 100); v.style.setProperty("--vol", v.value + "%"); }
 function fadeTo(a, v, ms = 800, done){
   clearInterval(a._f);
   const from = a.volume, t0 = performance.now();
@@ -392,6 +392,7 @@ document.addEventListener("click", e => {
     return;
   }
   if (e.target.closest("#log-follow")){
+    if (V.mode === "novel"){ novel().then(m => { const on = m.toggleSound(); $("#log-follow").setAttribute("aria-pressed", String(on)); }); return; }   // 노벨: 같은 버튼으로 노벨 BGM 켜고 끔
     P.follow = !P.follow;
     $("#log-follow").setAttribute("aria-pressed", String(P.follow));
 
@@ -409,7 +410,7 @@ document.addEventListener("click", e => {
   if (wb){ width = +wb.dataset.w; try { localStorage.setItem(WIDTH_KEY, String(width)); } catch (_) {} applyWidth(); return; }
   if (e.target.closest("#log-big")){ setBig(!big); return; }
   if (e.target.closest("#log-full")){ toggleFull(); return; }
-  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261030g").then(m => m.toggleEdit()); return; }
+  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261030i").then(m => m.toggleEdit()); return; }
   const sz = e.target.closest(".log-size button");
   if (sz){
     size = Math.max(0, Math.min(SIZES.length - 1, size + +sz.dataset.size));

@@ -1978,10 +1978,9 @@ img.px{image-rendering:pixelated; image-rendering:crisp-edges; object-fit:contai
 
 /* BGM 볼륨 막대 (읽기: 따라 듣기 옆, 노벨: BGM 버튼 옆) */
 .log-snd, .vn-snd{display:inline-flex; align-items:center; gap:.45rem; flex:none}
-.log-snd:has(#log-vol:not([hidden]))::before{content:"♪"; color:var(--smoke); font-size:.9rem}
 input.vol{-webkit-appearance:none; appearance:none; width:6.5rem; height:1.5rem; margin:0; background:transparent; cursor:pointer}
 input.vol[hidden]{display:none}
-input.vol::-webkit-slider-runnable-track{height:4px; border-radius:2px; background:linear-gradient(90deg, var(--velvet) var(--p, 40%), rgba(238,243,250,.2) var(--p, 40%))}
+input.vol::-webkit-slider-runnable-track{height:4px; border-radius:2px; background:linear-gradient(90deg, var(--velvet) var(--vol, 40%), rgba(238,243,250,.2) var(--vol, 40%))}
 input.vol::-moz-range-track{height:4px; border-radius:2px; background:rgba(238,243,250,.2)}
 input.vol::-moz-range-progress{height:4px; border-radius:2px; background:var(--velvet)}
 input.vol::-webkit-slider-thumb{-webkit-appearance:none; width:14px; height:14px; margin-top:-5px; border-radius:50%; background:var(--ivory); border:0}
@@ -2060,13 +2059,12 @@ input.vol:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
 
 /* ---------- 노벨: 화면 전체가 무대, 위 막대는 무대 위에 겹침 ---------- */
 .log-box.is-vn{background:#000}
-.log-box.is-vn .log-bar{position:absolute; inset:0 0 auto; z-index:20; border:0; background:linear-gradient(rgba(0,0,0,.85), rgba(0,0,0,0))}
-.log-box.is-vn .log-chips, .log-box.is-vn .log-width{display:none}
+.log-box.is-vn .log-bar{background:#000}
 .vn{padding:0}
-.vn-stage{border:0; border-radius:0; --say-l:clamp(1.2rem, 27%, 24rem); --box-h:clamp(11rem, 31%, 14.5rem)}
+.vn-stage{border:0; border-radius:0; --say-l:clamp(1.2rem, 27%, 24rem); --box-h:clamp(13rem, 34%, 16rem)}
 .vn-stage:focus-visible{outline-offset:-3px}
-.vn-pills{top:3.9rem; right:1.2rem}
-.vn-edit{top:3.9rem; left:1.2rem}
+.vn-pills{top:1rem; right:1.2rem}
+.vn-edit{top:1rem; left:1.2rem}
 .vn-pill{min-height:2.2rem; font-family:var(--f-pixel); font-size:.8rem}
 /* 대사: 아래쪽이 어둡게 깔리는 자막 띠 */
 .vn-box{left:0; right:0; bottom:0; height:var(--box-h); padding:2.6rem 2.6rem .8rem var(--say-l); border:0; border-radius:0; box-shadow:none;
@@ -2096,7 +2094,7 @@ input.vol:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
 .vn-seek input::-moz-range-thumb{width:10px; height:10px; border-radius:50%; background:var(--velvet); border:0}
 /* 메인 밖의 탭 창: 오른쪽, 자막 띠 위까지. 왼쪽 색 띠 + 글자 탭 */
 .vn-stage.side-open .vn-pills{display:none}   /* 창이 열리면 창 안의 탭으로 오감 */
-.vn-side{top:3.9rem; right:1.2rem; bottom:calc(var(--box-h) - .4rem); width:clamp(20rem, 30%, 28rem)}
+.vn-side{top:1rem; right:1.2rem; bottom:calc(var(--box-h) - .4rem); width:clamp(20rem, 30%, 28rem)}
 .vn-stage.side-open .vn-box{right:0}
 .vn-grp{--band:var(--velvet); border:0; border-left:2px solid var(--band); border-radius:0; background:linear-gradient(90deg, rgba(40,6,26,.9), rgba(40,6,26,.62)); box-shadow:none}
 .vn-grp:has(.vn-chat:not(.f-secret):not([hidden])){--band:rgba(173,207,234,.7); background:linear-gradient(90deg, rgba(10,16,41,.92), rgba(10,16,41,.62))}
@@ -2115,7 +2113,7 @@ input.vol:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
   .vn-stage{--say-l:1rem; --box-h:clamp(14rem, 44%, 19rem)}
   .vn-box{padding:2rem 1rem .6rem}
   .vn-fix{right:1rem; top:1.6rem}
-  .vn-side{top:3.9rem; left:.6rem; right:.6rem; width:auto; bottom:calc(var(--box-h) + .4rem)}
+  .vn-side{top:.6rem; left:.6rem; right:.6rem; width:auto; bottom:calc(var(--box-h) + .4rem)}
   .vn-ctl{gap:.8rem}
 }
 @media (max-width:760px){
@@ -2126,3 +2124,21 @@ input.vol:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
   .log-box > .pane{padding:1.4rem 1.1rem 3rem}
   .log-rail{right:.35rem}
 }
+
+/* 대사가 길어도 조작 줄은 늘 보이게: 본문만 스크롤 */
+.vn-box .vn-text{flex:1 1 auto; min-height:0}
+.vn-box .vn-name, .vn-box .vn-ctl{flex:none}
+.cb-seg button:disabled{opacity:.3}
+.log-snd{margin-right:.2rem}
+
+/* 위 막대: 1줄 = 제목(줄어듦) | 도구(늘 같은 자리), 2줄 = 탭 칩 */
+.cb-title{flex:1 1 0 !important; max-width:none}
+.cb-tools{flex:none; display:flex; align-items:center; gap:.4rem; max-width:100%; overflow-x:auto; scrollbar-width:none}
+.cb-tools::-webkit-scrollbar{display:none}
+.cb-tools > *{flex:none}
+.log-bar .cb-seg button{padding:0 .65rem}
+.log-bar .cb{padding:0 .8rem}
+@media (max-width:760px){ .cb-tools{flex:1 1 auto; min-width:0} .cb-title{flex:0 1 auto !important} }
+.log-snd{display:inline-flex; align-items:center; gap:.4rem; padding-right:.3rem}
+.log-snd[hidden]{display:none}
+.log-snd input.vol{width:5.5rem}
