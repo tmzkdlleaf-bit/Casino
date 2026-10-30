@@ -5,10 +5,10 @@
    - 편집에서 넣은 배경·BGM 표시를 대사 위치에 맞춰 따라감
    - 읽던 위치는 회차마다 이 기기에 기억
    ========================================================= */
-import { $, $$, esc } from "./dom.js?v=20261030c";
-import { motionOK, state } from "./state.js?v=20261030c";
-import { ALL } from "./views.js?v=20261030c";
-import { SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId } from "./logview.js?v=20261030c";
+import { $, $$, esc } from "./dom.js?v=20261030d";
+import { motionOK, state } from "./state.js?v=20261030d";
+import { ALL } from "./views.js?v=20261030d";
+import { SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId } from "./logview.js?v=20261030d";
 
 const SPEEDS = [
   { label: "느리게", char: 55, wait: 2600, per: 70 },
@@ -522,7 +522,7 @@ document.addEventListener("click", e => {
     else if (act === "ed-bg" || act === "ed-bgm" || act === "ed-line" || act === "save"){
       setAuto(false);
       const i = N.lines[N.pos];
-      import("./logedit.js?v=20261030c").then(m => act === "save" ? m.saveEdits() : act === "ed-line" ? m.editLineAt(i) : act === "ed-bg" ? m.editBgAt(i) : m.editBgmAt(i));
+      import("./logedit.js?v=20261030d").then(m => act === "save" ? m.saveEdits() : act === "ed-line" ? m.editLineAt(i) : act === "ed-bg" ? m.editBgAt(i) : m.editBgmAt(i));
     }
     else if (act === "sound"){ N.sound = !N.sound; savePref(); syncButtons(); N.bgmKey = null; syncBgm(N.lines[N.pos] ?? 0); }
     return;

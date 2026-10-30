@@ -1,9 +1,9 @@
-import { loadMine } from "./auth.js?v=20261030c";
-import { CONFIG } from "./config.js?v=20261030c";
-import { $, toast } from "./dom.js?v=20261030c";
-import { route } from "./router.js?v=20261030c";
-import { DATA, nav, state } from "./state.js?v=20261030c";
-import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261030c";
+import { loadMine } from "./auth.js?v=20261030d";
+import { CONFIG } from "./config.js?v=20261030d";
+import { $, toast } from "./dom.js?v=20261030d";
+import { route } from "./router.js?v=20261030d";
+import { DATA, nav, state } from "./state.js?v=20261030d";
+import { renderAccount, renderCast, renderHome, renderRecords, renderShop, renderStory } from "./views.js?v=20261030d";
 
 /* =========================================================
    DATA LAYER — Supabase 조회 → 화면용 DATA 모양으로 변환
@@ -197,16 +197,16 @@ export function subscribeProfile(){
     })
     // 구매 요청: 멤버는 자기 것만, 관리자는 전부 도착 (update-7.sql)
     .on("postgres_changes", { event: "*", schema: "public", table: "shop_requests" }, ({ eventType, new: row }) => {
-      import("./shop.js?v=20261030c").then(m => m.onRequestChange(row));
-      import("./notify.js?v=20261030c").then(m => m.notifyDecision(row, "shop"));
+      import("./shop.js?v=20261030d").then(m => m.onRequestChange(row));
+      import("./notify.js?v=20261030d").then(m => m.notifyDecision(row, "shop"));
       if (!state.isAdmin) return;
       if (eventType === "INSERT" && !state.mine.some(m => m.uuid === row.character_id)) toast(`새 구매 요청: ${row.item_name} ×${row.quantity}`);
       document.dispatchEvent(new CustomEvent("comu:shop-req", { detail: row }));
     })
     // 코인 정산 요청 (update-9.sql)
     .on("postgres_changes", { event: "*", schema: "public", table: "chip_requests" }, ({ eventType, new: row }) => {
-      import("./chipreq.js?v=20261030c").then(m => m.onChipRequestChange(row));
-      import("./notify.js?v=20261030c").then(m => m.notifyDecision(row, "chip"));
+      import("./chipreq.js?v=20261030d").then(m => m.onChipRequestChange(row));
+      import("./notify.js?v=20261030d").then(m => m.notifyDecision(row, "chip"));
       if (!state.isAdmin) return;
       if (eventType === "INSERT" && !state.mine.some(m => m.uuid === row.character_id)) toast(`새 코인 정산 요청: ${row.amount > 0 ? "+" : ""}${row.amount}코인`);
       document.dispatchEvent(new CustomEvent("comu:chip-req", { detail: row }));

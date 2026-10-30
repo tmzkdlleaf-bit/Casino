@@ -1,14 +1,14 @@
-import { CALM_KEY, isIdAccount, loginEmail } from "./config.js?v=20261030c";
-import { sb, subscribeProfile } from "./data.js?v=20261030c";
-import { $, toast } from "./dom.js?v=20261030c";
-import { applyCalm } from "./effects.js?v=20261030c";
-import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261030c";
-import { route } from "./router.js?v=20261030c";
-import { state } from "./state.js?v=20261030c";
-import { renderAccount, renderShop } from "./views.js?v=20261030c";
-import { SHOP, loadMyRequests } from "./shop.js?v=20261030c";
-import { notifyUnseen } from "./notify.js?v=20261030c";
-import { CREQ, loadChipRequests, renderChipRequests } from "./chipreq.js?v=20261030c";
+import { CALM_KEY, isIdAccount, loginEmail } from "./config.js?v=20261030d";
+import { sb, subscribeProfile } from "./data.js?v=20261030d";
+import { $, toast } from "./dom.js?v=20261030d";
+import { applyCalm } from "./effects.js?v=20261030d";
+import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261030d";
+import { route } from "./router.js?v=20261030d";
+import { state } from "./state.js?v=20261030d";
+import { renderAccount, renderShop } from "./views.js?v=20261030d";
+import { SHOP, loadMyRequests } from "./shop.js?v=20261030d";
+import { notifyUnseen } from "./notify.js?v=20261030d";
+import { CREQ, loadChipRequests, renderChipRequests } from "./chipreq.js?v=20261030d";
 
 /* =========================================================
    AUTH — 이메일 + 비밀번호, 초대제
