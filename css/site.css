@@ -2197,12 +2197,6 @@ input.vol:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
 .tchip[aria-pressed="false"] .c{opacity:.6}
 /* 노벨: 막대·탭 줄이 무대 위에 따로, 넘기기는 대사창 안의 네모 버튼 */
 .log-box.is-vn .log-tabbar{background:#000}
-.vn-ctl{gap:.5rem !important; padding-top:.7rem !important}
-.vc{min-height:2.5rem !important; min-width:2.5rem; padding:0 .9rem !important; border:1px solid rgba(238,243,250,.16) !important; border-radius:10px !important; background:rgba(238,243,250,.04) !important; color:var(--smoke)}
-.vc:hover:not(:disabled){color:var(--ivory); border-color:rgba(238,243,250,.4) !important}
-.vc.primary{background:var(--velvet) !important; border-color:var(--velvet) !important; color:#fff !important; padding:0 1.3rem !important}
-.vc[aria-pressed="true"]{background:rgba(239,26,114,.2) !important; border-color:var(--velvet) !important; color:var(--ivory) !important}
-.vn-seek{margin-left:.6rem}
 /* 스탠딩 숨김 */
 .log-box.no-st .lg .lg-av{display:none}
 .log-box.no-st .lg{grid-template-columns:minmax(0,1fr)}
@@ -2242,3 +2236,36 @@ input.vol:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
 .vn-chat-list::-webkit-scrollbar, .vn-text::-webkit-scrollbar, .vn-log-list::-webkit-scrollbar, .log-tabbar .log-chips::-webkit-scrollbar{width:8px; height:8px}
 .vn-chat-list::-webkit-scrollbar-thumb, .vn-text::-webkit-scrollbar-thumb, .vn-log-list::-webkit-scrollbar-thumb, .log-tabbar .log-chips::-webkit-scrollbar-thumb{background:rgba(238,243,250,.18); border-radius:8px}
 .vn-chat-list::-webkit-scrollbar-button, .vn-text::-webkit-scrollbar-button, .vn-log-list::-webkit-scrollbar-button{display:none}
+/* 하단 조작 (A+C): 왼쪽 ◀ ▶ 위치 / 오른쪽 글자 메뉴 / 맨 아래 가장자리 진행선 */
+.vn-box{padding-bottom:0}
+.vn-ctl{position:relative; gap:.25rem; border:0; margin:auto calc(-1 * var(--say-l)) 0 calc(-1 * var(--say-l)) !important; padding:.4rem 2.6rem .55rem var(--say-l); border-top:1px solid rgba(238,243,250,.08); overflow:visible}
+.vn-stage .vn-ctl{margin-right:-2.6rem !important}
+.vn-ctl .vc{min-height:2.5rem; padding:0 .7rem; border:0; border-radius:999px; font-family:var(--f-pixel); font-size:.8125rem; letter-spacing:.06em; color:var(--smoke); background:none}
+.vn-ctl .vc:hover:not(:disabled){color:var(--ivory); background:rgba(238,243,250,.06)}
+.vn-ctl .vc:focus-visible{outline:2px solid var(--velvet); outline-offset:1px}
+.vn-ctl .vc.ic{width:2.5rem; padding:0; font-size:.9rem; letter-spacing:0}
+.vn-ctl .vc.ic:first-child{margin-left:-.7rem}
+.vn-ctl .vc.primary{color:var(--ivory); font-weight:400}
+.vn-ctl .vc[aria-pressed="true"]{color:var(--red-text); background:rgba(239,26,114,.16)}
+.vn-ctl .vc.save{background:var(--felt); color:#fff; margin-right:.5rem}
+.vn-ctl .vc.save:disabled{background:none; color:var(--smoke)}
+.vn-ctl .num{margin-left:.5rem; font-size:var(--s-1); color:var(--smoke); font-variant-numeric:tabular-nums; white-space:nowrap}
+.vn-seek{position:absolute; left:0; right:0; bottom:0; height:14px; display:block; margin:0; z-index:2; max-width:none; min-width:0}
+.vn-seek input{position:absolute; left:0; right:0; bottom:0; width:100%; height:14px; margin:0; -webkit-appearance:none; appearance:none; background:transparent; cursor:pointer; --seek:0%}
+.vn-seek input::-webkit-slider-runnable-track{height:3px; margin-top:11px; background:linear-gradient(90deg, var(--velvet) var(--seek), rgba(238,243,250,.14) var(--seek)); transition:height .15s, margin .15s}
+.vn-seek input::-moz-range-track{height:3px; background:rgba(238,243,250,.14)}
+.vn-seek input::-moz-range-progress{height:3px; background:var(--velvet)}
+.vn-seek input::-webkit-slider-thumb{-webkit-appearance:none; width:12px; height:12px; margin-top:-4.5px; border-radius:50%; background:#fff; border:0; opacity:0; transition:opacity .15s}
+.vn-seek input::-moz-range-thumb{width:12px; height:12px; border-radius:50%; background:#fff; border:0; opacity:0}
+.vn-seek:hover input::-webkit-slider-thumb, .vn-seek input:focus-visible::-webkit-slider-thumb{opacity:1}
+.vn-seek:hover input::-moz-range-thumb, .vn-seek input:focus-visible::-moz-range-thumb{opacity:1}
+.vn-seek:hover input::-webkit-slider-runnable-track{height:5px; margin-top:9px}
+.vn-seek input:focus-visible{outline:none}
+.vn-more{display:block !important; position:absolute; right:2.6rem; bottom:3.9rem !important; font-size:.8rem; color:var(--velvet)}
+@media (max-width:640px){
+  .vn-ctl{flex-wrap:nowrap; padding-right:1rem; padding-left:.9rem; margin-left:-.9rem !important}
+  .vn-stage .vn-ctl{margin-right:-.9rem !important}
+  .vn-ctl .vc{padding:0 .45rem; font-size:.75rem}
+  .vn-ctl .grow{display:block}
+  .vn-more{display:none !important}
+}

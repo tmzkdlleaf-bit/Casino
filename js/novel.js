@@ -5,15 +5,15 @@
    - 편집에서 넣은 배경·BGM 표시를 대사 위치에 맞춰 따라감
    - 읽던 위치는 회차마다 이 기기에 기억
    ========================================================= */
-import { $, $$, esc } from "./dom.js?v=20261031d";
-import { motionOK, state } from "./state.js?v=20261031d";
-import { ALL } from "./views.js?v=20261031d";
-import { LV, SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId, ytVolume } from "./logview.js?v=20261031d";
+import { $, $$, esc } from "./dom.js?v=20261031f";
+import { motionOK, state } from "./state.js?v=20261031f";
+import { ALL } from "./views.js?v=20261031f";
+import { LV, SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId, ytVolume } from "./logview.js?v=20261031f";
 
 const SPEEDS = [
-  { label: "느리게", char: 55, wait: 2600, per: 70 },
-  { label: "보통",   char: 32, wait: 1700, per: 45 },
-  { label: "빠르게", char: 14, wait: 900,  per: 25 }
+  { label: "SPEED ×0.5", name: "느리게", char: 55, wait: 2600, per: 70 },
+  { label: "SPEED ×1",   name: "보통", char: 32, wait: 1700, per: 45 },
+  { label: "SPEED ×2", name: "빠르게", char: 14, wait: 900,  per: 25 }
 ];
 const PREF_KEY = "comu-vn-pref";
 const POS_KEY = n => "comu-vn-pos-" + n;
@@ -48,15 +48,16 @@ function build(){
         <div class="vn-text" id="vn-text" aria-live="polite"></div>
         <span class="vn-more" id="vn-more" aria-hidden="true">▼</span>
         <div class="vn-ctl" role="toolbar" aria-label="비주얼 노벨 조작">
-          <button class="vc" type="button" data-vn="prev" aria-label="이전 대사">◀</button>
-          <button class="vc primary" type="button" data-vn="next">다음 ▶</button>
-          <button class="vc" type="button" data-vn="auto" aria-pressed="false">자동</button>
-          <button class="vc" type="button" data-vn="speed" aria-label="속도 바꾸기"></button>
-          <button class="vc" type="button" data-vn="log">지난 대사</button>
+          <button class="vc ic" type="button" data-vn="prev" aria-label="이전 대사" title="이전 대사">◀</button>
+          <button class="vc ic primary" type="button" data-vn="next" aria-label="다음 대사" title="다음 대사">▶</button>
+          <span class="num" id="vn-pos"></span>
           <span class="grow"></span>
           <button class="vc save" type="button" data-vn="save" hidden disabled>저장</button>
-          <label class="vn-seek"><span class="sr">대사 위치</span><input type="range" id="vn-seek" min="1" max="1" value="1"><span class="num" id="vn-pos"></span></label>
+          <button class="vc" type="button" data-vn="auto" aria-pressed="false" aria-label="자동 넘기기" title="자동 넘기기">AUTO</button>
+          <button class="vc" type="button" data-vn="speed" aria-label="속도 바꾸기" title="속도 바꾸기"></button>
+          <button class="vc" type="button" data-vn="log" aria-label="지난 대사" title="지난 대사">LOG</button>
         </div>
+        <label class="vn-seek"><span class="sr">대사 위치</span><input type="range" id="vn-seek" min="1" max="1" value="1"></label>
       </div>
       <div class="vn-log" id="vn-log" hidden role="dialog" aria-label="지난 대사">
         <div class="vn-log-head"><strong>지난 대사</strong><span class="grow"></span>
@@ -285,7 +286,7 @@ function syncBgm(i){
   if (key === N.bgmKey) return;
   N.bgmKey = key;
   stopVnAudio();
-  import("./logview.js?v=20261031d").then(m => m.bgmTitle(key >= 0 ? b.title : ""));
+  import("./logview.js?v=20261031f").then(m => m.bgmTitle(key >= 0 ? b.title : ""));
   if (key < 0) return;
   document.dispatchEvent(new CustomEvent("comu:bgm-pause"));      // 사이트 배경음악은 잠시 멈춤
   if (b.kind === "audio"){
@@ -382,6 +383,7 @@ function go(pos){
   preload(N.pos);
 
   $("#vn-seek").value = N.pos + 1;
+  $("#vn-seek").style.setProperty("--seek", (N.lines.length > 1 ? N.pos / (N.lines.length - 1) * 100 : 100) + "%");
   $("#vn-pos").textContent = `${(N.pos + 1).toLocaleString("ko-KR")} / ${N.lines.length.toLocaleString("ko-KR")}`;
   $('[data-vn="prev"]').disabled = N.pos === 0;
   $('[data-vn="next"]').disabled = N.pos >= N.lines.length - 1 && !N.typing;
@@ -431,10 +433,10 @@ function closeLogPanel(){ $("#vn-log").hidden = true; $("#vn-stage").focus({ pre
 function syncButtons(){
   const a = $('[data-vn="auto"]'); if (!a) return;
   a.setAttribute("aria-pressed", String(N.auto));
-  a.textContent = N.auto ? "자동 ■" : "자동";
-  $('[data-vn="speed"]').textContent = SPEEDS[N.speed].label;
+  a.textContent = "AUTO";
+  $('[data-vn="speed"]').textContent = SPEEDS[N.speed].label; $('[data-vn="speed"]').setAttribute("aria-label", "속도: " + SPEEDS[N.speed].name);
   $("#log-follow")?.setAttribute("aria-pressed", String(N.sound && N.on));
-  import("./logview.js?v=20261031d").then(m => m.bgmLabel());
+  import("./logview.js?v=20261031f").then(m => m.bgmLabel());
 
 }
 
@@ -520,13 +522,13 @@ document.addEventListener("click", e => {
     else if (act === "ed-bg" || act === "ed-bgm" || act === "ed-line" || act === "save"){
       setAuto(false);
       const i = N.lines[N.pos];
-      import("./logedit.js?v=20261031d").then(m => act === "save" ? m.saveEdits() : act === "ed-line" ? m.editLineAt(i) : act === "ed-bg" ? m.editBgAt(i) : m.editBgmAt(i));
+      import("./logedit.js?v=20261031f").then(m => act === "save" ? m.saveEdits() : act === "ed-line" ? m.editLineAt(i) : act === "ed-bg" ? m.editBgAt(i) : m.editBgmAt(i));
     }
     else if (act === "sound"){ N.sound = !N.sound; savePref(); syncButtons(); N.bgmKey = null; syncBgm(N.lines[N.pos] ?? 0); }
     return;
   }
   // 무대(대사창 포함)를 누르면 다음. 지난 대사·채팅창·쪽지는 제외. 쪽지가 펼쳐져 있으면 먼저 접음
-  if (e.target.closest("#vn-stage") && !e.target.closest("#vn-log, .vn-side, .vn-pills, .vn-ctl, .vn-edit")) next();
+  if (e.target.closest("#vn-stage") && !e.target.closest("#vn-log, .vn-side, .vn-pills, .vn-ctl, .vn-seek, .vn-edit")) next();
 });
 
 document.addEventListener("input", e => {
@@ -541,7 +543,7 @@ document.addEventListener("keydown", e => {
   if (!e.target.closest?.("#log-vn") && e.target !== document.body) return;
   if (!$("#vn-log").hidden){ if (e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); closeLogPanel(); } return; }
   if (e.key === "Escape" && N.openSide != null){ e.preventDefault(); e.stopPropagation(); setSide(null); return; }
-  if (e.target.closest?.(".vn-side, .vn-ctl")) return;
+  if (e.target.closest?.(".vn-side, .vn-ctl, .vn-seek")) return;
   if (e.target.id === "vn-seek" && (e.key === "ArrowLeft" || e.key === "ArrowRight")) return;
   if (e.target.tagName === "BUTTON" && (e.key === " " || e.key === "Enter")) return;   // 버튼은 버튼대로
   if ([" ", "Enter", "ArrowRight", "ArrowDown", "PageDown"].includes(e.key)){ e.preventDefault(); next(); }
