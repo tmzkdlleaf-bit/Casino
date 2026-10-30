@@ -2224,3 +2224,21 @@ input.vol:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
 .log-tabbar[hidden]{display:none !important}
 .log-tabbar .log-chips{order:0 !important; width:100%; margin:0 !important; flex:none !important}
 @media (max-width:760px){ .log-tabbar{grid-template-columns:minmax(0,1fr)} }
+/* 탭 줄 접기 */
+.tr-l{display:inline-flex !important; align-items:center; gap:.35rem; min-height:2.2rem; padding:0 .7rem 0 .4rem; border:0; border-radius:8px; background:none; font-family:var(--f-pixel); font-size:.75rem; color:var(--smoke); cursor:pointer}
+.tr-l:hover{background:rgba(238,243,250,.06); color:var(--ivory)}
+.tr-l .arw{font-size:.7rem; transition:transform .2s}
+.tr-l .sum{color:#5d6a8c; font-variant-numeric:tabular-nums}
+.log-tabbar.folded{min-height:2.4rem; padding-block:.15rem}
+.log-tabbar.folded .tr-l .arw{transform:rotate(-90deg)}
+.log-tabbar:not(.folded) .tr-l .sum{display:none}
+@media (max-width:760px){ .tr-l{display:inline-flex !important} .log-tabbar{grid-template-columns:max-content minmax(0,1fr) !important} }
+/* 노벨 대사: 왼쪽 정렬, 스탠딩 아랫부분은 자막 띠가 덮음 */
+.vn-stage{--say-l:clamp(1.2rem, 3vw, 2.6rem) !important}
+.vn-box{z-index:3}
+.vn-st{z-index:2}
+/* 스크롤 막대: 사이트 다른 화면과 같게 (얇고 흐린 막대, 화살표 없음) */
+.log-box .pane, .vn-chat-list, .vn-text, .vn-log-list, .aa-menu, .log-tabbar .log-chips{scrollbar-width:thin; scrollbar-color:rgba(238,243,250,.2) transparent}
+.vn-chat-list::-webkit-scrollbar, .vn-text::-webkit-scrollbar, .vn-log-list::-webkit-scrollbar, .log-tabbar .log-chips::-webkit-scrollbar{width:8px; height:8px}
+.vn-chat-list::-webkit-scrollbar-thumb, .vn-text::-webkit-scrollbar-thumb, .vn-log-list::-webkit-scrollbar-thumb, .log-tabbar .log-chips::-webkit-scrollbar-thumb{background:rgba(238,243,250,.18); border-radius:8px}
+.vn-chat-list::-webkit-scrollbar-button, .vn-text::-webkit-scrollbar-button, .vn-log-list::-webkit-scrollbar-button{display:none}

@@ -3,12 +3,12 @@
    가볍게: ① 기록은 작게 저장된 JSON 한 개 ② 화면에는 50묶음씩 나눠 붙이고, 첫 두 묶음만 바로 그린 뒤
    나머지는 브라우저가 한가할 때 이어 붙임 ③ 화면 밖 묶음은 content-visibility로 그리기를 건너뜀
    ========================================================= */
-import { publicUrl, sb } from "./data.js?v=20261031c";
-import { guessTabFormat } from "./logparse.js?v=20261031c";
-import { loadSecrets, mergeLog } from "./logsecret.js?v=20261031c";
-import { $, $$, esc, setTitle } from "./dom.js?v=20261031c";
-import { DATA, nav, state } from "./state.js?v=20261031c";
-import { ALL } from "./views.js?v=20261031c";
+import { publicUrl, sb } from "./data.js?v=20261031d";
+import { guessTabFormat } from "./logparse.js?v=20261031d";
+import { loadSecrets, mergeLog } from "./logsecret.js?v=20261031d";
+import { $, $$, esc, setTitle } from "./dom.js?v=20261031d";
+import { DATA, nav, state } from "./state.js?v=20261031d";
+import { ALL } from "./views.js?v=20261031d";
 
 const cache = new Map();          // 주소 → 기록 JSON
 const SIZE_KEY = "comu-log-size";
@@ -157,7 +157,14 @@ function drawTabs(){
     return `<button type="button" class="tchip f-${format}" data-tab="${t}" aria-pressed="${!V.hidden.has(t)}" >${esc(label)} <span class="c">${n.toLocaleString("ko-KR")}</span></button>`;
   }).join("");
   $("#log-tabbar").hidden = log.tabs.length < 2;
+  tabSum();
 }
+/* 탭 줄 접기: 접으면 '탭 7/9'만 한 줄로 — 이 기기에 기억 */
+const TF_KEY = "comu-log-tabfold";
+let tabFold = false;
+try { tabFold = localStorage.getItem(TF_KEY) === "1"; } catch (_) {}
+function applyTabFold(){ $("#log-tabbar").classList.toggle("folded", tabFold); $("#log-tabfold").setAttribute("aria-expanded", String(!tabFold)); $("#log-tabs").hidden = tabFold; }
+function tabSum(){ const n = V.log?.tabs.length || 0; $("#log-tabsum").textContent = n ? `${n - [...V.hidden].filter(t => t < n).length}/${n}` : ""; }
 
 function applySize(){
   $("#log-body").style.setProperty("--lg-fs", SIZES[size] + "rem"); $("#log-vn").style.setProperty("--lg-fs", SIZES[size] + "rem");
@@ -225,7 +232,7 @@ document.addEventListener("click", e => {
 });
 
 /* ---------- 읽기 / 노벨 ---------- */
-const novel = () => import("./novel.js?v=20261031c");
+const novel = () => import("./novel.js?v=20261031d");
 async function applyMode(){
   const vn = V.mode === "novel" && !!V.log;
   $$("#log-mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === (vn ? "novel" : "read"))));
@@ -258,11 +265,11 @@ export async function openLog(number){
   $("#log-meta").textContent = "";
   $("#log-tabs").innerHTML = ""; $("#log-tabbar").hidden = true; aaMenu(false); $("#log-rail").hidden = true;
   $('[data-page="log"]').classList.remove("folded");
-  applySize(); applyWidth(); applyBig(); applySt(); bgmTitle();
+  applySize(); applyWidth(); applyBig(); applySt(); bgmTitle(); applyTabFold();
   const box = $("#log-body");
   $("#log-edit").hidden = true; $("#log-snd").hidden = true;
   $("#log-mode").hidden = true; $("#log-pane").hidden = false; $("#log-vn").hidden = true; $(".log-box").classList.remove("is-vn");
-  import("./novel.js?v=20261031c").then(m => m.closeNovel()).catch(() => {});
+  import("./novel.js?v=20261031d").then(m => m.closeNovel()).catch(() => {});
   stopAudio(); V.editing = false; box.classList.remove("editing"); document.body.classList.remove("vn-on");
   $("#log-edit").setAttribute("aria-label", "편집"); $("#log-edit").setAttribute("aria-pressed", "false"); { const eb = $("#log-editbar"); if (eb) eb.hidden = true; }
   if (!c.log){ box.innerHTML = `<p class="empty-note">이 회차에는 아직 진행 기록이 없습니다.</p>`; return; }
@@ -382,7 +389,7 @@ document.addEventListener("click", e => {
     const t = +tb.dataset.tab;
     V.hidden.has(t) ? V.hidden.delete(t) : V.hidden.add(t);
     tb.setAttribute("aria-pressed", String(!V.hidden.has(t)));
-    V.tabsTouched = true;
+    V.tabsTouched = true; tabSum();
     const pane = $("#log-pane"), top = pane.scrollTop;
     render();
     pane.scrollTop = Math.min(top, pane.scrollHeight);
@@ -419,12 +426,13 @@ document.addEventListener("click", e => {
   }
   const wb = e.target.closest("#log-width button");
   if (wb){ width = +wb.dataset.w; try { localStorage.setItem(WIDTH_KEY, String(width)); } catch (_) {} applyWidth(); return; }
+  if (e.target.closest("#log-tabfold")){ tabFold = !tabFold; try { localStorage.setItem(TF_KEY, tabFold ? "1" : "0"); } catch (_) {} applyTabFold(); return; }
   if (e.target.closest("#log-aa")){ aaMenu($("#log-aa-menu").hidden); return; }
   const bg2 = e.target.closest("[data-big]"); if (bg2){ setBig(bg2.dataset.big === "1"); return; }
   const stb = e.target.closest("[data-st]"); if (stb){ showSt = stb.dataset.st === "1"; try { localStorage.setItem(ST_KEY, showSt ? "1" : "0"); } catch (_) {} applySt(); return; }
   if (!$("#log-aa-menu").hidden && !e.target.closest("#log-aa-menu")) aaMenu(false);
   if (e.target.closest("#log-full")){ toggleFull(); return; }
-  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261031c").then(m => m.toggleEdit()); return; }
+  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261031d").then(m => m.toggleEdit()); return; }
   const sz = e.target.closest(".log-size button");
   if (sz){
     size = Math.max(0, Math.min(SIZES.length - 1, size + +sz.dataset.size));
