@@ -3,12 +3,12 @@
    가볍게: ① 기록은 작게 저장된 JSON 한 개 ② 화면에는 50묶음씩 나눠 붙이고, 첫 두 묶음만 바로 그린 뒤
    나머지는 브라우저가 한가할 때 이어 붙임 ③ 화면 밖 묶음은 content-visibility로 그리기를 건너뜀
    ========================================================= */
-import { publicUrl, sb } from "./data.js?v=20261031g";
-import { guessTabFormat } from "./logparse.js?v=20261031g";
-import { loadSecrets, mergeLog } from "./logsecret.js?v=20261031g";
-import { $, $$, esc, setTitle } from "./dom.js?v=20261031g";
-import { DATA, nav, state } from "./state.js?v=20261031g";
-import { ALL } from "./views.js?v=20261031g";
+import { publicUrl, sb } from "./data.js?v=20261031h";
+import { guessTabFormat } from "./logparse.js?v=20261031h";
+import { loadSecrets, mergeLog } from "./logsecret.js?v=20261031h";
+import { $, $$, esc, setTitle } from "./dom.js?v=20261031h";
+import { DATA, nav, state } from "./state.js?v=20261031h";
+import { ALL } from "./views.js?v=20261031h";
 
 const cache = new Map();          // 주소 → 기록 JSON
 const SIZE_KEY = "comu-log-size";
@@ -232,15 +232,33 @@ document.addEventListener("click", e => {
 });
 
 /* ---------- 읽기 / 노벨 ---------- */
-const novel = () => import("./novel.js?v=20261031g");
-async function applyMode(){
+const novel = () => import("./novel.js?v=20261031h");
+/* 읽기 화면에서 지금 읽는 대사(화면 위에서 40% 지점) */
+function readLine(){
+  const pane = $("#log-pane"), thr = pane.getBoundingClientRect().top + pane.clientHeight * .4;
+  let cur = -1;
+  for (const p of $$("#log-body [data-i]")){ if (p.getBoundingClientRect().top > thr) break; cur = +p.dataset.i; }
+  return cur;
+}
+/* 읽기 화면을 i번 대사(없으면 그 앞의 가장 가까운 대사)가 40% 지점에 오게 */
+function scrollToLine(i){
+  const pick = () => { let el = null; for (const p of $$("#log-body [data-i]")){ if (+p.dataset.i > i) break; el = p; } return el; };
+  let el = $(`#log-body [data-i="${i}"]`) || null;
+  if (!el){ const all = $$("#log-body [data-i]"); if (!all.length || +all[all.length - 1].dataset.i < i) render({ upTo: i }); el = pick(); }
+  if (!el) return;
+  const pane = $("#log-pane");
+  pane.scrollTop += el.getBoundingClientRect().top - (pane.getBoundingClientRect().top + pane.clientHeight * .4) + 2;
+  railHere();
+}
+async function applyMode(switching = false){
   const vn = V.mode === "novel" && !!V.log;
+  const from = switching && vn ? Math.max(0, readLine()) : -1;     // 읽던 자리에서 노벨 시작
   $$("#log-mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === (vn ? "novel" : "read"))));
   $("#log-pane").hidden = vn;
   $("#log-vn").hidden = !vn;
   $(".log-box").classList.toggle("is-vn", vn);
   $("#log-rail").hidden = vn || !(V.log?.bg || []).some(b => b.url);
-  P.follow = false; stopAudio(); $("#log-follow").setAttribute("aria-pressed", "false"); bgmLabel();   // 모드를 바꾸면 BGM은 꺼진 상태에서 시작
+  $("#log-follow").setAttribute("aria-pressed", String(P.follow)); bgmLabel();   // BGM 켜짐·꺼짐은 두 모드가 같이 씀
   syncVol(vn);
   $("#log-edit").hidden = !state.isAdmin || !V.log;     // 편집은 읽기·노벨 둘 다에서
   const eb = $("#log-editbar"); if (eb) eb.hidden = vn || !V.editing;
@@ -250,7 +268,12 @@ async function applyMode(){
   if (vn && !V.tabsTouched && V.log){ let ch = false; V.log.tabs.forEach(([, f], t) => { if (f === "other" && V.hidden.delete(t)) ch = true; }); if (ch){ drawTabs(); render(); } }
   $('[data-page="log"]').classList.toggle("folded", false);
   const m = await novel();
-  if (vn) m.openNovel(); else m.closeNovel();
+  if (vn) m.openNovel(from);
+  else {
+    const at = m.closeNovel();                                      // 노벨에서 보던 대사로 읽기 화면을 옮김
+    if (switching && at >= 0) scrollToLine(at);
+    if (P.follow) follow(); else if (switching) stopAudio();
+  }
   const bar = $(".log-bar"); if (bar) bar.scrollLeft = 0;     // 휴대폰: 버튼 줄이 옆으로 밀려 ‘읽기’가 가려지지 않게
 }
 
@@ -269,8 +292,8 @@ export async function openLog(number){
   const box = $("#log-body");
   $("#log-edit").hidden = true; $("#log-snd").hidden = true;
   $("#log-mode").hidden = true; $("#log-pane").hidden = false; $("#log-vn").hidden = true; $(".log-box").classList.remove("is-vn");
-  import("./novel.js?v=20261031g").then(m => m.closeNovel()).catch(() => {});
-  stopAudio(); V.editing = false; box.classList.remove("editing"); document.body.classList.remove("vn-on");
+  import("./novel.js?v=20261031h").then(m => m.closeNovel()).catch(() => {});
+  stopAudio(); setSound(false); V.editing = false; box.classList.remove("editing"); document.body.classList.remove("vn-on");
   $("#log-edit").setAttribute("aria-label", "편집"); $("#log-edit").setAttribute("aria-pressed", "false"); { const eb = $("#log-editbar"); if (eb) eb.hidden = true; }
   if (!c.log){ box.innerHTML = `<p class="empty-note">이 회차에는 아직 진행 기록이 없습니다.</p>`; return; }
   box.innerHTML = `<p class="empty-note" role="status">기록을 불러오는 중…</p>`;
@@ -333,22 +356,35 @@ function fadeTo(a, v, ms = 800, done){
   const from = a.volume, t0 = performance.now();
   a._f = setInterval(() => { const x = Math.min(1, (performance.now() - t0) / ms); a.volume = from + (v - from) * x; if (x >= 1){ clearInterval(a._f); done?.(); } }, 40);
 }
-function playK(k){
-  const b = V.log.bgm[k];
-  bgmTitle(b?.kind === "audio" ? b.title : "");
-  if (!b || b.kind !== "audio"){ stopAudio(); return; }
+/* BGM 재생기 하나를 읽기·노벨이 같이 씀 → 모드를 바꿔도 같은 곡이면 끊기지 않고 이어짐 */
+export function playMark(k){
+  const b = k >= 0 ? V.log?.bgm?.[k] : null;
+  if (!b || b.kind === "stop"){ stopAudio(); bgmTitle(""); return; }
+  bgmTitle(b.title);
   if (P.k === k && P.playing) return;
-  const old = P.audio;
-  if (old) fadeTo(old, 0, 600, () => old.pause());
-  const a = new Audio(audioSrc(b.url));
-  a.loop = true; a.volume = 0;
-  a.play().then(() => { fadeTo(a, VOL()); }).catch(() => { P.playing = false; syncButtons(); });
+  stopAudio();
   document.dispatchEvent(new CustomEvent("comu:bgm-pause"));        // 사이트 배경음악은 잠시 멈춤
-  Object.assign(P, { audio: a, k, playing: true });
+  if (b.kind === "youtube"){
+    const id = ytId(b.url);
+    if (!id) return;
+    $(".log-box").insertAdjacentHTML("beforeend", `<iframe id="log-yt" title="${esc(b.title || "배경음악")}" tabindex="-1" aria-hidden="true"
+      src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&loop=1&playlist=${id}&start=${+b.start || 0}&controls=0&enablejsapi=1" class="yt-vol" allow="autoplay; encrypted-media"
+      style="position:fixed; left:-9999px; top:0; width:2px; height:2px; opacity:0; pointer-events:none; border:0"></iframe>`);
+    const fr = $("#log-yt"); fr.addEventListener("load", () => { ytVolume(fr); setTimeout(() => ytVolume(fr), 800); });
+    Object.assign(P, { audio: null, k, playing: true });
+  } else {
+    const a = new Audio(audioSrc(b.url));
+    a.loop = true; a.volume = 0;
+    a.play().then(() => { fadeTo(a, VOL()); }).catch(() => { if (P.audio === a){ P.playing = false; syncButtons(); } });
+    Object.assign(P, { audio: a, k, playing: true });
+  }
   syncButtons();
 }
+export const soundOn = () => P.follow;
+export function setSound(on){ P.follow = !!on; $("#log-follow")?.setAttribute("aria-pressed", String(P.follow)); bgmLabel(); }
 export function stopAudio(){
   if (P.audio){ const a = P.audio; fadeTo(a, 0, 500, () => a.pause()); }
+  $("#log-yt")?.remove();
   Object.assign(P, { audio: null, k: -1, playing: false });
   syncButtons();
 }
@@ -373,8 +409,8 @@ function currentMark(){
 function follow(){
   if (!P.follow || !V.log) return;
   const k = currentMark(), b = V.log.bgm[k];
-  if (k < 0 || !b || b.kind !== "audio"){ if (P.playing) stopAudio(); return; }
-  playK(k);
+  if (k < 0 || !b || b.kind === "stop"){ if (P.playing) stopAudio(); bgmTitle(""); return; }
+  playMark(k);
 }
 document.addEventListener("scroll", e => {
   if (e.target.id !== "log-pane" || !P.follow) return;
@@ -398,7 +434,7 @@ document.addEventListener("click", e => {
     return;
   }
   const pb = e.target.closest("[data-bgm-play]");
-  if (pb && !V.editing){ const k = +pb.dataset.bgmPlay; P.k === k && P.playing ? stopAudio() : playK(k); return; }
+  if (pb && !V.editing){ const k = +pb.dataset.bgmPlay; P.k === k && P.playing ? stopAudio() : playMark(k); return; }
   const yt = e.target.closest("[data-yt]");
   if (yt && !V.editing){
     const b = V.log.bgm[+yt.dataset.yt], id = ytId(b.url);
@@ -421,7 +457,7 @@ document.addEventListener("click", e => {
   if (md && V.log){
     V.mode = md.dataset.mode;
     try { localStorage.setItem(MODE_KEY, V.mode); } catch (_) {}
-    applyMode();
+    applyMode(true);
     return;
   }
   const wb = e.target.closest("#log-width button");
@@ -432,7 +468,7 @@ document.addEventListener("click", e => {
   const stb = e.target.closest("[data-st]"); if (stb){ showSt = stb.dataset.st === "1"; try { localStorage.setItem(ST_KEY, showSt ? "1" : "0"); } catch (_) {} applySt(); return; }
   if (!$("#log-aa-menu").hidden && !e.target.closest("#log-aa-menu")) aaMenu(false);
   if (e.target.closest("#log-full")){ toggleFull(); return; }
-  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261031g").then(m => m.toggleEdit()); return; }
+  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261031h").then(m => m.toggleEdit()); return; }
   const sz = e.target.closest(".log-size button");
   if (sz){
     size = Math.max(0, Math.min(SIZES.length - 1, size + +sz.dataset.size));

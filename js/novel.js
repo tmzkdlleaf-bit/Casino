@@ -5,10 +5,10 @@
    - 편집에서 넣은 배경·BGM 표시를 대사 위치에 맞춰 따라감
    - 읽던 위치는 회차마다 이 기기에 기억
    ========================================================= */
-import { $, $$, esc } from "./dom.js?v=20261031g";
-import { motionOK, state } from "./state.js?v=20261031g";
-import { ALL } from "./views.js?v=20261031g";
-import { LV, SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId, ytVolume } from "./logview.js?v=20261031g";
+import { $, $$, esc } from "./dom.js?v=20261031h";
+import { motionOK, state } from "./state.js?v=20261031h";
+import { ALL } from "./views.js?v=20261031h";
+import { LV, SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId, ytVolume, playMark, soundOn, setSound, bgmTitle } from "./logview.js?v=20261031h";
 
 const SPEEDS = [
   { label: "SPEED ×0.5", name: "느리게", char: 55, wait: 2600, per: 70 },
@@ -24,8 +24,8 @@ const N = {
   side: [], upTo: -1, mine: new Set(), unread: { other: 0, secret: 0 }, openSide: null, queue: []
 };
 const SIDE_MAX = 120;      // 채팅창에 남겨 두는 메시지 수
-try { const p = JSON.parse(localStorage.getItem(PREF_KEY) || "{}"); if (p.speed >= 0 && p.speed < 3) N.speed = p.speed; N.sound = !!p.sound; } catch (_) {}
-const savePref = () => { try { localStorage.setItem(PREF_KEY, JSON.stringify({ speed: N.speed, sound: N.sound })); } catch (_) {} };
+try { const p = JSON.parse(localStorage.getItem(PREF_KEY) || "{}"); if (p.speed >= 0 && p.speed < 3) N.speed = p.speed; } catch (_) {}
+const savePref = () => { try { localStorage.setItem(PREF_KEY, JSON.stringify({ speed: N.speed })); } catch (_) {} };
 
 /* ---------- 화면 뼈대 ---------- */
 function build(){
@@ -270,37 +270,16 @@ function preload(pos){
 }
 
 /* ---------- BGM: 표시 위치를 따라감. ‘BGM’을 켠 사람만 ---------- */
-document.addEventListener("comu:log-vol", e => { if (N.audio){ clearInterval(N.audio._f); N.audio.volume = e.detail; } });
 function fade(a, v, ms, done){
   clearInterval(a._f);
   const from = a.volume, t0 = performance.now();
   a._f = setInterval(() => { const x = Math.min(1, (performance.now() - t0) / ms); a.volume = from + (v - from) * x; if (x >= 1){ clearInterval(a._f); done?.(); } }, 40);
 }
-function stopVnAudio(){
-  if (N.audio){ const a = N.audio; fade(a, 0, 500, () => a.pause()); N.audio = null; }
-  const yt = $("#vn-yt"); if (yt) yt.remove();
-}
+/* BGM: logview의 재생기 하나를 같이 씀 (읽기↔노벨 바꿔도 같은 곡이면 이어짐) */
 function syncBgm(i){
-  const log = V.log, k = markAt(log.bgm, i), b = k >= 0 ? log.bgm[k] : null;
-  const key = N.sound && b && b.kind !== "stop" ? k : -1;
-  if (key === N.bgmKey) return;
-  N.bgmKey = key;
-  stopVnAudio();
-  import("./logview.js?v=20261031g").then(m => m.bgmTitle(key >= 0 ? b.title : ""));
-  if (key < 0) return;
-  document.dispatchEvent(new CustomEvent("comu:bgm-pause"));      // 사이트 배경음악은 잠시 멈춤
-  if (b.kind === "audio"){
-    const a = new Audio(audioSrc(b.url));
-    a.loop = true; a.volume = 0;
-    a.play().then(() => fade(a, LV.v, 800)).catch(() => {});
-    N.audio = a;
-  } else if (b.kind === "youtube"){
-    const id = ytId(b.url);
-    if (!id) return;
-    $("#log-vn").insertAdjacentHTML("beforeend", `<iframe id="vn-yt" title="${esc(b.title || "배경음악")}" tabindex="-1" aria-hidden="true"
-      src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&loop=1&playlist=${id}&start=${+b.start || 0}&controls=0&enablejsapi=1" class="vn-yt yt-vol" allow="autoplay; encrypted-media"></iframe>`);
-    const fr = $("#vn-yt"); fr.addEventListener("load", () => { ytVolume(fr); setTimeout(() => ytVolume(fr), 800); });
-  }
+  const k = markAt(V.log.bgm, i), b = k >= 0 ? V.log.bgm[k] : null, key = b && b.kind !== "stop" ? k : -1;
+  if (soundOn()) playMark(key);
+  else bgmTitle(key >= 0 ? b.title : "");
 }
 
 /* ---------- 한 자씩 ---------- */
@@ -435,8 +414,8 @@ function syncButtons(){
   a.setAttribute("aria-pressed", String(N.auto));
   a.textContent = "AUTO";
   $('[data-vn="speed"]').textContent = SPEEDS[N.speed].label; $('[data-vn="speed"]').setAttribute("aria-label", "속도: " + SPEEDS[N.speed].name);
-  $("#log-follow")?.setAttribute("aria-pressed", String(N.sound && N.on));
-  import("./logview.js?v=20261031g").then(m => m.bgmLabel());
+  $("#log-follow")?.setAttribute("aria-pressed", String(soundOn()));
+  import("./logview.js?v=20261031h").then(m => m.bgmLabel());
 
 }
 
@@ -464,16 +443,16 @@ document.addEventListener("comu:log-dirty", e => {
 });
 
 /* 위 막대의 BGM 버튼 (logview.js가 부름) */
-export function toggleSound(){ N.sound = !N.sound; savePref(); N.bgmKey = null; syncBgm(N.lines[N.pos] ?? 0); return N.sound; }
+export function toggleSound(){ setSound(!soundOn()); if (!soundOn()) stopAudio(); syncBgm(N.lines[N.pos] ?? 0); return soundOn(); }
 
 /* ---------- 여닫기 (logview.js가 부름) ---------- */
-export function openNovel(){
+export function openNovel(from = -1){
   build();
-  stopAudio();                 // 읽기 화면의 구간 BGM은 멈춤
-  N.on = true; N.bgKey = null; N.faceKey = null; N.bgmKey = null; siteFaces = null;
+  N.on = true; N.bgKey = null; N.faceKey = null; siteFaces = null;
   collect();
   let start = 0;
-  try {
+  if (from >= 0){ const p = N.lines.findIndex(i => i >= from); start = p >= 0 ? p : Math.max(0, N.lines.length - 1); }
+  else try {
     const saved = +localStorage.getItem(POS_KEY(V.number));
     if (saved > 0){ const p = N.lines.findIndex(i => i >= saved); start = p >= 0 ? p : 0; }
   } catch (_) {}
@@ -483,10 +462,11 @@ export function openNovel(){
   $("#vn-stage").focus({ preventScroll: true });
 }
 export function closeNovel(){
-  if (!N.on) return;
+  if (!N.on) return -1;
   N.on = false;
-  stopTyping(); setAuto(false); stopVnAudio(); N.bgmKey = null;
+  stopTyping(); setAuto(false);
   for (const q of N.queue) clearTimeout(q.timer); N.queue = [];
+  return N.lines[N.pos] ?? -1;                                     // 읽기 화면이 이 대사로 옮겨 감
 }
 /* 탭을 켜고 끄면 목록만 다시 만들고 같은 대사 근처에서 이어 감 */
 export function refreshNovel(){
@@ -522,9 +502,9 @@ document.addEventListener("click", e => {
     else if (act === "ed-bg" || act === "ed-bgm" || act === "ed-line" || act === "save"){
       setAuto(false);
       const i = N.lines[N.pos];
-      import("./logedit.js?v=20261031g").then(m => act === "save" ? m.saveEdits() : act === "ed-line" ? m.editLineAt(i) : act === "ed-bg" ? m.editBgAt(i) : m.editBgmAt(i));
+      import("./logedit.js?v=20261031h").then(m => act === "save" ? m.saveEdits() : act === "ed-line" ? m.editLineAt(i) : act === "ed-bg" ? m.editBgAt(i) : m.editBgmAt(i));
     }
-    else if (act === "sound"){ N.sound = !N.sound; savePref(); syncButtons(); N.bgmKey = null; syncBgm(N.lines[N.pos] ?? 0); }
+    else if (act === "sound"){ toggleSound(); syncButtons(); }
     return;
   }
   // 무대(대사창 포함)를 누르면 다음. 지난 대사·채팅창·쪽지는 제외. 쪽지가 펼쳐져 있으면 먼저 접음
