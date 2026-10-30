@@ -5,10 +5,10 @@
    - 편집에서 넣은 배경·BGM 표시를 대사 위치에 맞춰 따라감
    - 읽던 위치는 회차마다 이 기기에 기억
    ========================================================= */
-import { $, $$, esc } from "./dom.js?v=20261031f";
-import { motionOK, state } from "./state.js?v=20261031f";
-import { ALL } from "./views.js?v=20261031f";
-import { LV, SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId, ytVolume } from "./logview.js?v=20261031f";
+import { $, $$, esc } from "./dom.js?v=20261031g";
+import { motionOK, state } from "./state.js?v=20261031g";
+import { ALL } from "./views.js?v=20261031g";
+import { LV, SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId, ytVolume } from "./logview.js?v=20261031g";
 
 const SPEEDS = [
   { label: "SPEED ×0.5", name: "느리게", char: 55, wait: 2600, per: 70 },
@@ -286,7 +286,7 @@ function syncBgm(i){
   if (key === N.bgmKey) return;
   N.bgmKey = key;
   stopVnAudio();
-  import("./logview.js?v=20261031f").then(m => m.bgmTitle(key >= 0 ? b.title : ""));
+  import("./logview.js?v=20261031g").then(m => m.bgmTitle(key >= 0 ? b.title : ""));
   if (key < 0) return;
   document.dispatchEvent(new CustomEvent("comu:bgm-pause"));      // 사이트 배경음악은 잠시 멈춤
   if (b.kind === "audio"){
@@ -436,7 +436,7 @@ function syncButtons(){
   a.textContent = "AUTO";
   $('[data-vn="speed"]').textContent = SPEEDS[N.speed].label; $('[data-vn="speed"]').setAttribute("aria-label", "속도: " + SPEEDS[N.speed].name);
   $("#log-follow")?.setAttribute("aria-pressed", String(N.sound && N.on));
-  import("./logview.js?v=20261031f").then(m => m.bgmLabel());
+  import("./logview.js?v=20261031g").then(m => m.bgmLabel());
 
 }
 
@@ -522,7 +522,7 @@ document.addEventListener("click", e => {
     else if (act === "ed-bg" || act === "ed-bgm" || act === "ed-line" || act === "save"){
       setAuto(false);
       const i = N.lines[N.pos];
-      import("./logedit.js?v=20261031f").then(m => act === "save" ? m.saveEdits() : act === "ed-line" ? m.editLineAt(i) : act === "ed-bg" ? m.editBgAt(i) : m.editBgmAt(i));
+      import("./logedit.js?v=20261031g").then(m => act === "save" ? m.saveEdits() : act === "ed-line" ? m.editLineAt(i) : act === "ed-bg" ? m.editBgAt(i) : m.editBgmAt(i));
     }
     else if (act === "sound"){ N.sound = !N.sound; savePref(); syncButtons(); N.bgmKey = null; syncBgm(N.lines[N.pos] ?? 0); }
     return;

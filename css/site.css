@@ -2223,7 +2223,7 @@ input.vol:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
 .tr-l:hover{background:rgba(238,243,250,.06); color:var(--ivory)}
 .tr-l .arw{font-size:.7rem; transition:transform .2s}
 .tr-l .sum{color:#5d6a8c; font-variant-numeric:tabular-nums}
-.log-tabbar.folded{min-height:2.4rem; padding-block:.15rem}
+.log-tabbar.folded{}
 .log-tabbar.folded .tr-l .arw{transform:rotate(-90deg)}
 .log-tabbar:not(.folded) .tr-l .sum{display:none}
 @media (max-width:760px){ .tr-l{display:inline-flex !important} .log-tabbar{grid-template-columns:max-content minmax(0,1fr) !important} }
@@ -2232,10 +2232,6 @@ input.vol:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
 .vn-box{z-index:3}
 .vn-st{z-index:2}
 /* 스크롤 막대: 사이트 다른 화면과 같게 (얇고 흐린 막대, 화살표 없음) */
-.log-box .pane, .vn-chat-list, .vn-text, .vn-log-list, .aa-menu, .log-tabbar .log-chips{scrollbar-width:thin; scrollbar-color:rgba(238,243,250,.2) transparent}
-.vn-chat-list::-webkit-scrollbar, .vn-text::-webkit-scrollbar, .vn-log-list::-webkit-scrollbar, .log-tabbar .log-chips::-webkit-scrollbar{width:8px; height:8px}
-.vn-chat-list::-webkit-scrollbar-thumb, .vn-text::-webkit-scrollbar-thumb, .vn-log-list::-webkit-scrollbar-thumb, .log-tabbar .log-chips::-webkit-scrollbar-thumb{background:rgba(238,243,250,.18); border-radius:8px}
-.vn-chat-list::-webkit-scrollbar-button, .vn-text::-webkit-scrollbar-button, .vn-log-list::-webkit-scrollbar-button{display:none}
 /* 하단 조작 (A+C): 왼쪽 ◀ ▶ 위치 / 오른쪽 글자 메뉴 / 맨 아래 가장자리 진행선 */
 .vn-box{padding-bottom:0}
 .vn-ctl{position:relative; gap:.25rem; border:0; margin:auto calc(-1 * var(--say-l)) 0 calc(-1 * var(--say-l)) !important; padding:.4rem 2.6rem .55rem var(--say-l); border-top:1px solid rgba(238,243,250,.08); overflow:visible}
@@ -2269,3 +2265,24 @@ input.vol:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
   .vn-ctl .grow{display:block}
   .vn-more{display:none !important}
 }
+/* 탭 줄: 접어도 펴도 높이 그대로 */
+.log-tabbar, .log-tabbar.folded{height:3.4rem; min-height:0; padding-block:0; box-sizing:border-box; align-items:center}
+.log-tabbar .log-chips{scrollbar-width:none}
+.log-tabbar .log-chips::-webkit-scrollbar{display:none}
+/* 다음 표시: 깜빡임 대신 천천히 위아래로 */
+.vn-more{opacity:0; transition:opacity .25s}
+.vn-more.on{opacity:.9; animation:vn-bob 1.6s ease-in-out infinite}
+@keyframes vn-bob{0%,100%{transform:translateY(0)} 50%{transform:translateY(4px)}}
+@media (prefers-reduced-motion:reduce){ .vn-more.on{animation:none} }
+/* 스크롤바: 사이트 전체 통일 — 화살표 없는 얇은 막대, 올리면 분홍 */
+html{scrollbar-color:rgba(238,243,250,.22) transparent}
+@supports selector(::-webkit-scrollbar){
+  *{scrollbar-color:auto !important}
+  html, .pane, .scroll, .vn-text, .vn-chat-list, .rl-rooms, .vn-log-list, .aa-menu, .lg-body{scrollbar-width:auto !important}
+}
+::-webkit-scrollbar{width:10px; height:10px; background:transparent}
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner{background:transparent}
+::-webkit-scrollbar-button{display:none; width:0; height:0}
+::-webkit-scrollbar-thumb{min-height:2.5rem; border:3px solid transparent; border-radius:999px; background:rgba(238,243,250,.2) padding-box}
+::-webkit-scrollbar-thumb:hover{background-color:rgba(239,26,114,.75)}
+::-webkit-scrollbar-thumb:active{background-color:var(--velvet)}
