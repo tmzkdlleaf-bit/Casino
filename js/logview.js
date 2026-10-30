@@ -3,12 +3,12 @@
    가볍게: ① 기록은 작게 저장된 JSON 한 개 ② 화면에는 50묶음씩 나눠 붙이고, 첫 두 묶음만 바로 그린 뒤
    나머지는 브라우저가 한가할 때 이어 붙임 ③ 화면 밖 묶음은 content-visibility로 그리기를 건너뜀
    ========================================================= */
-import { publicUrl, sb } from "./data.js?v=20261030d";
-import { guessTabFormat } from "./logparse.js?v=20261030d";
-import { loadSecrets, mergeLog } from "./logsecret.js?v=20261030d";
-import { $, $$, esc, setTitle } from "./dom.js?v=20261030d";
-import { DATA, nav, state } from "./state.js?v=20261030d";
-import { ALL } from "./views.js?v=20261030d";
+import { publicUrl, sb } from "./data.js?v=20261030e";
+import { guessTabFormat } from "./logparse.js?v=20261030e";
+import { loadSecrets, mergeLog } from "./logsecret.js?v=20261030e";
+import { $, $$, esc, setTitle } from "./dom.js?v=20261030e";
+import { DATA, nav, state } from "./state.js?v=20261030e";
+import { ALL } from "./views.js?v=20261030e";
 
 const cache = new Map();          // 주소 → 기록 JSON
 const SIZE_KEY = "comu-log-size";
@@ -203,7 +203,7 @@ $("#log-pane").addEventListener("scroll", e => {
 }, { passive: true });
 
 /* ---------- 읽기 / 노벨 ---------- */
-const novel = () => import("./novel.js?v=20261030d");
+const novel = () => import("./novel.js?v=20261030e");
 async function applyMode(){
   const vn = V.mode === "novel" && !!V.log;
   $$("#log-mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === (vn ? "novel" : "read"))));
@@ -238,7 +238,7 @@ export async function openLog(number){
   const box = $("#log-body");
   $("#log-edit").hidden = true; $("#log-follow").hidden = true;
   $("#log-mode").hidden = true; $("#log-pane").hidden = false; $("#log-vn").hidden = true; $(".log-box").classList.remove("is-vn");
-  import("./novel.js?v=20261030d").then(m => m.closeNovel()).catch(() => {});
+  import("./novel.js?v=20261030e").then(m => m.closeNovel()).catch(() => {});
   stopAudio(); V.editing = false; box.classList.remove("editing"); document.body.classList.remove("vn-on");
   $("#log-edit").textContent = "편집"; $("#log-edit").setAttribute("aria-pressed", "false"); { const eb = $("#log-editbar"); if (eb) eb.hidden = true; }
   if (!c.log){ box.innerHTML = `<p class="empty-note">이 회차에는 아직 진행 기록이 없습니다.</p>`; return; }
@@ -372,7 +372,7 @@ document.addEventListener("click", e => {
   if (wb){ width = +wb.dataset.w; try { localStorage.setItem(WIDTH_KEY, String(width)); } catch (_) {} applyWidth(); return; }
   if (e.target.closest("#log-big")){ setBig(!big); return; }
   if (e.target.closest("#log-full")){ toggleFull(); return; }
-  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261030d").then(m => m.toggleEdit()); return; }
+  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261030e").then(m => m.toggleEdit()); return; }
   const sz = e.target.closest(".log-size button");
   if (sz){
     size = Math.max(0, Math.min(SIZES.length - 1, size + +sz.dataset.size));

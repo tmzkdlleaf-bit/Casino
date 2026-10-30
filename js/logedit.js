@@ -4,12 +4,12 @@
    - BGM 표시를 누르면: 고치기 / 삭제
    - 고친 내용은 모아 두었다가 ‘변경 저장’ 한 번에 새 파일로 올림 (이전 파일은 지움)
    ========================================================= */
-import { publicUrl, refreshPublic, sb } from "./data.js?v=20261030d";
-import { $, $$, announce, esc, toast } from "./dom.js?v=20261030d";
-import { errMsg, withBusy } from "./forms.js?v=20261030d";
-import { V, faceSrc, imgSrc, render, stopAudio } from "./logview.js?v=20261030d";
-import { extOf, toWebP } from "./img.js?v=20261030d";
-import { state } from "./state.js?v=20261030d";
+import { publicUrl, refreshPublic, sb } from "./data.js?v=20261030e";
+import { $, $$, announce, esc, toast } from "./dom.js?v=20261030e";
+import { errMsg, withBusy } from "./forms.js?v=20261030e";
+import { V, faceSrc, imgSrc, render, stopAudio } from "./logview.js?v=20261030e";
+import { extOf, toWebP } from "./img.js?v=20261030e";
+import { state } from "./state.js?v=20261030e";
 
 const E = { dirty: 0, i: -1, k: -1 };
 
@@ -95,7 +95,7 @@ function lineDialog(i, isNew = false){
 const shiftBgm = (from, by) => { for (const b of [...(V.log.bgm || []), ...(V.log.bg || [])]) if (b.at > from) b.at += by; };
 
 function rerender(at){
-  if (V.mode === "novel") import("./novel.js?v=20261030d").then(m => m.refreshNovel());   // 노벨 화면에서 고쳤으면 그 자리에서 다시
+  if (V.mode === "novel") import("./novel.js?v=20261030e").then(m => m.refreshNovel());   // 노벨 화면에서 고쳤으면 그 자리에서 다시
   const pane = $("#log-pane");
   render({ upTo: at });
   const el = $(`#log-body [data-i="${at}"]`) || $(`#log-body [data-k="${at}"]`);
@@ -250,7 +250,7 @@ async function save(){
   if (row.error) throw row.error;
   if (!V.secretsOk) throw new Error("비밀 탭을 불러오지 못해서 저장하지 않았습니다. 새로고침한 뒤 다시 해 주세요.");   // 그대로 저장하면 비밀 탭이 지워짐
   log.n = log.m.length; log.v = 3;
-  const { splitLog, saveSecrets } = await import("./logsecret.js?v=20261030d");
+  const { splitLog, saveSecrets } = await import("./logsecret.js?v=20261030e");
   const { pub, secrets } = splitLog(log);            // 비밀 탭은 공개 파일에서 빼서 따로
   await saveSecrets(sb, c.id, secrets);
   const blob = new Blob([JSON.stringify(pub)], { type: "application/json" });
@@ -268,8 +268,32 @@ async function save(){
 
 /* ---------- 노벨 화면에서 부르는 편집 (지금 보고 있는 대사 i 기준) ---------- */
 export function editLineAt(i){ if (V.editing && V.log?.m[i]) lineDialog(i); }
-export function editBgAt(i){ if (!V.editing) return; const k = (V.log.bg || []).findIndex(b => b.at === i); bgDialog(k, i); }
-export function editBgmAt(i){ if (!V.editing) return; const k = (V.log.bgm || []).findIndex(b => b.at === i); bgmDialog(k, i); }
+/* 배경·BGM 버튼: 이 대사에서 시작하는 것이면 바로 고치기.
+   앞에서 시작해 지금 깔려 있는 것이면 [지금 것 고치기] / [여기부터 새로] 중 고름. 아무것도 없으면 바로 새로 */
+const lastAt = (list, i) => { let k = -1; (list || []).forEach((b, j) => { if (b.at <= i) k = j; }); return k; };
+function pick(kind, i){
+  const list = kind === "bg" ? V.log.bg : V.log.bgm, open = kind === "bg" ? bgDialog : bgmDialog;
+  const k = lastAt(list, i), cur = k >= 0 ? list[k] : null;
+  if (cur && cur.at === i) return open(k, i);
+  const none = !cur || (kind === "bg" ? !cur.url : cur.kind === "stop");
+  if (none) return open(-1, i);
+  const name = (kind === "bg" ? cur.title : cur.title) || (kind === "bg" ? "이미지" : "음악");
+  const word = kind === "bg" ? "배경" : "BGM";
+  const d = dialog("dlg-pick", `
+    <div class="pick-mark">
+      <h2 class="card-h">${word}</h2>
+      <button class="pick-opt" type="button" data-pick="edit"><b>지금 ${word} 고치기·지우기</b><span>${esc(name)} · ${(cur.at + 1).toLocaleString("ko-KR")}번째 대사부터</span></button>
+      <button class="pick-opt" type="button" data-pick="new"><b>여기부터 새 ${word}</b><span>${(i + 1).toLocaleString("ko-KR")}번째 대사부터</span></button>
+      <div class="form-actions"><button class="btn" type="button" data-act="close">닫기</button></div>
+    </div>`);
+  d.onclick = e => {
+    const b = e.target.closest("[data-pick]"); if (!b) return;
+    d.close(); d.onclick = null;
+    b.dataset.pick === "edit" ? open(k, cur.at) : open(-1, i);
+  };
+}
+export function editBgAt(i){ if (V.editing) pick("bg", i); }
+export function editBgmAt(i){ if (V.editing) pick("bgm", i); }
 export function saveEdits(){
   const b = $('[data-vn="save"]');
   // 버튼 글자는 저장이 끝난 뒤 다시 맞춤 (저장 중 표시가 예전 글자로 되돌리므로)

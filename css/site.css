@@ -944,6 +944,11 @@ body.log-big .log-head{display:none}
 .dlg::backdrop{background:rgba(0,0,0,.6)}
 .dlg .row2{display:grid; grid-template-columns:1fr 1fr; gap:1rem}
 .bg-prev{display:block; width:100%; max-height:12rem; object-fit:cover; margin:.25rem 0 .75rem; border-radius:3px}
+.pick-mark{display:grid; gap:.6rem}
+.pick-mark .card-h{margin:0 0 .2rem}
+.pick-opt{display:grid; gap:.2rem; padding:.85rem 1rem; border:1px solid var(--line-strong); border-radius:4px; background:rgba(238,243,250,.04); color:var(--ivory); font:inherit; text-align:left; cursor:pointer}
+.pick-opt:hover, .pick-opt:focus-visible{border-color:var(--gold); background:rgba(173,207,234,.08)}
+.pick-opt span{font-size:var(--s-1); color:var(--text-2)}
 .face-pick{display:flex; flex-wrap:wrap; gap:.4rem; margin:0; padding:.6rem .7rem; border:1px solid var(--line); border-radius:4px; max-height:12rem; overflow:auto}
 .face-pick legend{padding:0 .3rem; font-size:.9375rem; font-weight:500}
 .face-pick label{position:relative; cursor:pointer}
