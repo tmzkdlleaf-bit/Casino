@@ -28,24 +28,24 @@
 .logtest-bar{position:fixed;left:8px;bottom:calc(var(--dock) + env(safe-area-inset-bottom) + 8px);z-index:9999;opacity:.85}
 body.log-big .logtest-bar, body.vn-on .logtest-bar{display:none !important}   /* 크게 보기·노벨 모드에서는 도구를 가리지 않게 숨김 */</style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="css/site.css?v=20261030e">
+<link rel="stylesheet" href="css/site.css?v=20261030f">
 <!-- 파일 주소 끝의 ?v=날짜 는 버전 표시 — 바꿔 올릴 때마다 함께 바꾸면 브라우저가 옛 파일을 쓰지 않음 (js 안의 import 주소도 같은 값) -->
 <!-- 모듈 미리 받기: import 사슬을 따라 차례로 받는 대기 시간 제거 (관리 모듈은 제외 — 관리자만 필요할 때 받음) -->
-<link rel="modulepreload" href="js/main.js?v=20261030e">
-<link rel="modulepreload" href="js/config.js?v=20261030e">
-<link rel="modulepreload" href="js/state.js?v=20261030e">
-<link rel="modulepreload" href="js/dom.js?v=20261030e">
-<link rel="modulepreload" href="js/data.js?v=20261030e">
-<link rel="modulepreload" href="js/views.js?v=20261030e">
-<link rel="modulepreload" href="js/effects.js?v=20261030e">
-<link rel="modulepreload" href="js/router.js?v=20261030e">
-<link rel="modulepreload" href="js/auth.js?v=20261030e">
-<link rel="modulepreload" href="js/forms.js?v=20261030e">
-<link rel="modulepreload" href="js/markdown.js?v=20261030e">
-<link rel="modulepreload" href="js/ambience.js?v=20261030e">
-<link rel="modulepreload" href="js/navorder.js?v=20261030e">
-<link rel="modulepreload" href="js/charedit.js?v=20261030e">
-<link rel="modulepreload" href="js/shop.js?v=20261030e">
+<link rel="modulepreload" href="js/main.js?v=20261030f">
+<link rel="modulepreload" href="js/config.js?v=20261030f">
+<link rel="modulepreload" href="js/state.js?v=20261030f">
+<link rel="modulepreload" href="js/dom.js?v=20261030f">
+<link rel="modulepreload" href="js/data.js?v=20261030f">
+<link rel="modulepreload" href="js/views.js?v=20261030f">
+<link rel="modulepreload" href="js/effects.js?v=20261030f">
+<link rel="modulepreload" href="js/router.js?v=20261030f">
+<link rel="modulepreload" href="js/auth.js?v=20261030f">
+<link rel="modulepreload" href="js/forms.js?v=20261030f">
+<link rel="modulepreload" href="js/markdown.js?v=20261030f">
+<link rel="modulepreload" href="js/ambience.js?v=20261030f">
+<link rel="modulepreload" href="js/navorder.js?v=20261030f">
+<link rel="modulepreload" href="js/charedit.js?v=20261030f">
+<link rel="modulepreload" href="js/shop.js?v=20261030f">
 </head>
 <body class="intro-on loading">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -252,7 +252,7 @@ body.log-big .logtest-bar, body.vn-on .logtest-bar{display:none !important}   /*
           <button type="button" data-size="1" aria-label="글자 크게">가<span aria-hidden="true">+</span></button>
         </div>
         <span class="grow"></span>
-        <button class="btn small log-btn" type="button" id="log-follow" aria-pressed="false" hidden>BGM 따라 듣기</button>
+        <span class="log-snd"><button class="btn small log-btn" type="button" id="log-follow" aria-pressed="false" hidden>BGM 따라 듣기</button><input class="vol" id="log-vol" type="range" min="0" max="100" step="1" aria-label="BGM 볼륨" hidden></span>
         <button class="btn small log-btn" type="button" id="log-edit" aria-pressed="false" hidden>편집</button>
         <button class="btn small log-btn" type="button" id="log-big" aria-pressed="false">크게 보기</button>
         <button class="btn small log-btn" type="button" id="log-full">전체 화면</button>
@@ -725,6 +725,6 @@ body.log-big .logtest-bar, body.vn-on .logtest-bar{display:none !important}   /*
 
 <!-- 버전 고정 + 무결성 해시(SRI): CDN 파일이 바뀌면 브라우저가 실행을 거부 -->
 <script src="js/mock-supabase.js"></script>
-<script type="module" src="js/main.js?v=20261030e"></script>
+<script type="module" src="js/main.js?v=20261030f"></script>
 </body>
 </html>

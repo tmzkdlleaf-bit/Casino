@@ -3,12 +3,12 @@
    가볍게: ① 기록은 작게 저장된 JSON 한 개 ② 화면에는 50묶음씩 나눠 붙이고, 첫 두 묶음만 바로 그린 뒤
    나머지는 브라우저가 한가할 때 이어 붙임 ③ 화면 밖 묶음은 content-visibility로 그리기를 건너뜀
    ========================================================= */
-import { publicUrl, sb } from "./data.js?v=20261030e";
-import { guessTabFormat } from "./logparse.js?v=20261030e";
-import { loadSecrets, mergeLog } from "./logsecret.js?v=20261030e";
-import { $, $$, esc, setTitle } from "./dom.js?v=20261030e";
-import { DATA, nav, state } from "./state.js?v=20261030e";
-import { ALL } from "./views.js?v=20261030e";
+import { publicUrl, sb } from "./data.js?v=20261030f";
+import { guessTabFormat } from "./logparse.js?v=20261030f";
+import { loadSecrets, mergeLog } from "./logsecret.js?v=20261030f";
+import { $, $$, esc, setTitle } from "./dom.js?v=20261030f";
+import { DATA, nav, state } from "./state.js?v=20261030f";
+import { ALL } from "./views.js?v=20261030f";
 
 const cache = new Map();          // 주소 → 기록 JSON
 const SIZE_KEY = "comu-log-size";
@@ -203,7 +203,7 @@ $("#log-pane").addEventListener("scroll", e => {
 }, { passive: true });
 
 /* ---------- 읽기 / 노벨 ---------- */
-const novel = () => import("./novel.js?v=20261030e");
+const novel = () => import("./novel.js?v=20261030f");
 async function applyMode(){
   const vn = V.mode === "novel" && !!V.log;
   $$("#log-mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === (vn ? "novel" : "read"))));
@@ -211,6 +211,7 @@ async function applyMode(){
   $("#log-vn").hidden = !vn;
   $(".log-box").classList.toggle("is-vn", vn);
   $("#log-follow").hidden = vn || !(V.log?.bgm || []).some(b => b.kind === "audio");
+  syncVol(vn);
   $("#log-edit").hidden = !state.isAdmin || !V.log;     // 편집은 읽기·노벨 둘 다에서
   const eb = $("#log-editbar"); if (eb) eb.hidden = vn || !V.editing;
   document.body.classList.toggle("vn-on", vn);
@@ -236,9 +237,9 @@ export async function openLog(number){
   $('[data-page="log"]').classList.remove("folded");
   applySize(); applyWidth(); applyBig();
   const box = $("#log-body");
-  $("#log-edit").hidden = true; $("#log-follow").hidden = true;
+  $("#log-edit").hidden = true; $("#log-follow").hidden = true; $("#log-vol").hidden = true;
   $("#log-mode").hidden = true; $("#log-pane").hidden = false; $("#log-vn").hidden = true; $(".log-box").classList.remove("is-vn");
-  import("./novel.js?v=20261030e").then(m => m.closeNovel()).catch(() => {});
+  import("./novel.js?v=20261030f").then(m => m.closeNovel()).catch(() => {});
   stopAudio(); V.editing = false; box.classList.remove("editing"); document.body.classList.remove("vn-on");
   $("#log-edit").textContent = "편집"; $("#log-edit").setAttribute("aria-pressed", "false"); { const eb = $("#log-editbar"); if (eb) eb.hidden = true; }
   if (!c.log){ box.innerHTML = `<p class="empty-note">이 회차에는 아직 진행 기록이 없습니다.</p>`; return; }
@@ -265,6 +266,7 @@ export async function openLog(number){
   $("#log-meta").textContent = `대사 ${V.log.m.length.toLocaleString("ko-KR")}개`;
   $("#log-edit").hidden = !state.isAdmin;
   $("#log-follow").hidden = !(V.log.bgm || []).some(b => b.kind === "audio");
+  syncVol(false);
   $("#log-mode").hidden = false;
   drawTabs();
   render();
@@ -274,7 +276,23 @@ export async function openLog(number){
 /* ---------- 구간 BGM ----------
    ‘BGM 따라 듣기’를 켜면 읽는 위치(창 위에서 40%)를 지난 마지막 BGM 표시의 음악이 흐름. 누르기 전에는 재생하지 않음 */
 const P = { audio: null, k: -1, playing: false, follow: false, timer: 0 };
-const VOL = .4;
+/* 기록 BGM 볼륨 (0~1) — 읽기·노벨 같이, 이 기기에 기억. 유튜브는 iframe에 setVolume 명령으로 */
+const VOL_KEY = "comu-log-vol";
+export const LV = { v: .4 };
+try { const r = localStorage.getItem(VOL_KEY); if (r !== null && +r >= 0 && +r <= 1) LV.v = +r; } catch (_) {}
+export function ytVolume(frame){ try { frame?.contentWindow?.postMessage(JSON.stringify({ event: "command", func: "setVolume", args: [Math.round(LV.v * 100)] }), "*"); } catch (_) {} }
+export function setVolume(v){
+  LV.v = Math.max(0, Math.min(1, v));
+  try { localStorage.setItem(VOL_KEY, String(LV.v)); } catch (_) {}
+  if (P.audio && P.playing){ clearInterval(P.audio._f); P.audio.volume = LV.v; }
+  document.querySelectorAll("iframe.yt-vol").forEach(ytVolume);
+  document.querySelectorAll("input.vol").forEach(i => { i.value = Math.round(LV.v * 100); i.style.setProperty("--p", Math.round(LV.v * 100) + "%"); });
+  document.dispatchEvent(new CustomEvent("comu:log-vol", { detail: LV.v }));
+}
+document.addEventListener("input", e => { if (e.target.matches?.("input.vol")) setVolume(+e.target.value / 100); });
+const VOL = () => LV.v;
+/* 읽기 화면: 기록에 BGM 표시가 있으면 볼륨 막대를 보임 (노벨은 대사창 안 BGM 버튼 옆) */
+function syncVol(vn){ const v = $("#log-vol"); if (!v) return; v.hidden = vn || !(V.log?.bgm || []).some(b => b.kind !== "stop"); v.value = Math.round(LV.v * 100); v.style.setProperty("--p", v.value + "%"); }
 function fadeTo(a, v, ms = 800, done){
   clearInterval(a._f);
   const from = a.volume, t0 = performance.now();
@@ -288,7 +306,7 @@ function playK(k){
   if (old) fadeTo(old, 0, 600, () => old.pause());
   const a = new Audio(audioSrc(b.url));
   a.loop = true; a.volume = 0;
-  a.play().then(() => { fadeTo(a, VOL); }).catch(() => { P.playing = false; syncButtons(); });
+  a.play().then(() => { fadeTo(a, VOL()); }).catch(() => { P.playing = false; syncButtons(); });
   document.dispatchEvent(new CustomEvent("comu:bgm-pause"));        // 사이트 배경음악은 잠시 멈춤
   Object.assign(P, { audio: a, k, playing: true });
   syncButtons();
@@ -349,13 +367,15 @@ document.addEventListener("click", e => {
   if (yt && !V.editing){
     const b = V.log.bgm[+yt.dataset.yt], id = ytId(b.url);
     if (P.playing) stopAudio();
-    yt.nextElementSibling.innerHTML = `<iframe title="${esc(b.title || "유튜브 음악")}" src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&start=${+b.start || 0}" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>`;
+    yt.nextElementSibling.innerHTML = `<iframe title="${esc(b.title || "유튜브 음악")}" class="yt-vol" src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&enablejsapi=1&start=${+b.start || 0}" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>`;
+    const fr = yt.nextElementSibling?.querySelector("iframe") || $(".yt-slot iframe:last-of-type"); if (fr) fr.addEventListener("load", () => ytVolume(fr));
     yt.remove();
     return;
   }
   if (e.target.closest("#log-follow")){
     P.follow = !P.follow;
     $("#log-follow").setAttribute("aria-pressed", String(P.follow));
+
     P.follow ? follow() : stopAudio();
     return;
   }
@@ -372,7 +392,7 @@ document.addEventListener("click", e => {
   if (wb){ width = +wb.dataset.w; try { localStorage.setItem(WIDTH_KEY, String(width)); } catch (_) {} applyWidth(); return; }
   if (e.target.closest("#log-big")){ setBig(!big); return; }
   if (e.target.closest("#log-full")){ toggleFull(); return; }
-  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261030e").then(m => m.toggleEdit()); return; }
+  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261030f").then(m => m.toggleEdit()); return; }
   const sz = e.target.closest(".log-size button");
   if (sz){
     size = Math.max(0, Math.min(SIZES.length - 1, size + +sz.dataset.size));

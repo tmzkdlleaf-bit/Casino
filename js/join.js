@@ -2,10 +2,10 @@
    가입 — 관리자가 공유한 링크(#join/코드)로만
    코드 확인과 계정 만들기는 서버 함수(supabase/functions/signup)가 함. 사이트 자체 가입은 막혀 있음
    ========================================================= */
-import { loginEmail } from "./config.js?v=20261030e";
-import { sb } from "./data.js?v=20261030e";
-import { $, toast } from "./dom.js?v=20261030e";
-import { fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261030e";
+import { loginEmail } from "./config.js?v=20261030f";
+import { sb } from "./data.js?v=20261030f";
+import { $, toast } from "./dom.js?v=20261030f";
+import { fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261030f";
 
 let code = "";
 

@@ -4,12 +4,12 @@
    - BGM 표시를 누르면: 고치기 / 삭제
    - 고친 내용은 모아 두었다가 ‘변경 저장’ 한 번에 새 파일로 올림 (이전 파일은 지움)
    ========================================================= */
-import { publicUrl, refreshPublic, sb } from "./data.js?v=20261030e";
-import { $, $$, announce, esc, toast } from "./dom.js?v=20261030e";
-import { errMsg, withBusy } from "./forms.js?v=20261030e";
-import { V, faceSrc, imgSrc, render, stopAudio } from "./logview.js?v=20261030e";
-import { extOf, toWebP } from "./img.js?v=20261030e";
-import { state } from "./state.js?v=20261030e";
+import { publicUrl, refreshPublic, sb } from "./data.js?v=20261030f";
+import { $, $$, announce, esc, toast } from "./dom.js?v=20261030f";
+import { errMsg, withBusy } from "./forms.js?v=20261030f";
+import { V, faceSrc, imgSrc, render, stopAudio } from "./logview.js?v=20261030f";
+import { extOf, toWebP } from "./img.js?v=20261030f";
+import { state } from "./state.js?v=20261030f";
 
 const E = { dirty: 0, i: -1, k: -1 };
 
@@ -95,7 +95,7 @@ function lineDialog(i, isNew = false){
 const shiftBgm = (from, by) => { for (const b of [...(V.log.bgm || []), ...(V.log.bg || [])]) if (b.at > from) b.at += by; };
 
 function rerender(at){
-  if (V.mode === "novel") import("./novel.js?v=20261030e").then(m => m.refreshNovel());   // 노벨 화면에서 고쳤으면 그 자리에서 다시
+  if (V.mode === "novel") import("./novel.js?v=20261030f").then(m => m.refreshNovel());   // 노벨 화면에서 고쳤으면 그 자리에서 다시
   const pane = $("#log-pane");
   render({ upTo: at });
   const el = $(`#log-body [data-i="${at}"]`) || $(`#log-body [data-k="${at}"]`);
@@ -250,7 +250,7 @@ async function save(){
   if (row.error) throw row.error;
   if (!V.secretsOk) throw new Error("비밀 탭을 불러오지 못해서 저장하지 않았습니다. 새로고침한 뒤 다시 해 주세요.");   // 그대로 저장하면 비밀 탭이 지워짐
   log.n = log.m.length; log.v = 3;
-  const { splitLog, saveSecrets } = await import("./logsecret.js?v=20261030e");
+  const { splitLog, saveSecrets } = await import("./logsecret.js?v=20261030f");
   const { pub, secrets } = splitLog(log);            // 비밀 탭은 공개 파일에서 빼서 따로
   await saveSecrets(sb, c.id, secrets);
   const blob = new Blob([JSON.stringify(pub)], { type: "application/json" });

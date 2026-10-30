@@ -5,10 +5,10 @@
    - 편집에서 넣은 배경·BGM 표시를 대사 위치에 맞춰 따라감
    - 읽던 위치는 회차마다 이 기기에 기억
    ========================================================= */
-import { $, $$, esc } from "./dom.js?v=20261030e";
-import { motionOK, state } from "./state.js?v=20261030e";
-import { ALL } from "./views.js?v=20261030e";
-import { SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId } from "./logview.js?v=20261030e";
+import { $, $$, esc } from "./dom.js?v=20261030f";
+import { motionOK, state } from "./state.js?v=20261030f";
+import { ALL } from "./views.js?v=20261030f";
+import { LV, SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId, ytVolume } from "./logview.js?v=20261030f";
 
 const SPEEDS = [
   { label: "느리게", char: 55, wait: 2600, per: 70 },
@@ -17,7 +17,6 @@ const SPEEDS = [
 ];
 const PREF_KEY = "comu-vn-pref";
 const POS_KEY = n => "comu-vn-pos-" + n;
-const VOL = .4;
 
 const N = {
   on: false, lines: [], pos: 0, typing: false, auto: false, speed: 1, sound: false,
@@ -54,7 +53,7 @@ function build(){
           <button class="vc" type="button" data-vn="auto" aria-pressed="false">자동</button>
           <button class="vc" type="button" data-vn="speed" aria-label="속도 바꾸기"></button>
           <button class="vc" type="button" data-vn="log">지난 대사</button>
-          <button class="vc" type="button" data-vn="sound" aria-pressed="false">BGM</button>
+          <span class="vn-snd"><button class="vc" type="button" data-vn="sound" aria-pressed="false">BGM</button><input class="vol" type="range" min="0" max="100" step="1" aria-label="BGM 볼륨" hidden></span>
           <span class="grow"></span>
           <button class="vc save" type="button" data-vn="save" hidden disabled>저장</button>
           <label class="vn-seek"><span class="sr">대사 위치</span><input type="range" id="vn-seek" min="1" max="1" value="1"><span class="num" id="vn-pos"></span></label>
@@ -277,6 +276,7 @@ function preload(pos){
 }
 
 /* ---------- BGM: 표시 위치를 따라감. ‘BGM’을 켠 사람만 ---------- */
+document.addEventListener("comu:log-vol", e => { if (N.audio){ clearInterval(N.audio._f); N.audio.volume = e.detail; } });
 function fade(a, v, ms, done){
   clearInterval(a._f);
   const from = a.volume, t0 = performance.now();
@@ -297,13 +297,14 @@ function syncBgm(i){
   if (b.kind === "audio"){
     const a = new Audio(audioSrc(b.url));
     a.loop = true; a.volume = 0;
-    a.play().then(() => fade(a, VOL, 800)).catch(() => {});
+    a.play().then(() => fade(a, LV.v, 800)).catch(() => {});
     N.audio = a;
   } else if (b.kind === "youtube"){
     const id = ytId(b.url);
     if (!id) return;
-    $("#log-vn").insertAdjacentHTML("beforeend", `<iframe id="vn-yt" class="vn-yt" title="${esc(b.title || "배경음악")}" tabindex="-1" aria-hidden="true"
-      src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&loop=1&playlist=${id}&start=${+b.start || 0}&controls=0" allow="autoplay; encrypted-media"></iframe>`);
+    $("#log-vn").insertAdjacentHTML("beforeend", `<iframe id="vn-yt" title="${esc(b.title || "배경음악")}" tabindex="-1" aria-hidden="true"
+      src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&loop=1&playlist=${id}&start=${+b.start || 0}&controls=0&enablejsapi=1" class="vn-yt yt-vol" allow="autoplay; encrypted-media"></iframe>`);
+    const fr = $("#vn-yt"); fr.addEventListener("load", () => { ytVolume(fr); setTimeout(() => ytVolume(fr), 800); });
   }
 }
 
@@ -441,6 +442,7 @@ function syncButtons(){
   const snd = $('[data-vn="sound"]');
   snd.setAttribute("aria-pressed", String(N.sound));
   snd.hidden = !(V.log?.bgm || []).some(b => b.kind !== "stop");
+  const vol = $(".vn-snd .vol"); vol.hidden = snd.hidden || !N.sound; vol.value = Math.round(LV.v * 100); vol.style.setProperty("--p", vol.value + "%");
 }
 
 /* ---------- 편집 (관리자): 지금 대사 위치에 배경·BGM 넣기, 대사 고치기, 저장 ---------- */
@@ -522,7 +524,7 @@ document.addEventListener("click", e => {
     else if (act === "ed-bg" || act === "ed-bgm" || act === "ed-line" || act === "save"){
       setAuto(false);
       const i = N.lines[N.pos];
-      import("./logedit.js?v=20261030e").then(m => act === "save" ? m.saveEdits() : act === "ed-line" ? m.editLineAt(i) : act === "ed-bg" ? m.editBgAt(i) : m.editBgmAt(i));
+      import("./logedit.js?v=20261030f").then(m => act === "save" ? m.saveEdits() : act === "ed-line" ? m.editLineAt(i) : act === "ed-bg" ? m.editBgAt(i) : m.editBgmAt(i));
     }
     else if (act === "sound"){ N.sound = !N.sound; savePref(); syncButtons(); N.bgmKey = null; syncBgm(N.lines[N.pos] ?? 0); }
     return;
