@@ -3,12 +3,12 @@
    가볍게: ① 기록은 작게 저장된 JSON 한 개 ② 화면에는 50묶음씩 나눠 붙이고, 첫 두 묶음만 바로 그린 뒤
    나머지는 브라우저가 한가할 때 이어 붙임 ③ 화면 밖 묶음은 content-visibility로 그리기를 건너뜀
    ========================================================= */
-import { publicUrl, sb } from "./data.js?v=20261030f";
-import { guessTabFormat } from "./logparse.js?v=20261030f";
-import { loadSecrets, mergeLog } from "./logsecret.js?v=20261030f";
-import { $, $$, esc, setTitle } from "./dom.js?v=20261030f";
-import { DATA, nav, state } from "./state.js?v=20261030f";
-import { ALL } from "./views.js?v=20261030f";
+import { publicUrl, sb } from "./data.js?v=20261030g";
+import { guessTabFormat } from "./logparse.js?v=20261030g";
+import { loadSecrets, mergeLog } from "./logsecret.js?v=20261030g";
+import { $, $$, esc, setTitle } from "./dom.js?v=20261030g";
+import { DATA, nav, state } from "./state.js?v=20261030g";
+import { ALL } from "./views.js?v=20261030g";
 
 const cache = new Map();          // 주소 → 기록 JSON
 const SIZE_KEY = "comu-log-size";
@@ -149,19 +149,14 @@ export function render({ upTo = -1 } = {}){
 
 function drawTabs(){
   const log = V.log;
-  $("#log-tabs").innerHTML = log.tabs.map(([name, format], t) => {
+  const ord = { main: 0, other: 1, info: 2, secret: 3 };
+  const order = log.tabs.map((x, t) => t).sort((a, b) => (ord[log.tabs[a][1]] ?? 1) - (ord[log.tabs[b][1]] ?? 1) || log.tabs[a][0].localeCompare(log.tabs[b][0], "ko", { numeric: true }));
+  $("#log-tabs").innerHTML = order.map(t => { const [name, format] = log.tabs[t];
     const n = log.m.reduce((k, x) => k + (x[0] === t), 0);
     const label = /^(main|info|other|secret)$/i.test(name) ? { main: "메인", ...TAB_LABEL }[format] : name;
-    return `<button type="button" data-tab="${t}" aria-pressed="${!V.hidden.has(t)}">${esc(label)}<span class="num"> ${n.toLocaleString("ko-KR")}</span></button>`;
+    return `<button type="button" class="tchip f-${format}" data-tab="${t}" aria-pressed="${!V.hidden.has(t)}" title="${esc(label)} · ${n.toLocaleString("ko-KR")}줄">${esc(label)}</button>`;
   }).join("");
-  $("#log-tabs-btn").hidden = log.tabs.length < 2;
-  tabCount();
-}
-function tabCount(){ const n = V.log?.tabs.length || 0; $("#log-tabs-n").textContent = `${n - [...V.hidden].filter(t => t < n).length}/${n}`; }
-function tabsPop(open){
-  const pop = $("#log-tabs"), btn = $("#log-tabs-btn");
-  pop.hidden = !open; btn.setAttribute("aria-expanded", String(open));
-  if (open){ const r = btn.getBoundingClientRect(), box = $(".log-box").getBoundingClientRect(); pop.style.left = Math.max(8, r.left - box.left) + "px"; pop.style.top = (r.bottom - box.top + 6) + "px"; pop.querySelector("button")?.focus(); }
+  $("#log-tabs").hidden = log.tabs.length < 2;
 }
 
 function applySize(){
@@ -202,14 +197,37 @@ $("#log-pane").addEventListener("scroll", e => {
   if (Math.abs(top - lastTop) > 12 || top < 40) lastTop = top;
 }, { passive: true });
 
+/* ---------- 읽기: 오른쪽 장면 막대 — 배경 표시마다 점, 읽는 위치는 분홍 눈금. 점을 누르면 그 장면으로 ---------- */
+function drawRail(){
+  const r = $("#log-rail"), log = V.log, n = log?.m.length || 0;
+  const marks = (log?.bg || []).map((b, k) => ({ b, k })).filter(x => x.b.url);
+  r.hidden = !n || !marks.length;
+  if (r.hidden) return;
+  r.innerHTML = marks.map(({ b, k }) => `<button type="button" data-rail="${k}" style="top:${(Math.min(b.at, n - 1) / Math.max(1, n - 1) * 100).toFixed(2)}%" aria-label="${esc(b.title || "장면")}로" title="${esc(b.title || "장면")}"></button>`).join("") + `<i class="here" aria-hidden="true"></i>`;
+  railHere();
+}
+function railHere(){
+  const p = $("#log-pane"), h = $("#log-rail .here"); if (!h) return;
+  const max = p.scrollHeight - p.clientHeight;
+  h.style.top = (max > 0 ? p.scrollTop / max * 100 : 0).toFixed(2) + "%";
+}
+$("#log-pane").addEventListener("scroll", railHere, { passive: true });
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-rail]"); if (!b || !V.log) return;
+  const at = V.log.bg[+b.dataset.rail].at;
+  render({ upTo: at });
+  requestAnimationFrame(() => { const el = $(`#log-body [data-bk="${b.dataset.rail}"]`); el?.scrollIntoView({ block: "start" }); railHere(); });
+});
+
 /* ---------- 읽기 / 노벨 ---------- */
-const novel = () => import("./novel.js?v=20261030f");
+const novel = () => import("./novel.js?v=20261030g");
 async function applyMode(){
   const vn = V.mode === "novel" && !!V.log;
   $$("#log-mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === (vn ? "novel" : "read"))));
   $("#log-pane").hidden = vn;
   $("#log-vn").hidden = !vn;
   $(".log-box").classList.toggle("is-vn", vn);
+  $("#log-rail").hidden = vn || !(V.log?.bg || []).some(b => b.url);
   $("#log-follow").hidden = vn || !(V.log?.bgm || []).some(b => b.kind === "audio");
   syncVol(vn);
   $("#log-edit").hidden = !state.isAdmin || !V.log;     // 편집은 읽기·노벨 둘 다에서
@@ -233,13 +251,13 @@ export async function openLog(number){
   $("#log-title").textContent = c.title;
   setTitle(`제${c.number}화 ${c.title}`);
   $("#log-meta").textContent = "";
-  $("#log-tabs").innerHTML = ""; tabsPop(false); $("#log-tabs-btn").hidden = true;
+  $("#log-tabs").innerHTML = ""; $("#log-tabs").hidden = true; $("#log-rail").hidden = true;
   $('[data-page="log"]').classList.remove("folded");
   applySize(); applyWidth(); applyBig();
   const box = $("#log-body");
   $("#log-edit").hidden = true; $("#log-follow").hidden = true; $("#log-vol").hidden = true;
   $("#log-mode").hidden = true; $("#log-pane").hidden = false; $("#log-vn").hidden = true; $(".log-box").classList.remove("is-vn");
-  import("./novel.js?v=20261030f").then(m => m.closeNovel()).catch(() => {});
+  import("./novel.js?v=20261030g").then(m => m.closeNovel()).catch(() => {});
   stopAudio(); V.editing = false; box.classList.remove("editing"); document.body.classList.remove("vn-on");
   $("#log-edit").textContent = "편집"; $("#log-edit").setAttribute("aria-pressed", "false"); { const eb = $("#log-editbar"); if (eb) eb.hidden = true; }
   if (!c.log){ box.innerHTML = `<p class="empty-note">이 회차에는 아직 진행 기록이 없습니다.</p>`; return; }
@@ -270,6 +288,7 @@ export async function openLog(number){
   $("#log-mode").hidden = false;
   drawTabs();
   render();
+  drawRail();
   if (V.mode === "novel") applyMode();
 }
 
@@ -354,11 +373,11 @@ document.addEventListener("click", e => {
     V.hidden.has(t) ? V.hidden.delete(t) : V.hidden.add(t);
     tb.setAttribute("aria-pressed", String(!V.hidden.has(t)));
     V.tabsTouched = true;
-    tabCount();
     const pane = $("#log-pane"), top = pane.scrollTop;
     render();
     pane.scrollTop = Math.min(top, pane.scrollHeight);
     if (V.mode === "novel") novel().then(m => m.refreshNovel());
+    railHere();
     return;
   }
   const pb = e.target.closest("[data-bgm-play]");
@@ -386,13 +405,11 @@ document.addEventListener("click", e => {
     applyMode();
     return;
   }
-  if (e.target.closest("#log-tabs-btn")){ tabsPop($("#log-tabs").hidden); return; }
-  if (!$("#log-tabs").hidden && !e.target.closest("#log-tabs")) tabsPop(false);
   const wb = e.target.closest("#log-width button");
   if (wb){ width = +wb.dataset.w; try { localStorage.setItem(WIDTH_KEY, String(width)); } catch (_) {} applyWidth(); return; }
   if (e.target.closest("#log-big")){ setBig(!big); return; }
   if (e.target.closest("#log-full")){ toggleFull(); return; }
-  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261030f").then(m => m.toggleEdit()); return; }
+  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261030g").then(m => m.toggleEdit()); return; }
   const sz = e.target.closest(".log-size button");
   if (sz){
     size = Math.max(0, Math.min(SIZES.length - 1, size + +sz.dataset.size));
@@ -403,6 +420,5 @@ document.addEventListener("click", e => {
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape" || nav.current !== "log" || document.querySelector("dialog[open]")) return;
   // 여기서 처리한 Esc는 사이트 전체의 ‘Esc = 목록으로’까지 가지 않게 막음
-  if (!$("#log-tabs").hidden){ e.stopPropagation(); tabsPop(false); $("#log-tabs-btn").focus(); return; }
   if (big && !document.fullscreenElement && !$("#vn-log:not([hidden])")){ e.stopPropagation(); setBig(false); }
 });

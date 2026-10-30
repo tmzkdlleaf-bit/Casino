@@ -5,10 +5,10 @@
    - 편집에서 넣은 배경·BGM 표시를 대사 위치에 맞춰 따라감
    - 읽던 위치는 회차마다 이 기기에 기억
    ========================================================= */
-import { $, $$, esc } from "./dom.js?v=20261030f";
-import { motionOK, state } from "./state.js?v=20261030f";
-import { ALL } from "./views.js?v=20261030f";
-import { LV, SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId, ytVolume } from "./logview.js?v=20261030f";
+import { $, $$, esc } from "./dom.js?v=20261030g";
+import { motionOK, state } from "./state.js?v=20261030g";
+import { ALL } from "./views.js?v=20261030g";
+import { LV, SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId, ytVolume } from "./logview.js?v=20261030g";
 
 const SPEEDS = [
   { label: "느리게", char: 55, wait: 2600, per: 70 },
@@ -79,13 +79,12 @@ const tabLabel = t => { const [n, f] = V.log.tabs[t]; return /^(main|info|other|
 /* 메인 밖의 탭은 두 묶음(비밀 / 잡담·정보 등). 무대 오른쪽 위 버튼으로 하나씩 열면 무대 위에 채팅 창이 겹쳐 뜸 */
 const GROUPS = [["secret", "비밀"], ["rest", "잡담"]];
 const groupOf = t => fmtOf(t) === "secret" ? "secret" : "rest";
-const ORDER = { other: 0, info: 1, secret: 0, main: 2 };     // 잡담 묶음 안 책갈피 순서: 잡담 → 정보 → 그 밖
+const ORDER = { secret: -1, other: 0, info: 1, main: 2 };     // 잡담 묶음 안 책갈피 순서: 잡담 → 정보 → 그 밖
 const SIDE_KEY = "comu-vn-side2";                          // { open: 열어 둔 묶음, pick:{묶음: 탭 이름} } — 이 기기에 기억
 let SP = { open: null, pick: {} };
 try { SP = { open: null, pick: {}, ...JSON.parse(localStorage.getItem(SIDE_KEY) || "{}") }; } catch (_) {}
 const saveSP = () => { try { localStorage.setItem(SIDE_KEY, JSON.stringify(SP)); } catch (_) {} };
 const win = t => $(`.vn-chat[data-t="${t}"]`);
-const grp = g => $(`.vn-grp[data-g="${g}"]`);
 
 function collect(){
   const log = V.log;
@@ -99,26 +98,20 @@ function collect(){
   // 비밀은 이름·번호 순(Ho1, Ho2, HO3…), 잡담 묶음은 잡담 → 정보 → 그 밖 (같은 종류끼리는 처음 나온 순)
   const tabs = [...new Set(N.side.map(i => log.m[i][0]))].sort((a, b) => ORDER[fmtOf(a)] - ORDER[fmtOf(b)]
     || (fmtOf(a) === "secret" ? log.tabs[a][0].localeCompare(log.tabs[b][0], "ko", { numeric: true, sensitivity: "base" }) : 0) || a - b);
-  N.active = {};
-  const html = GROUPS.map(([g, label]) => {
-    const ts = tabs.filter(t => groupOf(t) === g);
-    if (!ts.length) return "";
-    const want = ts.find(t => log.tabs[t][0] === SP.pick[g]);
-    const act = want ?? ts[0];
-    N.active[g] = act;
-    return `<section class="vn-grp g-${g}" data-g="${g}" hidden aria-label="${label}">
-      <header>
-        <div class="vn-marks${ts.length > 3 ? " dense" : ""}" role="tablist">${ts.map(t => `<button type="button" role="tab" class="vn-mark f-${fmtOf(t)}" data-mark="${t}" aria-selected="${t === act}" title="${esc(tabLabel(t))}"><span class="nm">${esc(tabLabel(t))}</span><span class="sh">${esc(shortLabel(t))}</span><span class="n"></span></button>`).join("")}</div>
-        <button type="button" class="vn-chat-x" data-vn="side-close" aria-label="${label} 닫기">×</button>
-      </header>
-      ${ts.map(t => `<div class="vn-chat f-${fmtOf(t)}" data-t="${t}" role="tabpanel" ${t === act ? "" : "hidden"}><ol class="vn-chat-list"></ol></div>`).join("")}
-    </section>`;
-  }).join("");
-  $("#vn-side").innerHTML = html;
+  // 창은 하나: 위쪽 글자 탭에 비밀(분홍) → 잡담·정보 순. 오른쪽 위 [비밀] [잡담] 버튼은 그 묶음의 마지막으로 본 탭을 엶
+  N.active = {}; N.tabs = tabs;
+  for (const [g] of GROUPS){ const ts = tabs.filter(t => groupOf(t) === g); if (ts.length) N.active[g] = ts.find(t => log.tabs[t][0] === SP.pick[g]) ?? ts[0]; }
   const gs = GROUPS.filter(([g]) => N.active[g] != null);
+  const dense = tabs.length > 5;
+  const mark = t => `<button type="button" role="tab" class="vn-mark f-${fmtOf(t)}" data-mark="${t}" aria-selected="false" title="${esc(tabLabel(t))}"><span class="nm">${esc(dense && fmtOf(t) === "secret" ? shortLabel(t) : tabLabel(t))}</span><span class="n"></span></button>`;
+  $("#vn-side").innerHTML = tabs.length ? `<section class="vn-grp" hidden aria-label="메인 밖의 탭">
+      <header><div class="vn-marks" role="tablist">${tabs.map((t, k) => (k && groupOf(t) !== groupOf(tabs[k - 1]) ? `<span class="sep" aria-hidden="true"></span>` : "") + mark(t)).join("")}</div>
+        <button type="button" class="vn-chat-x" data-vn="side-close" aria-label="닫기">×</button></header>
+      ${tabs.map(t => `<div class="vn-chat f-${fmtOf(t)}" data-t="${t}" role="tabpanel" hidden><ol class="vn-chat-list"></ol></div>`).join("")}
+    </section>` : "";
   $("#vn-pills").innerHTML = gs.map(([g, label]) => `<button type="button" class="vn-pill g-${g}" data-side="${g}" aria-pressed="false">${label}<span class="n"></span></button>`).join("");
   for (const q of N.queue) clearTimeout(q.timer); N.queue = [];
-  N.upTo = -1; N.unread = {};
+  N.upTo = -1; N.unread = {}; N.cur = null;
   setSide(gs.some(([g]) => g === SP.open) ? SP.open : null, true);
 }
 
@@ -157,7 +150,7 @@ function badge(t){
   const b = $(`.vn-pill[data-side="${g}"] .n`); if (b) b.textContent = sum ? sum : "";
 }
 /* 지금 눈에 보이는 탭인지: 그 묶음이 열려 있고 그 책갈피가 골라져 있을 때 */
-const visible = t => { const g = groupOf(t); return N.openSide === g && N.active[g] === t; };
+const visible = t => N.openSide != null && N.cur === t;
 function appendSide(k, fresh){
   const t = V.log.m[k][0], w = win(t);
   if (!w) return;
@@ -199,23 +192,24 @@ function showSide(i, last, step){
   }
   N.upTo = until === Infinity ? V.log.m.length : until;
 }
-/* 책갈피: 묶음 안에서 탭 바꾸기 */
-function pickTab(t){
-  const g = groupOf(t), el = grp(g);
-  N.active[g] = t;
-  el.querySelectorAll(".vn-chat").forEach(w => { w.hidden = +w.dataset.t !== t; });
-  el.querySelectorAll(".vn-mark").forEach(b => b.setAttribute("aria-selected", String(+b.dataset.mark === t)));
-  SP.pick[g] = V.log.tabs[t][0]; saveSP();
+/* 글자 탭: 창 안에서 탭 바꾸기 */
+function pickTab(t, quiet){
+  const g = groupOf(t);
+  N.cur = t; N.active[g] = t;
+  $$(".vn-chat").forEach(w => { w.hidden = +w.dataset.t !== t; });
+  $$(".vn-mark").forEach(b => b.setAttribute("aria-selected", String(+b.dataset.mark === t)));
+  if (N.openSide !== g){ N.openSide = g; syncPills(); }
+  if (!quiet){ SP.pick[g] = V.log.tabs[t][0]; SP.open = g; saveSP(); }
   seen(t);
 }
 function seen(t){ if (t == null) return; N.unread[t] = 0; badge(t); const l = win(t)?.querySelector(".vn-chat-list"); if (l) toBottom(l); }
-/* 묶음 하나를 열고(다른 것은 닫힘) 닫기 — 연 묶음은 이 기기에 기억 */
+function syncPills(){ $$(".vn-pill").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.side === N.openSide))); $("#vn-stage")?.classList.toggle("side-open", !!N.openSide); }
+/* 창 열기(그 묶음의 탭으로)·닫기 — 이 기기에 기억 */
 function setSide(g, quiet){
   N.openSide = g || null;
-  $$(".vn-grp").forEach(el => { el.hidden = el.dataset.g !== N.openSide; });
-  $$(".vn-pill").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.side === N.openSide)));
-  $("#vn-stage")?.classList.toggle("side-open", !!N.openSide);
-  if (N.openSide) seen(N.active[N.openSide]);
+  const grpEl = $(".vn-grp"); if (grpEl) grpEl.hidden = !N.openSide;
+  syncPills();
+  if (N.openSide) pickTab(N.active[N.openSide], true);
   if (!quiet){ SP.open = N.openSide; saveSP(); }
 }
 
@@ -524,7 +518,7 @@ document.addEventListener("click", e => {
     else if (act === "ed-bg" || act === "ed-bgm" || act === "ed-line" || act === "save"){
       setAuto(false);
       const i = N.lines[N.pos];
-      import("./logedit.js?v=20261030f").then(m => act === "save" ? m.saveEdits() : act === "ed-line" ? m.editLineAt(i) : act === "ed-bg" ? m.editBgAt(i) : m.editBgmAt(i));
+      import("./logedit.js?v=20261030g").then(m => act === "save" ? m.saveEdits() : act === "ed-line" ? m.editLineAt(i) : act === "ed-bg" ? m.editBgAt(i) : m.editBgmAt(i));
     }
     else if (act === "sound"){ N.sound = !N.sound; savePref(); syncButtons(); N.bgmKey = null; syncBgm(N.lines[N.pos] ?? 0); }
     return;

@@ -28,24 +28,24 @@
 .logtest-bar{position:fixed;left:8px;bottom:calc(var(--dock) + env(safe-area-inset-bottom) + 8px);z-index:9999;opacity:.85}
 body.log-big .logtest-bar, body.vn-on .logtest-bar{display:none !important}   /* 크게 보기·노벨 모드에서는 도구를 가리지 않게 숨김 */</style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="css/site.css?v=20261030f">
+<link rel="stylesheet" href="css/site.css?v=20261030g">
 <!-- 파일 주소 끝의 ?v=날짜 는 버전 표시 — 바꿔 올릴 때마다 함께 바꾸면 브라우저가 옛 파일을 쓰지 않음 (js 안의 import 주소도 같은 값) -->
 <!-- 모듈 미리 받기: import 사슬을 따라 차례로 받는 대기 시간 제거 (관리 모듈은 제외 — 관리자만 필요할 때 받음) -->
-<link rel="modulepreload" href="js/main.js?v=20261030f">
-<link rel="modulepreload" href="js/config.js?v=20261030f">
-<link rel="modulepreload" href="js/state.js?v=20261030f">
-<link rel="modulepreload" href="js/dom.js?v=20261030f">
-<link rel="modulepreload" href="js/data.js?v=20261030f">
-<link rel="modulepreload" href="js/views.js?v=20261030f">
-<link rel="modulepreload" href="js/effects.js?v=20261030f">
-<link rel="modulepreload" href="js/router.js?v=20261030f">
-<link rel="modulepreload" href="js/auth.js?v=20261030f">
-<link rel="modulepreload" href="js/forms.js?v=20261030f">
-<link rel="modulepreload" href="js/markdown.js?v=20261030f">
-<link rel="modulepreload" href="js/ambience.js?v=20261030f">
-<link rel="modulepreload" href="js/navorder.js?v=20261030f">
-<link rel="modulepreload" href="js/charedit.js?v=20261030f">
-<link rel="modulepreload" href="js/shop.js?v=20261030f">
+<link rel="modulepreload" href="js/main.js?v=20261030g">
+<link rel="modulepreload" href="js/config.js?v=20261030g">
+<link rel="modulepreload" href="js/state.js?v=20261030g">
+<link rel="modulepreload" href="js/dom.js?v=20261030g">
+<link rel="modulepreload" href="js/data.js?v=20261030g">
+<link rel="modulepreload" href="js/views.js?v=20261030g">
+<link rel="modulepreload" href="js/effects.js?v=20261030g">
+<link rel="modulepreload" href="js/router.js?v=20261030g">
+<link rel="modulepreload" href="js/auth.js?v=20261030g">
+<link rel="modulepreload" href="js/forms.js?v=20261030g">
+<link rel="modulepreload" href="js/markdown.js?v=20261030g">
+<link rel="modulepreload" href="js/ambience.js?v=20261030g">
+<link rel="modulepreload" href="js/navorder.js?v=20261030g">
+<link rel="modulepreload" href="js/charedit.js?v=20261030g">
+<link rel="modulepreload" href="js/shop.js?v=20261030g">
 </head>
 <body class="intro-on loading">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -229,36 +229,34 @@ body.log-big .logtest-bar, body.vn-on .logtest-bar{display:none !important}   /*
 
   <!-- ===================== 진행 기록 (회차별 코코포리아 로그) ===================== -->
   <section data-page="log" class="page log-page" hidden>
-    <header class="log-head">
-      <a class="link-back" href="#story">지난 이야기로</a>
-      <p class="log-ep" id="log-ep"></p>
-      <h1 class="page-title log-title" id="log-title"></h1>
-      <p class="log-meta" id="log-meta"></p>
-    </header>
-    <div class="g-panel pane-box log-box">
+    <div class="log-box">
       <div class="log-bar" role="toolbar" aria-label="기록 보기 도구">
-        <div class="seg log-mode" role="group" aria-label="보기 방식" id="log-mode" hidden>
+        <a class="cb-back" href="#story" aria-label="지난 이야기로">‹</a>
+        <span class="cb-ep" id="log-ep"></span>
+        <h1 class="cb-title" id="log-title"></h1>
+        <p id="log-meta" hidden></p>
+        <div class="log-chips" id="log-tabs" role="group" aria-label="보이는 탭" hidden></div>
+        <span class="grow"></span>
+        <div class="cb-seg log-mode" role="group" aria-label="보기 방식" id="log-mode" hidden>
           <button type="button" data-mode="read" aria-pressed="true">읽기</button>
           <button type="button" data-mode="novel" aria-pressed="false">노벨</button>
         </div>
-        <button class="btn small log-btn log-tabbtn" type="button" id="log-tabs-btn" aria-expanded="false" aria-controls="log-tabs" hidden>탭 <span class="num" id="log-tabs-n"></span><span aria-hidden="true">▾</span></button>
-        <div class="seg log-width" role="group" aria-label="본문 폭" id="log-width">
-          <button type="button" data-w="0">좁게</button>
-          <button type="button" data-w="1">보통</button>
-          <button type="button" data-w="2">넓게</button>
+        <div class="cb-seg log-width" role="group" aria-label="본문 폭" id="log-width">
+          <button type="button" data-w="0" aria-label="본문 좁게">좁게</button>
+          <button type="button" data-w="1" aria-label="본문 보통">보통</button>
+          <button type="button" data-w="2" aria-label="본문 넓게">넓게</button>
         </div>
-        <div class="seg log-size" role="group" aria-label="글자 크기">
+        <div class="cb-seg log-size" role="group" aria-label="글자 크기">
           <button type="button" data-size="-1" aria-label="글자 작게">가<span aria-hidden="true">−</span></button>
           <button type="button" data-size="1" aria-label="글자 크게">가<span aria-hidden="true">+</span></button>
         </div>
-        <span class="grow"></span>
-        <span class="log-snd"><button class="btn small log-btn" type="button" id="log-follow" aria-pressed="false" hidden>BGM 따라 듣기</button><input class="vol" id="log-vol" type="range" min="0" max="100" step="1" aria-label="BGM 볼륨" hidden></span>
-        <button class="btn small log-btn" type="button" id="log-edit" aria-pressed="false" hidden>편집</button>
-        <button class="btn small log-btn" type="button" id="log-big" aria-pressed="false">크게 보기</button>
-        <button class="btn small log-btn" type="button" id="log-full">전체 화면</button>
+        <span class="log-snd"><button class="cb" type="button" id="log-follow" aria-pressed="false" hidden>BGM 따라 듣기</button><input class="vol" id="log-vol" type="range" min="0" max="100" step="1" aria-label="BGM 볼륨" hidden></span>
+        <button class="cb" type="button" id="log-edit" aria-pressed="false" hidden>편집</button>
+        <button class="cb" type="button" id="log-big" aria-pressed="false">크게 보기</button>
+        <button class="cb" type="button" id="log-full">전체 화면</button>
       </div>
-      <div class="log-tabs-pop" role="group" aria-label="보이는 탭" id="log-tabs" hidden></div>
       <div class="pane log-pane" id="log-pane" tabindex="0" role="region" aria-label="진행 기록 본문"><div class="lg-body" id="log-body"></div></div>
+      <nav class="log-rail" id="log-rail" aria-label="장면" hidden></nav>
       <div class="vn" id="log-vn" hidden></div>
     </div>
   </section>
@@ -725,6 +723,6 @@ body.log-big .logtest-bar, body.vn-on .logtest-bar{display:none !important}   /*
 
 <!-- 버전 고정 + 무결성 해시(SRI): CDN 파일이 바뀌면 브라우저가 실행을 거부 -->
 <script src="js/mock-supabase.js"></script>
-<script type="module" src="js/main.js?v=20261030f"></script>
+<script type="module" src="js/main.js?v=20261030g"></script>
 </body>
 </html>
