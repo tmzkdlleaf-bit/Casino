@@ -4,12 +4,12 @@
    - BGM 표시를 누르면: 고치기 / 삭제
    - 고친 내용은 모아 두었다가 ‘변경 저장’ 한 번에 새 파일로 올림 (이전 파일은 지움)
    ========================================================= */
-import { publicUrl, refreshPublic, sb } from "./data.js?v=20261030b";
-import { $, $$, announce, esc, toast } from "./dom.js?v=20261030b";
-import { errMsg, withBusy } from "./forms.js?v=20261030b";
-import { V, faceSrc, imgSrc, render, stopAudio } from "./logview.js?v=20261030b";
-import { extOf, toWebP } from "./img.js?v=20261030b";
-import { state } from "./state.js?v=20261030b";
+import { publicUrl, refreshPublic, sb } from "./data.js?v=20261030c";
+import { $, $$, announce, esc, toast } from "./dom.js?v=20261030c";
+import { errMsg, withBusy } from "./forms.js?v=20261030c";
+import { V, faceSrc, imgSrc, render, stopAudio } from "./logview.js?v=20261030c";
+import { extOf, toWebP } from "./img.js?v=20261030c";
+import { state } from "./state.js?v=20261030c";
 
 const E = { dirty: 0, i: -1, k: -1 };
 
@@ -29,6 +29,7 @@ function bar(){
 }
 const dirty = n => {
   E.dirty += n;
+  document.dispatchEvent(new CustomEvent("comu:log-dirty", { detail: E.dirty }));   // 노벨 화면의 저장 버튼
   state.admDirty = E.dirty > 0;
   $("#log-save").disabled = !E.dirty;
   $("#log-dirty").textContent = E.dirty ? `저장하지 않은 변경 ${E.dirty}건` : "대사나 배경·BGM 표시를 누르면 고칠 수 있습니다.";
@@ -39,9 +40,11 @@ export function toggleEdit(){
   if (V.editing && E.dirty && !confirm("저장하지 않은 변경이 있습니다. 편집을 끝낼까요? (변경은 화면에만 남고 저장되지 않습니다)")) return;
   V.editing = !V.editing;
   $("#log-edit").setAttribute("aria-pressed", String(V.editing));
+  $("#log-edit").textContent = V.editing ? "편집 끝" : "편집";
   $("#log-body").classList.toggle("editing", V.editing);
-  if (V.editing){ stopAudio(); bar().hidden = false; dirty(0); }
-  else { bar().hidden = true; }
+  if (V.editing){ stopAudio(); bar().hidden = V.mode === "novel"; dirty(0); }
+  else { bar().hidden = true; E.dirty = 0; state.admDirty = false; }
+  document.dispatchEvent(new Event("comu:log-edit"));
   announce(V.editing ? "편집 모드: 대사를 누르면 고칠 수 있습니다" : "편집 모드를 끝냈습니다");
 }
 
@@ -92,6 +95,7 @@ function lineDialog(i, isNew = false){
 const shiftBgm = (from, by) => { for (const b of [...(V.log.bgm || []), ...(V.log.bg || [])]) if (b.at > from) b.at += by; };
 
 function rerender(at){
+  if (V.mode === "novel") import("./novel.js?v=20261030c").then(m => m.refreshNovel());   // 노벨 화면에서 고쳤으면 그 자리에서 다시
   const pane = $("#log-pane");
   render({ upTo: at });
   const el = $(`#log-body [data-i="${at}"]`) || $(`#log-body [data-k="${at}"]`);
@@ -246,7 +250,7 @@ async function save(){
   if (row.error) throw row.error;
   if (!V.secretsOk) throw new Error("비밀 탭을 불러오지 못해서 저장하지 않았습니다. 새로고침한 뒤 다시 해 주세요.");   // 그대로 저장하면 비밀 탭이 지워짐
   log.n = log.m.length; log.v = 3;
-  const { splitLog, saveSecrets } = await import("./logsecret.js?v=20261030b");
+  const { splitLog, saveSecrets } = await import("./logsecret.js?v=20261030c");
   const { pub, secrets } = splitLog(log);            // 비밀 탭은 공개 파일에서 빼서 따로
   await saveSecrets(sb, c.id, secrets);
   const blob = new Blob([JSON.stringify(pub)], { type: "application/json" });
@@ -260,6 +264,16 @@ async function save(){
   E.dirty = 0; dirty(0);
   toast("기록을 저장했습니다");
   refreshPublic();
+}
+
+/* ---------- 노벨 화면에서 부르는 편집 (지금 보고 있는 대사 i 기준) ---------- */
+export function editLineAt(i){ if (V.editing && V.log?.m[i]) lineDialog(i); }
+export function editBgAt(i){ if (!V.editing) return; const k = (V.log.bg || []).findIndex(b => b.at === i); bgDialog(k, i); }
+export function editBgmAt(i){ if (!V.editing) return; const k = (V.log.bgm || []).findIndex(b => b.at === i); bgmDialog(k, i); }
+export function saveEdits(){
+  const b = $('[data-vn="save"]');
+  // 버튼 글자는 저장이 끝난 뒤 다시 맞춤 (저장 중 표시가 예전 글자로 되돌리므로)
+  return withBusy(b, () => save().catch(err => toast(errMsg(err)))).then(() => document.dispatchEvent(new CustomEvent("comu:log-dirty", { detail: E.dirty })));
 }
 
 /* ---------- 이벤트 ---------- */

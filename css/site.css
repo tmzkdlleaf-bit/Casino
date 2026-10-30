@@ -770,7 +770,8 @@ body.log-big .log-head{display:none}
 .lg-bgimg.none{padding:.4rem .9rem; border-style:dotted}
 .lg-bgimg.none .t::before{content:""}
 /* ---------- 비주얼 노벨 모드 — 코코포리아처럼 왼쪽에 말하는 사람 한 명, 아래 대사창 ---------- */
-.vn{--lg-fs:1.0625rem; flex:1; min-height:0; display:grid; grid-template-rows:minmax(0,1fr) auto; gap:.6rem; padding:.6rem}
+.vn{--lg-fs:1.0625rem; flex:1; min-height:0; display:flex; padding:.5rem}
+.vn > .vn-stage{flex:1}
 .vn-stage{position:relative; width:100%; height:100%; min-height:0; overflow:hidden; border:1px solid var(--line); border-radius:var(--r);
   background:radial-gradient(ellipse 80% 60% at 30% 100%, rgba(93,151,217,.28), transparent 70%), linear-gradient(180deg, var(--black-2), var(--felt-deep)); cursor:pointer; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent}
 .vn-stage:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
@@ -786,7 +787,8 @@ body.log-big .log-head{display:none}
 @keyframes vn-in{from{opacity:0; transform:translateX(-1.25rem)} to{opacity:1; transform:none}}
 @keyframes vn-swap{from{opacity:.35} to{opacity:1}}
 /* 대사창 */
-.vn-box{position:absolute; left:2%; right:2%; bottom:3%; z-index:3; display:flex; flex-direction:column; min-height:29%; max-height:48%; padding:1.6rem clamp(1rem, 3vw, 2.25rem) 1.1rem;
+.vn-stage{--box-h:clamp(10.5rem, 32%, 15rem)}
+.vn-box{position:absolute; left:.8rem; right:.8rem; bottom:.8rem; z-index:3; display:flex; flex-direction:column; height:var(--box-h); padding:1.5rem clamp(1rem, 3vw, 2rem) .5rem;
   border:1px solid rgba(173,207,234,.45); border-radius:var(--r); background:rgba(6,10,30,.86); box-shadow:inset 0 0 0 1px rgba(173,207,234,.08), 0 0 24px rgba(93,151,217,.18)}
 .vn-name{position:absolute; top:-1px; left:clamp(1rem, 3vw, 2.25rem); transform:translateY(-55%); display:flex; align-items:center; gap:.5rem; margin:0; padding:.2rem .9rem;
   border:1px solid color-mix(in srgb, var(--c, var(--gold)) 70%, transparent); border-radius:3px; background:var(--black-2); font-family:var(--f-serif); font-weight:700; font-size:calc(var(--lg-fs) * .95); line-height:1.5; color:var(--c, var(--ivory))}
@@ -801,47 +803,40 @@ body.log-big .log-head{display:none}
 .vn-more{position:absolute; right:1rem; bottom:.55rem; font-size:.7rem; color:var(--gold); opacity:0}
 .vn-more.on{opacity:1; animation:vn-blink 1.1s steps(2, end) infinite}
 @keyframes vn-blink{50%{opacity:.2}}
-/* 노벨: 오른쪽 두 묶음 — 안쪽(왼쪽)=비밀 탭들, 바깥쪽(오른쪽)=잡담·정보 등. 위쪽 책갈피로 탭을 오가고, 묶음째 접고 폄 */
-.vn-stage{container-type:inline-size; --strip:2.6rem; --open-w:clamp(16rem, 30%, 24rem); --side-w:calc(var(--open-w) + var(--fold-n, 0) * var(--strip) + var(--gap-n, 0) * .5rem)}
-.vn-stage.open-0{--open-w:0px}
-.vn-stage.open-2{--open-w:clamp(26rem, 50%, 46rem)}
-.vn-side{position:absolute; top:3%; right:2%; bottom:3%; z-index:4; display:none; flex-direction:row; align-items:stretch; gap:.5rem; width:var(--side-w); cursor:default}
-.vn-stage.has-side .vn-side{display:flex}
-.vn-stage.has-side .vn-box{right:calc(2% + var(--side-w) + .8rem)}
-.vn-grp{--band:rgba(154,168,200,.7); flex:1 1 0; min-width:0; display:flex; flex-direction:column; border:1px solid color-mix(in srgb, var(--band) 60%, transparent); border-radius:10px; background:rgba(6,10,30,.86); overflow:hidden}
-.vn-grp.g-secret{--band:#EF1A72; background:rgba(40,6,26,.88)}
-/* 접힌 묶음: 얇은 세로 띠 (누르면 펴짐) */
-.vn-grp[data-folded="true"]{flex:0 0 var(--strip); width:var(--strip)}
-.vn-grp[data-folded="true"] header{display:none}
-.vn-strip{display:none}
-.vn-grp[data-folded="true"] .vn-strip{flex:1; display:flex; flex-direction:column; align-items:center; gap:.5rem; padding:.8rem 0; border:0; background:none; color:color-mix(in srgb, var(--band) 75%, var(--ivory)); font:inherit; font-family:var(--f-serif); font-weight:700; font-size:.875rem; cursor:pointer}
-.vn-grp[data-folded="true"] .vn-strip:hover{background:rgba(238,243,250,.05)}
-.vn-strip::before{content:"◂"; color:var(--smoke); font-size:.8rem}
-.vn-strip .lb{writing-mode:vertical-rl; letter-spacing:.15em}
-.vn-strip .n:not(:empty){display:inline-grid; place-items:center; min-width:1.3rem; height:1.3rem; padding:0 .3rem; border-radius:999px; background:var(--velvet); color:#fff; font-family:var(--f-sans); font-weight:500; font-size:.7rem}
+/* 노벨 (A안): 무대가 전부 차지. 메인 밖의 탭은 오른쪽 위 버튼(비밀·잡담)으로 열면 무대 위에 겹쳐 뜸 */
+.vn-stage{container-type:size}
+.vn-pills{position:absolute; top:.8rem; right:.8rem; z-index:6; display:flex; gap:.4rem}
+.vn-pill{display:inline-flex; align-items:center; gap:.4rem; min-height:2.5rem; padding:0 1rem; border:1px solid rgba(154,168,200,.55); border-radius:999px; background:rgba(6,10,30,.82); color:var(--ivory); font:inherit; font-size:.9rem; cursor:pointer}
+.vn-pill:hover{border-color:var(--ivory)}
+.vn-pill.g-secret{border-color:rgba(239,26,114,.7); color:var(--red-text)}
+.vn-pill[aria-pressed="true"]{background:var(--velvet); border-color:var(--velvet); color:#fff}
+.vn-pill .n:empty{display:none}
+.vn-pill .n{display:inline-grid; place-items:center; min-width:1.35rem; height:1.35rem; padding:0 .35rem; border-radius:999px; background:var(--velvet); color:#fff; font-size:.72rem; font-variant-numeric:tabular-nums}
+.vn-pill[aria-pressed="true"] .n{background:#fff; color:var(--velvet)}
+/* 열린 채팅 창: 버튼 아래, 대사창 위 */
+.vn-side{position:absolute; top:4rem; right:.8rem; bottom:calc(var(--box-h) + 1.4rem); z-index:5; width:min(26rem, 44%); display:flex; cursor:default; pointer-events:none}
+.vn-grp{--band:rgba(154,168,200,.7); pointer-events:auto; flex:1; min-width:0; display:flex; flex-direction:column; border:1px solid color-mix(in srgb, var(--band) 60%, transparent); border-radius:10px; background:rgba(6,10,30,.9); box-shadow:0 10px 30px rgba(0,0,0,.45); overflow:hidden}
+.vn-grp[hidden]{display:none}
+.vn-grp.g-secret{--band:#EF1A72; background:rgba(40,6,26,.92)}
 .vn-grp header{display:flex; align-items:flex-end; gap:.2rem; padding:.45rem .45rem 0; border-bottom:1px solid color-mix(in srgb, var(--band) 45%, transparent); background:rgba(0,0,0,.25)}
-/* 책갈피 */
-.vn-marks{flex:1; min-width:0; display:flex; gap:.15rem; overflow:hidden}   /* 한 줄. 많으면 책갈피마다 줄어들고 이름은 잘림 (전체 이름은 마우스를 올리면) */
+.vn-marks{flex:1; min-width:0; display:flex; gap:.15rem; overflow:hidden}
 .vn-mark{position:relative; flex:0 1 auto; min-width:2.6rem; display:inline-flex; align-items:center; justify-content:center; gap:.3rem; min-height:2.2rem; padding:0 .6rem; border:1px solid transparent; border-bottom:0; border-radius:6px 6px 0 0; background:rgba(238,243,250,.05); color:var(--smoke); font:inherit; font-family:var(--f-serif); font-weight:700; font-size:.8125rem; white-space:nowrap; cursor:pointer}
 .vn-mark:hover{color:var(--ivory)}
 .vn-mark .nm{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .vn-mark .sh{display:none}
 .vn-mark .n{flex:none}
-/* 책갈피가 넷 이상: 모두 같은 폭으로 나눠 갖고 짧은 이름(Ho1…)만. 전체 이름은 마우스를 올리면 */
-.vn-marks.dense .vn-mark{flex:1 1 0; min-width:0; padding:0 .3rem; font-size:.78rem}
-.vn-marks.dense .vn-mark .nm{display:none}
-.vn-marks.dense .vn-mark .sh{display:block; min-width:0; overflow:hidden; text-overflow:clip; white-space:nowrap}
-.vn-marks.dense .vn-mark{gap:0}
-.vn-marks.dense .vn-mark .n:not(:empty){position:absolute; top:.15rem; right:.15rem; min-width:0; width:.5rem; height:.5rem; padding:0; font-size:0}   /* 좁을 땐 새 메시지 수 대신 점 */
 .vn-mark[aria-selected="true"]{background:rgba(6,10,30,.95); border-color:color-mix(in srgb, var(--band) 60%, transparent); color:var(--ivory); margin-bottom:-1px; padding-bottom:1px}
 .vn-grp.g-secret .vn-mark[aria-selected="true"]{background:rgba(40,6,26,1); color:var(--red-text)}
 .vn-mark.f-info[aria-selected="true"]{color:var(--gold)}
 .vn-mark .n:not(:empty){display:inline-grid; place-items:center; min-width:1.2rem; height:1.2rem; padding:0 .3rem; border-radius:999px; background:var(--velvet); color:#fff; font-family:var(--f-sans); font-weight:500; font-size:.7rem}
-.vn-fold{flex:none; align-self:center; width:2rem; height:2rem; margin-bottom:.2rem; border:0; border-radius:4px; background:none; color:var(--smoke); cursor:pointer; transform:rotate(-90deg)}   /* ▸ 오른쪽으로 접힘 */
-.vn-fold:hover{background:rgba(238,243,250,.06); color:var(--ivory)}
-.vn-chat-x{display:none; flex:none; align-self:center; width:2.4rem; height:2.4rem; border:0; background:none; color:var(--smoke); font-size:1.25rem; cursor:pointer}
+.vn-marks.dense .vn-mark{flex:1 1 0; min-width:0; padding:0 .3rem; gap:0; font-size:.78rem}
+.vn-marks.dense .vn-mark .nm{display:none}
+.vn-marks.dense .vn-mark .sh{display:block; min-width:0; overflow:hidden; white-space:nowrap}
+.vn-marks.dense .vn-mark .n:not(:empty){position:absolute; top:.15rem; right:.15rem; min-width:0; width:.5rem; height:.5rem; padding:0; font-size:0}
+.vn-chat-x{flex:none; align-self:center; width:2.2rem; height:2.2rem; margin-bottom:.15rem; border:0; border-radius:4px; background:none; color:var(--smoke); font-size:1.25rem; cursor:pointer}
+.vn-chat-x:hover{background:rgba(238,243,250,.08); color:var(--ivory)}
 .vn-chat{flex:1 1 0; min-height:0; display:flex; flex-direction:column}
-.vn-chat[hidden], .vn-grp[data-folded="true"] .vn-chat{display:none}
+.vn-chat[hidden]{display:none}
 .vn-chat .vn-chat-list{flex:1; min-height:0}
 .vn-chat-list{margin:0; padding:.6rem .6rem .8rem; list-style:none; overflow:auto; scrollbar-width:thin; display:flex; flex-direction:column; gap:.45rem; font-size:calc(var(--lg-fs) * .82); line-height:1.55}
 .vn-chat-list > li{display:grid; justify-items:start; gap:.15rem; max-width:100%}
@@ -870,30 +865,6 @@ body.log-big .log-head{display:none}
 .vn-chat-list li.info .body{margin-top:.3rem; padding:.7rem .9rem; border-left:3px solid rgba(93,151,217,.5); background:rgba(14,27,69,.6); color:rgba(238,243,250,.92); line-height:1.75; white-space:pre-line; overflow-wrap:anywhere; animation:vn-unfold .2s var(--ease) both}
 .vn-chat-list li.info .body .who{margin:0 0 .2rem; font-weight:600; font-size:.9em}
 @keyframes vn-unfold{from{opacity:0; transform:translateY(-.3rem)}}
-/* 휴대폰·좁은 무대: 묶음은 버튼(비밀·잡담)으로 하나씩 열기 */
-.vn-sidebtns{display:none}
-@container (min-width: 761px) and (max-width: 1100px){
-  .vn-stage.open-2{--open-w:clamp(22rem, 56%, 30rem)}
-}
-@container (max-width: 760px){
-  .vn-stage.has-side .vn-side{display:none}
-  .vn-stage.has-side .vn-box{right:2%}
-  .vn-stage.has-side .vn-sidebtns{position:absolute; top:3%; right:2%; z-index:5; display:flex; gap:.4rem}
-  .vn-sidebtn{position:relative; min-height:2.4rem; padding:0 1rem; border:1px solid rgba(154,168,200,.5); border-radius:999px; background:rgba(6,10,30,.85); color:var(--ivory); font:inherit; font-size:.875rem; cursor:pointer}
-  .vn-sidebtn.g-secret{border-color:rgba(239,26,114,.7); color:var(--red-text)}
-  .vn-sidebtn[aria-pressed="true"]{background:var(--velvet); color:var(--ivory)}
-  .vn-sidebtn .n:not(:empty){display:inline-grid; place-items:center; min-width:1.3rem; height:1.3rem; margin-left:.2rem; padding:0 .3rem; border-radius:999px; background:var(--velvet); color:#fff; font-size:.72rem}
-  .vn-side:not([data-open=""])[data-open]{display:flex !important; top:calc(3% + 3.2rem); left:2%; right:2%; bottom:auto; height:min(62%, 26rem); width:auto}
-  .vn-side[data-open] .vn-grp:not(.is-open){display:none}
-  .vn-side[data-open] .vn-grp.is-open{flex:1 1 auto; align-self:stretch}
-  .vn-side[data-open] .vn-grp.is-open .vn-chat:not([hidden]){display:flex}
-  .vn-side[data-open] .vn-fold{display:none}
-  .vn-side[data-open] .vn-grp[data-folded="true"]{width:auto; flex:1 1 auto}
-  .vn-side[data-open] .vn-grp[data-folded="true"] header{display:flex}
-  .vn-side[data-open] .vn-grp[data-folded="true"] .vn-strip{display:none}
-  .vn-side[data-open] .vn-grp.is-open[data-folded="true"] .vn-chat:not([hidden]){display:flex}
-  .vn-side[data-open] .vn-chat-x{display:block}
-}
 @media (prefers-reduced-motion:reduce){ .vn-chat-list li.fresh, .vn-chat-list li.info .body{animation:none} }
 /* 지난 대사 */
 .vn-log{position:absolute; inset:0; z-index:5; display:grid; grid-template-rows:auto minmax(0,1fr); background:rgba(4,7,20,.95); cursor:default}
@@ -907,22 +878,54 @@ body.log-big .log-head{display:none}
 .vn-log-list .n{font-family:var(--f-serif); font-weight:700; overflow-wrap:anywhere}
 .vn-log-list .t{grid-column:2; color:rgba(238,243,250,.88); white-space:pre-line; overflow-wrap:anywhere; line-height:1.7}
 .vn-log-list .t.q{color:var(--text-2)}
-/* 조작 줄 */
-.vn-ctl{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.5rem 1rem}
-.vn-ctl-main{display:flex; flex-wrap:wrap; gap:.4rem}
-.vn-seek{display:flex; align-items:center; gap:.7rem; flex:1 1 14rem; max-width:26rem; font-size:var(--s-1); color:var(--text-2)}
+/* 조작 줄: 대사창 아래쪽 안에 */
+.vn-ctl{display:flex; align-items:center; gap:.35rem; margin:0 calc(-1 * clamp(.4rem, 1.5vw, 1rem)); padding:.45rem clamp(.4rem, 1.5vw, 1rem) 0; border-top:1px solid var(--line-2); cursor:default; overflow-x:auto; scrollbar-width:none}
+.vn-ctl::-webkit-scrollbar{display:none}
+.vn-ctl .grow{flex:1 1 0; min-width:.25rem}
+.vc{flex:none; min-height:2.3rem; padding:0 .8rem; border:1px solid rgba(238,243,250,.22); border-radius:4px; background:rgba(238,243,250,.04); color:var(--text-2); font:inherit; font-size:.85rem; cursor:pointer; white-space:nowrap}
+.vc:hover:not(:disabled){color:var(--ivory); border-color:rgba(238,243,250,.5)}
+.vc:disabled{opacity:.35; cursor:default}
+.vc.primary{background:var(--velvet); border-color:var(--velvet); color:#fff; padding-inline:1.1rem}
+.vc[aria-pressed="true"]{background:rgba(239,26,114,.2); border-color:var(--velvet); color:var(--ivory)}
+.vc.save{background:var(--felt); border-color:var(--felt-hi); color:#fff}
+.vc.save:disabled{background:none; color:var(--smoke)}
+.vn-seek{flex:0 1 16rem; display:flex; align-items:center; gap:.6rem; min-width:8rem; font-size:var(--s-1); color:var(--text-2)}
 .vn-seek input{flex:1; min-width:0; accent-color:var(--velvet)}
 .vn-seek .num{font-variant-numeric:tabular-nums; white-space:nowrap}
+.vn-more{bottom:3.6rem !important}
 .vn-yt{position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; border:0}
-/* 전체 화면: 무대가 화면을 채움 */
-@media (max-width:760px){
-  .vn-st{height:66%; max-width:72%; left:0; bottom:22%}
-  .vn-box{min-height:34%; max-height:52%; padding:1.4rem 1rem .9rem}
+/* 편집 (관리자): 무대 왼쪽 위 배경·BGM, 이름표 옆 고치기 */
+.vn-edit{position:absolute; top:.8rem; left:.8rem; z-index:6; display:flex; flex-wrap:wrap; gap:.4rem; max-width:55%}
+.vn-edit[hidden]{display:none}
+.vn-ed{display:inline-flex; align-items:center; gap:.5rem; min-height:2.5rem; padding:0 .9rem; border:1px dashed rgba(173,207,234,.7); border-radius:4px; background:rgba(6,10,30,.85); color:var(--ivory); font:inherit; font-size:.85rem; cursor:pointer}
+.vn-ed:hover{border-style:solid}
+.vn-ed .k{font-weight:700; color:var(--gold)}
+.vn-ed .v{max-width:10rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-2)}
+.vn-ed.here{border-style:solid; border-color:var(--velvet); background:rgba(239,26,114,.16)}
+.vn-ed.here .v{color:var(--ivory)}
+.vn-fix{position:absolute; top:.45rem; right:.6rem; min-height:2rem; padding:0 .75rem; border:1px dashed rgba(173,207,234,.7); border-radius:4px; background:none; color:var(--gold); font:inherit; font-size:.8rem; cursor:pointer}
+.vn-fix:hover{border-style:solid}
+.vn-fix[hidden]{display:none}
+.vn-stage.editing{box-shadow:inset 0 0 0 2px rgba(173,207,234,.35)}
+/* 좁은 무대(휴대폰): 대사창을 키우고, 채팅 창은 무대 폭 전체 */
+@container (max-width: 640px){
+  .vn-stage{--box-h:clamp(12rem, 42%, 17rem)}
+  .vn-st{height:62%; max-width:70%; left:0; bottom:calc(var(--box-h) - 3rem)}
+  .vn-side{left:.6rem; right:.6rem; width:auto}
+  .vn-pills{top:.6rem; right:.6rem}
+  .vn-edit{top:.6rem; left:.6rem}
+  .vn-box{left:.5rem; right:.5rem; bottom:.5rem; padding:1.35rem .9rem .45rem}
   .vn-text{font-size:var(--lg-fs); line-height:1.75}
+  .vn-stage{--box-h:clamp(14rem, 46%, 19rem)}
+  .vn-ctl{flex-wrap:wrap; overflow:visible; row-gap:.3rem}
+  .vn-ctl .grow{display:none}
+  .vc{padding:0 .6rem}
+  .vn-seek{flex:1 1 100%; order:9}   /* 휴대폰: 위치 막대는 아랫줄 전체 */
+  .vn-more{display:none}
+}
+@media (max-width:760px){
   .vn-log-list button{grid-template-columns:minmax(0,1fr); gap:.1rem}
   .vn-log-list .t{grid-column:1}
-  .vn-ctl-main .btn{padding-inline:.7rem}
-  .vn-seek{max-width:none}
 }
 @media (prefers-reduced-motion:reduce){
   .vn-bg img, .vn-st{transition:none} .vn-st img{animation:none !important} .vn-more.on{animation:none}
