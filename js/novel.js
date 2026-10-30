@@ -5,10 +5,10 @@
    - 편집에서 넣은 배경·BGM 표시를 대사 위치에 맞춰 따라감
    - 읽던 위치는 회차마다 이 기기에 기억
    ========================================================= */
-import { $, $$, esc } from "./dom.js?v=20261030a";
-import { motionOK, state } from "./state.js?v=20261030a";
-import { ALL } from "./views.js?v=20261030a";
-import { SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId } from "./logview.js?v=20261030a";
+import { $, $$, esc } from "./dom.js?v=20261030b";
+import { motionOK, state } from "./state.js?v=20261030b";
+import { ALL } from "./views.js?v=20261030b";
+import { SYSTEM, TAB_LABEL, V, audioSrc, deco, faceSrc, imgSrc, readable, stopAudio, ytId } from "./logview.js?v=20261030b";
 
 const SPEEDS = [
   { label: "느리게", char: 55, wait: 2600, per: 70 },
@@ -21,7 +21,7 @@ const VOL = .4;
 
 const N = {
   on: false, lines: [], pos: 0, typing: false, auto: false, speed: 1, sound: false,
-  tTimer: 0, aTimer: 0, nodes: null, bgKey: null, bgmKey: null, audio: null, faceKey: null, bgFlip: 0,
+  tTimer: 0, typeId: 0, aTimer: 0, nodes: null, bgKey: null, bgmKey: null, audio: null, faceKey: null, bgFlip: 0,
   side: [], upTo: -1, mine: new Set(), unread: { other: 0, secret: 0 }, openSide: null, queue: []
 };
 const SIDE_MAX = 120;      // 채팅창에 남겨 두는 메시지 수
@@ -339,18 +339,21 @@ function typeText(el){
   while (walker.nextNode()) nodes.push({ node: walker.currentNode, full: walker.currentNode.textContent });
   N.nodes = nodes;
   if (!motionOK()){ finishTyping(); return; }
+  // 지난 시간으로 몇 글자를 보일지 계산 (브라우저가 타이머를 늦춰도 속도가 일정하게)
+  const chars = nodes.map(n => [...n.full]), total = chars.reduce((k, c) => k + c.length, 0);
   nodes.forEach(n => n.node.textContent = "");
-  let ni = 0, ci = 0;
+  const per = SPEEDS[N.speed].char, t0 = performance.now(), id = ++N.typeId;
   N.typing = true;
   const step = () => {
-    if (!N.typing) return;
-    let n = nodes[ni];
-    while (n && ci >= [...n.full].length){ ni++; ci = 0; n = nodes[ni]; }
-    if (!n){ finishTyping(); return; }
-    const chars = [...n.full];
-    ci++;
-    n.node.textContent = chars.slice(0, ci).join("");
-    N.tTimer = setTimeout(step, chars[ci - 1] === "\n" ? SPEEDS[N.speed].char * 4 : SPEEDS[N.speed].char);
+    if (!N.typing || id !== N.typeId) return;
+    let left = Math.floor((performance.now() - t0) / per) + 1;
+    if (left >= total){ finishTyping(); return; }
+    for (let k = 0; k < nodes.length; k++){
+      const c = chars[k], show = Math.max(0, Math.min(c.length, left));
+      if (nodes[k].node.textContent.length !== show) nodes[k].node.textContent = c.slice(0, show).join("");
+      left -= c.length;
+    }
+    N.tTimer = setTimeout(step, 16);   // 숨은 탭에서도 멈추지 않게 (늦어져도 지난 시간만큼 한꺼번에 보임)
   };
   step();
 }
@@ -415,8 +418,9 @@ function emptyState(){
   $("#vn-pos").textContent = "";
 }
 
+/* 누르면 늘 다음 대사로 (글자가 나오는 중이어도). 마지막 대사에서는 남은 글자만 마저 보임 */
 function next(){
-  if (N.typing){ finishTyping(); return; }
+  if (N.typing && N.pos >= N.lines.length - 1){ finishTyping(); return; }
   if (N.pos < N.lines.length - 1) go(N.pos + 1);
   else if (N.auto) setAuto(false);
 }

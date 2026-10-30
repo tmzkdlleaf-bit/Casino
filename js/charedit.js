@@ -3,11 +3,11 @@
    수정 범위: 나이 · 키 · 성격 키워드 · 설명 · 링크 · 음악(유튜브)
    실제 권한 확인은 DB 함수 owner_update_character (supabase/update-6.sql)
    ========================================================= */
-import { publicUrl, sb } from "./data.js?v=20261030a";
-import { $, $$, esc, toast } from "./dom.js?v=20261030a";
-import { errMsg, showMsg } from "./forms.js?v=20261030a";
-import { nav } from "./state.js?v=20261030a";
-import { ALL, canEdit, renderProfile, ytId } from "./views.js?v=20261030a";
+import { publicUrl, sb } from "./data.js?v=20261030b";
+import { $, $$, esc, toast } from "./dom.js?v=20261030b";
+import { errMsg, showMsg } from "./forms.js?v=20261030b";
+import { nav } from "./state.js?v=20261030b";
+import { ALL, canEdit, renderProfile, ytId } from "./views.js?v=20261030b";
 
 const MAX_LINKS = 10;
 const current = () => ALL().find(c => c.id === nav.lastProfile);
@@ -51,7 +51,7 @@ $("#pe-gimg").addEventListener("change", e => {
 });
 async function saveGameImg(c){
   if (gimg.file){
-    const { toWebP, extOf } = await import("./img.js?v=20261030a");
+    const { toWebP, extOf } = await import("./img.js?v=20261030b");
     const blob = await toWebP(gimg.file, 512), path = `${c.uuid}/${Date.now()}.${extOf(blob)}`;
     const up = await sb.storage.from("roulette").upload(path, blob, { contentType: blob.type, cacheControl: "31536000", upsert: false });
     if (up.error) throw up.error;
