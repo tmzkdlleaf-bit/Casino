@@ -2,11 +2,11 @@
    상점 구매 — 요청 → 관리자 승인 → 코인 차감·소지품 지급 (supabase/update-7.sql)
    요청할 때는 코인이 빠지지 않고, 승인되는 순간 서버에서 한 번에 처리됨
    ========================================================= */
-import { CURRENCY, USE_DB, itemCols, mapItem, publicUrl, sb, fmtDate, fmtTime } from "./data.js?v=20261030i";
-import { $, CUR, chipAmt, curOf, esc, toast, announce } from "./dom.js?v=20261030i";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261030i";
-import { DATA, state } from "./state.js?v=20261030i";
-import { balOf, myChars, renderShop } from "./views.js?v=20261030i";
+import { CURRENCY, USE_DB, itemCols, mapItem, publicUrl, sb, fmtDate, fmtTime } from "./data.js?v=20261031a";
+import { $, CUR, chipAmt, curOf, esc, toast, announce } from "./dom.js?v=20261031a";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261031a";
+import { DATA, state } from "./state.js?v=20261031a";
+import { balOf, myChars, renderShop } from "./views.js?v=20261031a";
 
 export const SHOP = { reqs: [], ok: true, loaded: false };
 export const STATUS = { pending: "승인 대기", approved: "승인됨", rejected: "거절됨", cancelled: "취소함" };

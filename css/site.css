@@ -2029,8 +2029,10 @@ input.vol:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
 /* ---------- 읽기: 가운데 한 줄 책 ---------- */
 .log-box > .pane{flex:1; margin:0; padding:2rem clamp(1rem, 5vw, 3.5rem) 4rem}
 .lg-body{--lg-fs:1.0625rem; max-width:var(--lg-w, 46rem)}
-.lg{display:block; padding:.55rem 0; border-top:0}
-.lg .lg-av{display:none}
+.lg{display:grid; grid-template-columns:3rem minmax(0,1fr); gap:1rem; padding:.7rem 0; border-top:0}
+.lg .lg-av{width:3rem; height:3rem; margin-top:.15rem; border-radius:6px}
+.lg.has-st{grid-template-columns:4.25rem minmax(0,1fr)}
+.lg .lg-av.st{width:4.25rem; height:4.25rem; border-radius:6px; background:rgba(238,243,250,.05)}
 .lg-n{margin:0 0 .15rem; font-family:var(--f-pixel); font-weight:700; font-size:.9em}
 .lg-b > p:not(.lg-n){font-size:1.02em; line-height:1.85; color:rgba(238,243,250,.92)}
 .lg-narr{margin:.6rem 0; padding:.1rem 0 .1rem 1.1rem; border-left:1px solid rgba(173,207,234,.4); color:rgba(238,243,250,.68)}
