@@ -2,11 +2,11 @@
    코인 정산 요청 — 멤버가 "코인 100개 추가" 같은 요청을 올리고 관리자가 승인 (supabase/update-9.sql)
    설정 화면의 '코인 정산 요청' 칸. 승인되면 서버가 코인 기록에 넣음
    ========================================================= */
-import { CURRENCY, USE_DB, fmtDate, fmtTime, sb } from "./data.js?v=20261031a";
-import { $, announce, chipAmt, esc, toast } from "./dom.js?v=20261031a";
-import { errMsg, showMsg, withBusy } from "./forms.js?v=20261031a";
-import { state } from "./state.js?v=20261031a";
-import { myChars } from "./views.js?v=20261031a";
+import { CURRENCY, USE_DB, fmtDate, fmtTime, sb } from "./data.js?v=20261031c";
+import { $, announce, chipAmt, esc, toast } from "./dom.js?v=20261031c";
+import { errMsg, showMsg, withBusy } from "./forms.js?v=20261031c";
+import { state } from "./state.js?v=20261031c";
+import { myChars } from "./views.js?v=20261031c";
 
 export const CREQ = { list: [], ok: true };
 const ST = { pending: "승인 대기", approved: "승인됨", rejected: "거절됨", cancelled: "취소함" };

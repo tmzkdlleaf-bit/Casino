@@ -3,12 +3,12 @@
    가볍게: ① 기록은 작게 저장된 JSON 한 개 ② 화면에는 50묶음씩 나눠 붙이고, 첫 두 묶음만 바로 그린 뒤
    나머지는 브라우저가 한가할 때 이어 붙임 ③ 화면 밖 묶음은 content-visibility로 그리기를 건너뜀
    ========================================================= */
-import { publicUrl, sb } from "./data.js?v=20261031a";
-import { guessTabFormat } from "./logparse.js?v=20261031a";
-import { loadSecrets, mergeLog } from "./logsecret.js?v=20261031a";
-import { $, $$, esc, setTitle } from "./dom.js?v=20261031a";
-import { DATA, nav, state } from "./state.js?v=20261031a";
-import { ALL } from "./views.js?v=20261031a";
+import { publicUrl, sb } from "./data.js?v=20261031c";
+import { guessTabFormat } from "./logparse.js?v=20261031c";
+import { loadSecrets, mergeLog } from "./logsecret.js?v=20261031c";
+import { $, $$, esc, setTitle } from "./dom.js?v=20261031c";
+import { DATA, nav, state } from "./state.js?v=20261031c";
+import { ALL } from "./views.js?v=20261031c";
 
 const cache = new Map();          // 주소 → 기록 JSON
 const SIZE_KEY = "comu-log-size";
@@ -154,9 +154,9 @@ function drawTabs(){
   $("#log-tabs").innerHTML = order.map(t => { const [name, format] = log.tabs[t];
     const n = log.m.reduce((k, x) => k + (x[0] === t), 0);
     const label = /^(main|info|other|secret)$/i.test(name) ? { main: "메인", ...TAB_LABEL }[format] : name;
-    return `<button type="button" class="tchip f-${format}" data-tab="${t}" aria-pressed="${!V.hidden.has(t)}" title="${esc(label)} · ${n.toLocaleString("ko-KR")}줄">${esc(label)}</button>`;
+    return `<button type="button" class="tchip f-${format}" data-tab="${t}" aria-pressed="${!V.hidden.has(t)}" >${esc(label)} <span class="c">${n.toLocaleString("ko-KR")}</span></button>`;
   }).join("");
-  $("#log-tabs").hidden = log.tabs.length < 2;
+  $("#log-tabbar").hidden = log.tabs.length < 2;
 }
 
 function applySize(){
@@ -170,10 +170,15 @@ function applyWidth(){
 /* 크게 보기: 아래 메뉴와 제목을 숨기고 기록 창이 브라우저 화면을 채움 */
 function applyBig(){
   document.body.classList.toggle("log-big", big && nav.current === "log");
-  $("#log-big").setAttribute("aria-pressed", String(big));
-  $("#log-big").textContent = big ? "크게 보기 끝" : "크게 보기";
+  $$("#log-bigseg button").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.big === "1") === big)));
 }
 export const setBig = on => { big = on; try { localStorage.setItem(BIG_KEY, on ? "1" : "0"); } catch (_) {} applyBig(); };
+/* 보기 설정(Aa) 메뉴: 글자 크기·본문 폭·스탠딩·크게 보기 */
+const ST_KEY = "comu-log-st";
+let showSt = true;
+try { showSt = localStorage.getItem(ST_KEY) !== "0"; } catch (_) {}
+function applySt(){ $(".log-box").classList.toggle("no-st", !showSt); $$("#log-st button").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.st === "1") === showSt))); }
+function aaMenu(open){ const m = $("#log-aa-menu"), b = $("#log-aa"); if (!m) return; m.hidden = !open; b.setAttribute("aria-expanded", String(open)); }
 /* 전체 화면: 기록 화면(읽기·노벨)을 모니터 전체로 */
 function toggleFull(){
   const sec = $('[data-page="log"]');
@@ -220,7 +225,7 @@ document.addEventListener("click", e => {
 });
 
 /* ---------- 읽기 / 노벨 ---------- */
-const novel = () => import("./novel.js?v=20261031a");
+const novel = () => import("./novel.js?v=20261031c");
 async function applyMode(){
   const vn = V.mode === "novel" && !!V.log;
   $$("#log-mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === (vn ? "novel" : "read"))));
@@ -251,15 +256,15 @@ export async function openLog(number){
   $("#log-title").textContent = c.title;
   setTitle(`제${c.number}화 ${c.title}`);
   $("#log-meta").textContent = "";
-  $("#log-tabs").innerHTML = ""; $("#log-tabs").hidden = true; $("#log-rail").hidden = true;
+  $("#log-tabs").innerHTML = ""; $("#log-tabbar").hidden = true; aaMenu(false); $("#log-rail").hidden = true;
   $('[data-page="log"]').classList.remove("folded");
-  applySize(); applyWidth(); applyBig();
+  applySize(); applyWidth(); applyBig(); applySt(); bgmTitle();
   const box = $("#log-body");
   $("#log-edit").hidden = true; $("#log-snd").hidden = true;
   $("#log-mode").hidden = true; $("#log-pane").hidden = false; $("#log-vn").hidden = true; $(".log-box").classList.remove("is-vn");
-  import("./novel.js?v=20261031a").then(m => m.closeNovel()).catch(() => {});
+  import("./novel.js?v=20261031c").then(m => m.closeNovel()).catch(() => {});
   stopAudio(); V.editing = false; box.classList.remove("editing"); document.body.classList.remove("vn-on");
-  $("#log-edit").textContent = "편집"; $("#log-edit").setAttribute("aria-pressed", "false"); { const eb = $("#log-editbar"); if (eb) eb.hidden = true; }
+  $("#log-edit").setAttribute("aria-label", "편집"); $("#log-edit").setAttribute("aria-pressed", "false"); { const eb = $("#log-editbar"); if (eb) eb.hidden = true; }
   if (!c.log){ box.innerHTML = `<p class="empty-note">이 회차에는 아직 진행 기록이 없습니다.</p>`; return; }
   box.innerHTML = `<p class="empty-note" role="status">기록을 불러오는 중…</p>`;
   try {
@@ -311,7 +316,9 @@ export function setVolume(v){
 document.addEventListener("input", e => { if (e.target.matches?.("input.vol")) setVolume(+e.target.value / 100); });
 const VOL = () => LV.v;
 /* BGM 버튼: 켜져 있으면 일시정지(❚❚), 꺼져 있으면 재생(▶) */
-export function bgmLabel(){ const b = $("#log-follow"); if (!b) return; const on = b.getAttribute("aria-pressed") === "true"; b.innerHTML = `<span aria-hidden="true">${on ? "❚❚" : "▶"}</span> BGM`; b.setAttribute("aria-label", on ? "BGM 일시정지" : "BGM 재생"); }
+export function bgmLabel(){ const b = $("#log-follow"); if (!b) return; const on = b.getAttribute("aria-pressed") === "true"; b.innerHTML = `<span aria-hidden="true">${on ? "❚❚" : "▶"}</span>`; b.setAttribute("aria-label", on ? "BGM 일시정지" : "BGM 재생"); }
+/* BGM 곡 이름 (지금 나오는 곡, 없으면 이 기록의 첫 곡) */
+export function bgmTitle(t){ const el = $("#log-bgm-t"); if (!el) return; const first = (V.log?.bgm || []).find(b => b.kind !== "stop"); el.textContent = t || first?.title || "BGM"; el.title = el.textContent; }
 /* 읽기 화면: 기록에 BGM 표시가 있으면 볼륨 막대를 보임 (노벨은 대사창 안 BGM 버튼 옆) */
 function syncVol(vn){ const v = $("#log-vol"); if (!v) return; $("#log-snd").hidden = !(V.log?.bgm || []).some(b => b.kind !== "stop"); v.value = Math.round(LV.v * 100); v.style.setProperty("--vol", v.value + "%"); }
 function fadeTo(a, v, ms = 800, done){
@@ -321,6 +328,7 @@ function fadeTo(a, v, ms = 800, done){
 }
 function playK(k){
   const b = V.log.bgm[k];
+  bgmTitle(b?.kind === "audio" ? b.title : "");
   if (!b || b.kind !== "audio"){ stopAudio(); return; }
   if (P.k === k && P.playing) return;
   const old = P.audio;
@@ -411,9 +419,12 @@ document.addEventListener("click", e => {
   }
   const wb = e.target.closest("#log-width button");
   if (wb){ width = +wb.dataset.w; try { localStorage.setItem(WIDTH_KEY, String(width)); } catch (_) {} applyWidth(); return; }
-  if (e.target.closest("#log-big")){ setBig(!big); return; }
+  if (e.target.closest("#log-aa")){ aaMenu($("#log-aa-menu").hidden); return; }
+  const bg2 = e.target.closest("[data-big]"); if (bg2){ setBig(bg2.dataset.big === "1"); return; }
+  const stb = e.target.closest("[data-st]"); if (stb){ showSt = stb.dataset.st === "1"; try { localStorage.setItem(ST_KEY, showSt ? "1" : "0"); } catch (_) {} applySt(); return; }
+  if (!$("#log-aa-menu").hidden && !e.target.closest("#log-aa-menu")) aaMenu(false);
   if (e.target.closest("#log-full")){ toggleFull(); return; }
-  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261031a").then(m => m.toggleEdit()); return; }
+  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261031c").then(m => m.toggleEdit()); return; }
   const sz = e.target.closest(".log-size button");
   if (sz){
     size = Math.max(0, Math.min(SIZES.length - 1, size + +sz.dataset.size));
@@ -424,5 +435,6 @@ document.addEventListener("click", e => {
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape" || nav.current !== "log" || document.querySelector("dialog[open]")) return;
   // 여기서 처리한 Esc는 사이트 전체의 ‘Esc = 목록으로’까지 가지 않게 막음
+  if (!$("#log-aa-menu").hidden){ e.stopPropagation(); aaMenu(false); $("#log-aa").focus(); return; }
   if (big && !document.fullscreenElement && !$("#vn-log:not([hidden])")){ e.stopPropagation(); setBig(false); }
 });

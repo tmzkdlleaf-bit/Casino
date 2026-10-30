@@ -28,24 +28,24 @@
 .logtest-bar{position:fixed;left:8px;bottom:calc(var(--dock) + env(safe-area-inset-bottom) + 8px);z-index:9999;opacity:.85}
 body.log-big .logtest-bar, body.vn-on .logtest-bar{display:none !important}   /* 크게 보기·노벨 모드에서는 도구를 가리지 않게 숨김 */</style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="css/site.css?v=20261031a">
+<link rel="stylesheet" href="css/site.css?v=20261031c">
 <!-- 파일 주소 끝의 ?v=날짜 는 버전 표시 — 바꿔 올릴 때마다 함께 바꾸면 브라우저가 옛 파일을 쓰지 않음 (js 안의 import 주소도 같은 값) -->
 <!-- 모듈 미리 받기: import 사슬을 따라 차례로 받는 대기 시간 제거 (관리 모듈은 제외 — 관리자만 필요할 때 받음) -->
-<link rel="modulepreload" href="js/main.js?v=20261031a">
-<link rel="modulepreload" href="js/config.js?v=20261031a">
-<link rel="modulepreload" href="js/state.js?v=20261031a">
-<link rel="modulepreload" href="js/dom.js?v=20261031a">
-<link rel="modulepreload" href="js/data.js?v=20261031a">
-<link rel="modulepreload" href="js/views.js?v=20261031a">
-<link rel="modulepreload" href="js/effects.js?v=20261031a">
-<link rel="modulepreload" href="js/router.js?v=20261031a">
-<link rel="modulepreload" href="js/auth.js?v=20261031a">
-<link rel="modulepreload" href="js/forms.js?v=20261031a">
-<link rel="modulepreload" href="js/markdown.js?v=20261031a">
-<link rel="modulepreload" href="js/ambience.js?v=20261031a">
-<link rel="modulepreload" href="js/navorder.js?v=20261031a">
-<link rel="modulepreload" href="js/charedit.js?v=20261031a">
-<link rel="modulepreload" href="js/shop.js?v=20261031a">
+<link rel="modulepreload" href="js/main.js?v=20261031c">
+<link rel="modulepreload" href="js/config.js?v=20261031c">
+<link rel="modulepreload" href="js/state.js?v=20261031c">
+<link rel="modulepreload" href="js/dom.js?v=20261031c">
+<link rel="modulepreload" href="js/data.js?v=20261031c">
+<link rel="modulepreload" href="js/views.js?v=20261031c">
+<link rel="modulepreload" href="js/effects.js?v=20261031c">
+<link rel="modulepreload" href="js/router.js?v=20261031c">
+<link rel="modulepreload" href="js/auth.js?v=20261031c">
+<link rel="modulepreload" href="js/forms.js?v=20261031c">
+<link rel="modulepreload" href="js/markdown.js?v=20261031c">
+<link rel="modulepreload" href="js/ambience.js?v=20261031c">
+<link rel="modulepreload" href="js/navorder.js?v=20261031c">
+<link rel="modulepreload" href="js/charedit.js?v=20261031c">
+<link rel="modulepreload" href="js/shop.js?v=20261031c">
 </head>
 <body class="intro-on loading">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -230,36 +230,41 @@ body.log-big .logtest-bar, body.vn-on .logtest-bar{display:none !important}   /*
   <!-- ===================== 진행 기록 (회차별 코코포리아 로그) ===================== -->
   <section data-page="log" class="page log-page" hidden>
     <div class="log-box">
+      <!-- 위 막대: 왼쪽 제목 | 가운데 읽기·노벨 | 오른쪽 BGM·보기 설정·편집·전체 화면. 두 모드가 똑같이 씀 -->
       <div class="log-bar" role="toolbar" aria-label="기록 보기 도구">
-        <a class="cb-back" href="#story" aria-label="지난 이야기로">‹</a>
-        <span class="cb-ep" id="log-ep"></span>
-        <h1 class="cb-title" id="log-title"></h1>
-        <p id="log-meta" hidden></p>
-        <div class="log-chips" id="log-tabs" role="group" aria-label="보이는 탭" hidden></div>
-        <!-- 오른쪽 도구: 읽기·노벨 모두 같은 자리. 기록마다 있거나 없는 BGM 볼륨은 맨 왼쪽(없어도 다른 버튼이 안 움직임) -->
-        <div class="cb-tools">
-        <span class="log-snd" id="log-snd" hidden><button class="cb" type="button" id="log-follow" aria-pressed="false">BGM</button><input class="vol" id="log-vol" type="range" min="0" max="100" step="1" aria-label="BGM 볼륨"></span>
-        <div class="cb-seg log-mode" role="group" aria-label="보기 방식" id="log-mode" hidden>
-          <button type="button" data-mode="read" aria-pressed="true">읽기</button>
-          <button type="button" data-mode="novel" aria-pressed="false">노벨</button>
+        <div class="lb-l">
+          <a class="ib" href="#story" aria-label="지난 이야기로">‹</a>
+          <div class="lb-t"><span class="cb-ep" id="log-ep"></span><h1 class="cb-title" id="log-title"></h1></div>
+          <p id="log-meta" hidden></p>
         </div>
-        <div class="cb-seg log-width" role="group" aria-label="본문 폭" id="log-width">
-          <button type="button" data-w="0" aria-label="본문 좁게">좁게</button>
-          <button type="button" data-w="1" aria-label="본문 보통">보통</button>
-          <button type="button" data-w="2" aria-label="본문 넓게">넓게</button>
+        <div class="lb-c">
+          <div class="mseg log-mode" role="group" aria-label="보기 방식" id="log-mode" hidden>
+            <button type="button" data-mode="read" aria-pressed="true">읽기</button>
+            <button type="button" data-mode="novel" aria-pressed="false">노벨</button>
+          </div>
         </div>
-        <div class="cb-seg log-size" role="group" aria-label="글자 크기">
-          <button type="button" data-size="-1" aria-label="글자 작게">가<span aria-hidden="true">−</span></button>
-          <button type="button" data-size="1" aria-label="글자 크게">가<span aria-hidden="true">+</span></button>
-        </div>
-        <button class="cb" type="button" id="log-edit" aria-pressed="false" hidden>편집</button>
-        <button class="cb" type="button" id="log-big" aria-pressed="false">크게 보기</button>
-        <button class="cb" type="button" id="log-full">전체 화면</button>
+        <div class="lb-r">
+          <div class="lbgm" id="log-snd" hidden>
+            <button class="bgm-pp" type="button" id="log-follow" aria-pressed="false" aria-label="BGM 재생"><span aria-hidden="true">▶</span></button>
+            <span class="bgm-t" id="log-bgm-t">BGM</span>
+            <input class="vol" id="log-vol" type="range" min="0" max="100" step="1" aria-label="BGM 볼륨">
+          </div>
+          <button class="ib" type="button" id="log-aa" aria-expanded="false" aria-controls="log-aa-menu" aria-label="보기 설정">Aa</button>
+          <button class="ib" type="button" id="log-edit" aria-pressed="false" aria-label="편집" hidden>✎</button>
+          <button class="ib" type="button" id="log-full" aria-label="전체 화면">⛶</button>
+          <div class="aa-menu" id="log-aa-menu" role="dialog" aria-label="보기 설정" hidden>
+            <div class="aa-row"><span>글자 크기</span><div class="mseg log-size" role="group" aria-label="글자 크기"><button type="button" data-size="-1" aria-label="글자 작게">가−</button><button type="button" data-size="1" aria-label="글자 크게">가+</button></div></div>
+            <div class="aa-row"><span>본문 폭</span><div class="mseg log-width" role="group" aria-label="본문 폭" id="log-width"><button type="button" data-w="0">좁게</button><button type="button" data-w="1">보통</button><button type="button" data-w="2">넓게</button></div></div>
+            <div class="aa-row"><span>스탠딩</span><div class="mseg" role="group" aria-label="스탠딩" id="log-st"><button type="button" data-st="1">보임</button><button type="button" data-st="0">숨김</button></div></div>
+            <div class="aa-row"><span>크게 보기</span><div class="mseg" role="group" aria-label="크게 보기" id="log-bigseg"><button type="button" data-big="0">끔</button><button type="button" data-big="1">켬</button></div></div>
+          </div>
         </div>
       </div>
+      <div class="log-tabbar" id="log-tabbar" hidden><span class="tr-l">탭</span><div class="log-chips" id="log-tabs" role="group" aria-label="보이는 탭"></div></div>
       <div class="pane log-pane" id="log-pane" tabindex="0" role="region" aria-label="진행 기록 본문"><div class="lg-body" id="log-body"></div></div>
       <nav class="log-rail" id="log-rail" aria-label="장면" hidden></nav>
       <div class="vn" id="log-vn" hidden></div>
+      <button type="button" id="log-big" hidden></button>
     </div>
   </section>
 
@@ -725,6 +730,6 @@ body.log-big .logtest-bar, body.vn-on .logtest-bar{display:none !important}   /*
 
 <!-- 버전 고정 + 무결성 해시(SRI): CDN 파일이 바뀌면 브라우저가 실행을 거부 -->
 <script src="js/mock-supabase.js"></script>
-<script type="module" src="js/main.js?v=20261031a"></script>
+<script type="module" src="js/main.js?v=20261031c"></script>
 </body>
 </html>
