@@ -845,6 +845,7 @@ table.rec .who, table.rec .note{color:var(--text-2); font-size:.875rem}
 table.rec .num{text-align:right; white-space:nowrap; font-weight:600; color:var(--gold)}
 table.rec .num.minus{color:var(--red-text)}
 table.rec .empty-note{padding:2rem .5rem}
+@media (max-width:600px){ table.rec .empty-note{text-align:left} }   /* 표가 화면보다 넓어 가운데 정렬 문구가 잘리던 문제 */
 .win-name{display:inline-flex; align-items:center; gap:.45rem; min-width:0; text-decoration:none; font-weight:500; transition:color .3s}
 .win-name:hover{color:var(--gold)}
 .win-name .mk{display:flex; font-size:.95rem; color:rgba(238,243,250,.9)}
@@ -1131,6 +1132,8 @@ body.loading #cc-track:empty, body.loading #show, body.loading #shop:empty{anima
    ========================================================= */
 /* 로비 (게임 화면 왼쪽 위 칸) */
 .game-stage.rl-lobby{display:flex; flex-direction:column; align-items:stretch; gap:.75rem; min-height:0; max-height:clamp(14rem, 34vh, 22rem)}
+/* 한 칸 배치(980px 이하): 세로 그리드 안에서 0으로 접히지 않게 — 전적·일정 칸처럼 최소 높이를 줌 */
+@media (max-width:980px){ .game-stage.rl-lobby{min-height:16rem; max-height:26rem} }
 .rl-lobby-head{display:flex; align-items:center; gap:.9rem}
 .rl-lobby-head .h{margin:0; font-size:var(--s2)}
 .rl-lobby-head .btn{margin-left:auto}
