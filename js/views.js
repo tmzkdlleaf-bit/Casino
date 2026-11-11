@@ -1,9 +1,10 @@
-import { CONFIG, SUITS, idOf } from "./config.js?v=20261031h";
-import { EXTRA, RECORDS, USE_DB, sb } from "./data.js?v=20261031h";
-import { $, $$, chipAmt, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261031h";
-import { initShow, layoutCast } from "./effects.js?v=20261031h";
-import { buyHtml, myReqHtml } from "./shop.js?v=20261031h";
-import { DATA, nav, state } from "./state.js?v=20261031h";
+import { CONFIG, SUITS, idOf } from "./config.js?v=20261031i";
+import { EXTRA, RECORDS, USE_DB, sb } from "./data.js?v=20261031i";
+import { $, $$, chipAmt, esc, isRed, ph, setTitle, splitText, suitIcon } from "./dom.js?v=20261031i";
+import { initShow, layoutCast } from "./effects.js?v=20261031i";
+import { buyHtml, myReqHtml } from "./shop.js?v=20261031i";
+import { DATA, nav, state } from "./state.js?v=20261031i";
+import { getPos, posKey, posState } from "./logpos.js?v=20261031i";
 
 /* ---------- render ---------- */
 export const timeTag = (label, iso) => `<time${iso ? ` datetime="${esc(iso)}"` : ""}>${esc(label)}</time>`;
@@ -200,7 +201,16 @@ const epTitle = c => {
   const t = (c.title || "").trim();
   return t && !new RegExp(`^제?\\s*${c.number}\\s*화$`).test(t) ? t : "";   // "1화"처럼 회차와 같은 제목은 한 번만
 };
-const logLink = c => c.log ? `<a class="btn small log-link" href="#story/${esc(String(c.number))}">진행 기록 보기<span class="sr"> — 제${c.number}화</span></a>` : "";
+/* 진행 기록 버튼: 읽던 자리가 있으면 ‘이어 보기 · 몇 %’ + ‘처음부터’, 없으면 ‘진행 기록 보기’ (읽던 자리는 이 기기에 기억 — logpos.js) */
+const readState = c => c.log ? posState(getPos(posKey(c))) : { kind: "none", pct: 0 };
+const logLink = c => {
+  if (!c.log) return "";
+  const href = `#story/${esc(String(c.number))}`, sr = `<span class="sr"> — 제${c.number}화</span>`, st = readState(c);
+  if (st.kind === "mid") return `<span class="log-links"><a class="btn small primary log-link" href="${href}">이어 보기 <span class="pct">${st.pct}%</span>${sr}</a><a class="btn small log-link" href="${href}" data-log-start="${esc(String(c.number))}">처음부터${sr}</a></span>`;
+  return `<span class="log-links"><a class="btn small log-link" href="${href}">진행 기록 보기${sr}</a></span>`;   // 다 읽은 회차는 다시 열면 맨 앞에서
+};
+/* 회차 목록에 붙는 작은 표시: 읽는 중 42% / 다 읽음 */
+const readTag = c => { const st = readState(c); return st.kind === "mid" ? `<span class="rd">읽는 중 ${st.pct}%</span>` : st.kind === "done" ? `<span class="rd done">다 읽음</span>` : ""; };
 
 export function renderStory(sel){
   const wrap = $("#timeline-wrap"), detail = $("#story-detail");
@@ -217,7 +227,7 @@ export function renderStory(sel){
     const t = epTitle(c);
     return `<li${c.number === sel ? ` class="on"` : ""} data-n="${esc(c.number)}">
       <button class="ch-pick" type="button" data-ch="${esc(c.number)}" aria-pressed="${c.number === sel}" aria-controls="story-detail">
-        <span class="ep">제${c.number}화</span>${t ? `<span class="h">${esc(t)}</span>` : ""}${timeTag(c.date, c.iso)}
+        <span class="ep">제${c.number}화${readTag(c)}</span>${t ? `<span class="h">${esc(t)}</span>` : ""}${timeTag(c.date, c.iso)}
       </button>
       <div class="m-only">${c.summary ? `<p>${esc(c.summary)}</p>` : ""}${logLink(c)}</div>
     </li>`;

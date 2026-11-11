@@ -4,12 +4,12 @@
    - BGM 표시를 누르면: 고치기 / 삭제
    - 고친 내용은 모아 두었다가 ‘변경 저장’ 한 번에 새 파일로 올림 (이전 파일은 지움)
    ========================================================= */
-import { publicUrl, refreshPublic, sb } from "./data.js?v=20261031h";
-import { $, $$, announce, esc, toast } from "./dom.js?v=20261031h";
-import { errMsg, withBusy } from "./forms.js?v=20261031h";
-import { V, faceSrc, imgSrc, render, stopAudio } from "./logview.js?v=20261031h";
-import { extOf, toWebP } from "./img.js?v=20261031h";
-import { state } from "./state.js?v=20261031h";
+import { publicUrl, refreshPublic, sb } from "./data.js?v=20261031i";
+import { $, $$, announce, esc, toast } from "./dom.js?v=20261031i";
+import { errMsg, withBusy } from "./forms.js?v=20261031i";
+import { V, faceSrc, imgSrc, render, stopAudio } from "./logview.js?v=20261031i";
+import { extOf, toWebP } from "./img.js?v=20261031i";
+import { state } from "./state.js?v=20261031i";
 
 const E = { dirty: 0, i: -1, k: -1 };
 
@@ -95,7 +95,7 @@ function lineDialog(i, isNew = false){
 const shiftBgm = (from, by) => { for (const b of [...(V.log.bgm || []), ...(V.log.bg || [])]) if (b.at > from) b.at += by; };
 
 function rerender(at){
-  if (V.mode === "novel") import("./novel.js?v=20261031h").then(m => m.refreshNovel());   // 노벨 화면에서 고쳤으면 그 자리에서 다시
+  if (V.mode === "novel") import("./novel.js?v=20261031i").then(m => m.refreshNovel());   // 노벨 화면에서 고쳤으면 그 자리에서 다시
   const pane = $("#log-pane");
   render({ upTo: at });
   const el = $(`#log-body [data-i="${at}"]`) || $(`#log-body [data-k="${at}"]`);
@@ -242,7 +242,7 @@ async function applyBgm(d){
   return true;
 }
 
-/* ---------- 저장: 새 파일로 올리고 회차가 그 파일을 가리키게 한 뒤 이전 파일 삭제 ---------- */
+/* ---------- 저장: 새 공개 파일 → 비밀 탭 → 회차 연결 순서 (logsecret.js saveLog). 중간에 끊겨도 예전 기록이 그대로 남음 ---------- */
 async function save(){
   const c = V.chapter, log = V.log;
   if (!c || !E.dirty) return;
@@ -250,16 +250,8 @@ async function save(){
   if (row.error) throw row.error;
   if (!V.secretsOk) throw new Error("비밀 탭을 불러오지 못해서 저장하지 않았습니다. 새로고침한 뒤 다시 해 주세요.");   // 그대로 저장하면 비밀 탭이 지워짐
   log.n = log.m.length; log.v = 3;
-  const { splitLog, saveSecrets } = await import("./logsecret.js?v=20261031h");
-  const { pub, secrets } = splitLog(log);            // 비밀 탭은 공개 파일에서 빼서 따로
-  await saveSecrets(sb, c.id, secrets);
-  const blob = new Blob([JSON.stringify(pub)], { type: "application/json" });
-  const path = `ch-${c.id}-${Date.now()}.json`;
-  const up = await sb.storage.from("logs").upload(path, blob, { contentType: "application/json", cacheControl: "31536000", upsert: false });
-  if (up.error) throw up.error;
-  const { error } = await sb.from("chapters").update({ log_path: path, updated_at: new Date().toISOString() }).eq("id", c.id);
-  if (error){ sb.storage.from("logs").remove([path]); throw error; }
-  if (row.data.log_path) sb.storage.from("logs").remove([row.data.log_path]);
+  const { saveLog } = await import("./logsecret.js?v=20261031i");
+  const { path } = await saveLog(sb, c.id, log, { oldPath: row.data.log_path || "" });
   c.log = publicUrl("logs", path);
   E.dirty = 0; dirty(0);
   toast("기록을 저장했습니다");

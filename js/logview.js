@@ -2,13 +2,15 @@
    진행 기록 보기 — #story/회차번호  (이 화면에 처음 들어올 때만 불러옴)
    가볍게: ① 기록은 작게 저장된 JSON 한 개 ② 화면에는 50묶음씩 나눠 붙이고, 첫 두 묶음만 바로 그린 뒤
    나머지는 브라우저가 한가할 때 이어 붙임 ③ 화면 밖 묶음은 content-visibility로 그리기를 건너뜀
+   그 밖에: 읽기↔노벨(novel.js) 전환, BGM 재생기, 찾기(탭 줄 자리에 겹쳐 뜸), 읽던 자리 기억(logpos.js — ‘이어 보기’)
    ========================================================= */
-import { publicUrl, sb } from "./data.js?v=20261031h";
-import { guessTabFormat } from "./logparse.js?v=20261031h";
-import { loadSecrets, mergeLog } from "./logsecret.js?v=20261031h";
-import { $, $$, esc, setTitle } from "./dom.js?v=20261031h";
-import { DATA, nav, state } from "./state.js?v=20261031h";
-import { ALL } from "./views.js?v=20261031h";
+import { publicUrl, sb } from "./data.js?v=20261031i";
+import { guessTabFormat } from "./logparse.js?v=20261031i";
+import { loadSecrets, mergeLog } from "./logsecret.js?v=20261031i";
+import { anchorOf, findPos, getPos, posKey, posState, setPos } from "./logpos.js?v=20261031i";
+import { $, $$, esc, setTitle } from "./dom.js?v=20261031i";
+import { DATA, nav, state } from "./state.js?v=20261031i";
+import { ALL } from "./views.js?v=20261031i";
 
 const cache = new Map();          // 주소 → 기록 JSON
 const SIZE_KEY = "comu-log-size";
@@ -21,10 +23,39 @@ const WIDTHS = ["38rem", "48rem", "64rem"];
 let width = 1, big = false;
 try { const r = localStorage.getItem(WIDTH_KEY), v = +r; if (r !== null && v >= 0 && v < WIDTHS.length) width = v; big = localStorage.getItem(BIG_KEY) === "1"; } catch (_) {}
 
-export const V = { log: null, hidden: new Set(), job: 0, number: null, chapter: null, editing: false, mode: "read", secretsOk: true };
+export const V = { log: null, hidden: new Set(), job: 0, number: null, chapter: null, editing: false, mode: "read", secretsOk: true, posReady: false, posMoved: false, openTop: 0, allDrawn: false };
 const MODE_KEY = "comu-log-mode";
 try { if (localStorage.getItem(MODE_KEY) === "novel") V.mode = "novel"; } catch (_) {}
 export const TAB_LABEL = { info: "정보", secret: "비밀", other: "잡담" };
+
+/* ---------- 찾기 표시 (읽기·노벨 같이 씀) ----------
+   글자를 감싸는 대신 브라우저의 ‘강조 범위’(CSS Custom Highlight)를 씀 → 화면 구조를 건드리지 않음.
+   이 기능이 없는 예전 브라우저에서는 낱말 표시는 빠지고, 찾은 대사로 가서 그 줄이 잠깐 밝아지는 것만 됨 */
+const F = { open: false, q: "", hits: [], set: new Set(), cur: -1, off: new Map(), idx: null, t: 0 };
+const HL = typeof Highlight === "function" && window.CSS?.highlights ? { all: new Highlight(), cur: new Highlight() } : null;
+if (HL){ HL.cur.priority = 1; CSS.highlights.set("log-find", HL.all); CSS.highlights.set("log-find-cur", HL.cur); }
+export function hlClear(){ HL?.all.clear(); HL?.cur.clear(); }
+const norm = t => String(t).normalize("NFC").toLowerCase();
+/* root 안의 글에서 q가 나오는 자리들 */
+function rangesIn(root, q){
+  const nq = norm(q || ""), out = [];
+  if (!root || !nq) return out;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  while (w.nextNode()){
+    const node = w.currentNode, text = norm(node.data);
+    if (text.length !== node.data.length) continue;          // 소문자·정규화로 길이가 달라지는 글(드묾)은 자리를 못 맞추니 건너뜀
+    for (let at = text.indexOf(nq); at >= 0; at = text.indexOf(nq, at + nq.length)){
+      const r = new Range(); r.setStart(node, at); r.setEnd(node, at + nq.length); out.push(r);
+    }
+  }
+  return out;
+}
+/* root 안의 q에 표시. cur면 첫 곳을 ‘지금 결과’ 색으로. 첫 곳(Range)을 돌려줌 */
+export function hlMark(root, q, cur = false){
+  const list = rangesIn(root, q);
+  if (HL){ for (const r of list) HL.all.add(r); if (cur && list[0]){ HL.cur.clear(); HL.cur.add(list[0]); } }
+  return list[0] || null;
+}
 
 /* ---------- 이름 색: 어두운 창 위에서 4.5:1 이상 보이도록 밝힘 ---------- */
 const lum = hex => {
@@ -128,13 +159,16 @@ export function render({ upTo = -1 } = {}){
   const box = $("#log-body"), log = V.log, job = ++V.job;
   const list = groups(log);
   const faces = new Map(ALL().filter(c => c.thumb || c.img).map(c => [c.name.trim(), { src: c.thumb || c.img }]));
-  box.innerHTML = "";
+  box.innerHTML = ""; hlClear();
+  V.allDrawn = !list.length;
   if (!list.length){ box.innerHTML = `<p class="empty-note">보이는 탭에 대사가 없습니다.</p>`; return; }
   let i = 0;
   const addChunk = () => {
     const html = list.slice(i, i + CHUNK).map(g => groupHtml(g, log, faces)).join("");
     box.insertAdjacentHTML("beforeend", `<div class="lg-chunk">${html}</div>`);
     i += CHUNK;
+    if (i >= list.length) V.allDrawn = true;
+    if (F.q) markChunk(box.lastElementChild);               // 찾는 말 표시
   };
   addChunk(); if (i < list.length) addChunk();                       // 첫 화면은 바로
   // 편집 뒤처럼 특정 대사로 돌아가야 하면 그 대사가 들어 있는 묶음까지는 바로 그림
@@ -156,7 +190,7 @@ function drawTabs(){
     const label = /^(main|info|other|secret)$/i.test(name) ? { main: "메인", ...TAB_LABEL }[format] : name;
     return `<button type="button" class="tchip f-${format}" data-tab="${t}" aria-pressed="${!V.hidden.has(t)}" >${esc(label)} <span class="c">${n.toLocaleString("ko-KR")}</span></button>`;
   }).join("");
-  $("#log-tabbar").hidden = log.tabs.length < 2;
+  $("#log-tabbar").hidden = log.tabs.length < 2 && !F.open;   // 탭이 하나뿐이면 줄을 숨김 (찾기 중에는 찾기 칸 자리로 씀)
   tabSum();
 }
 /* 탭 줄 접기: 접으면 '탭 7/9'만 한 줄로 — 이 기기에 기억 */
@@ -224,6 +258,12 @@ function railHere(){
   h.style.top = (max > 0 ? p.scrollTop / max * 100 : 0).toFixed(2) + "%";
 }
 $("#log-pane").addEventListener("scroll", railHere, { passive: true });
+/* 장면 막대는 본문이 시작하는 곳부터 (위 막대·탭 줄 높이가 화면 크기나 접힘에 따라 달라서, 고정 값이면 그 위로 삐져나옴) */
+if (window.ResizeObserver) new ResizeObserver(() => {
+  const p = $("#log-pane"); if (!p.offsetParent) return;
+  $("#log-rail").style.top = (p.offsetTop + 16) + "px";
+  railHere();
+}).observe($("#log-pane"));
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-rail]"); if (!b || !V.log) return;
   const at = V.log.bg[+b.dataset.rail].at;
@@ -232,27 +272,86 @@ document.addEventListener("click", e => {
 });
 
 /* ---------- 읽기 / 노벨 ---------- */
-const novel = () => import("./novel.js?v=20261031h");
-/* 읽기 화면에서 지금 읽는 대사(화면 위에서 40% 지점) */
-function readLine(){
-  const pane = $("#log-pane"), thr = pane.getBoundingClientRect().top + pane.clientHeight * .4;
+/* 노벨 모듈은 처음 쓸 때 불러옴. 불러온 뒤에는 VN으로 바로 씀 (닫기처럼 순서가 중요한 일을 기다림 없이 하려고) */
+let VN = null;
+const novel = () => VN ? Promise.resolve(VN) : import("./novel.js?v=20261031i").then(m => (VN = m));
+/* 화면 세로 위치 y에서 읽고 있는 대사: 첫 줄이 y보다 위에 있는 마지막 대사.
+   화면 밖 묶음은 높이를 어림값으로 잡아 두고 안쪽은 그리지 않으므로, 묶음 자체의 위치로만 판단함
+   (그 안쪽 대사의 위치는 묶음 밖으로 삐져나온 값이라 믿을 수 없고, 하나하나 재면 느려짐) */
+function lineAt(y){
   let cur = -1;
-  for (const p of $$("#log-body [data-i]")){ if (p.getBoundingClientRect().top > thr) break; cur = +p.dataset.i; }
+  for (const ch of $$("#log-body .lg-chunk")){
+    const r = ch.getBoundingClientRect();
+    if (r.top > y) break;
+    const ps = ch.querySelectorAll("[data-i]");
+    if (r.bottom < y){ if (ps.length) cur = +ps[ps.length - 1].dataset.i; continue; }   // 통째로 위에 있는 묶음: 마지막 대사
+    for (const p of ps){ if (p.getBoundingClientRect().top > y) break; cur = +p.dataset.i; }
+  }
   return cur;
 }
-/* 읽기 화면을 i번 대사(없으면 그 앞의 가장 가까운 대사)가 40% 지점에 오게 */
-function scrollToLine(i){
-  const pick = () => { let el = null; for (const p of $$("#log-body [data-i]")){ if (+p.dataset.i > i) break; el = p; } return el; };
-  let el = $(`#log-body [data-i="${i}"]`) || null;
-  if (!el){ const all = $$("#log-body [data-i]"); if (!all.length || +all[all.length - 1].dataset.i < i) render({ upTo: i }); el = pick(); }
-  if (!el) return;
-  const pane = $("#log-pane");
-  pane.scrollTop += el.getBoundingClientRect().top - (pane.getBoundingClientRect().top + pane.clientHeight * .4) + 2;
-  railHere();
+/* 읽기 화면에서 지금 읽는 대사(화면 위에서 40% 지점) */
+function readLine(){ const pane = $("#log-pane"); return lineAt(pane.getBoundingClientRect().top + pane.clientHeight * .4); }
+/* i번 대사가 꺼 둔 탭의 것이면: 그 앞의 가장 가까운 보이는 대사 (없으면 뒤쪽). 보이는 대사가 하나도 없으면 -1 */
+function visibleNear(i){
+  const m = V.log?.m || [];
+  i = Math.max(0, Math.min(m.length - 1, i));
+  for (let k = i; k >= 0; k--) if (!V.hidden.has(m[k][0])) return k;
+  for (let k = i + 1; k < m.length; k++) if (!V.hidden.has(m[k][0])) return k;
+  return -1;
 }
-async function applyMode(switching = false){
+/* 읽기 화면을 i번 대사(꺼 둔 탭이면 가까운 보이는 대사)가 40% 지점에 오게. 그 대사의 요소를 돌려줌.
+   pin(요소)이 화면 세로 위치를 돌려주면 대사 첫 줄 대신 그 자리를 맞춤 (긴 대사 안의 찾은 낱말) */
+let lineJob = 0;
+function scrollToLine(i, pin){
+  const k = visibleNear(i), sel = `#log-body [data-i="${k}"]`;
+  if (k < 0) return null;
+  let el = $(sel);
+  if (!el){ render({ upTo: k }); el = $(sel); }                       // 아직 안 그린 뒤쪽이면 그 묶음까지 바로 그림
+  if (!el) return null;
+  const pane = $("#log-pane"), job = ++lineJob;
+  const off = () => (pin?.(el) ?? el.getBoundingClientRect().top) - (pane.getBoundingClientRect().top + pane.clientHeight * .4) + 2;
+  pane.scrollTop += off();
+  // 화면 밖 묶음은 높이를 어림해 두었다가 보일 때 실제로 그리므로, 자리가 잡힐 때까지 몇 번 더 맞춤.
+  // 그 사이 사람이 직접 움직이면(휠·터치·키) 바로 그만둠
+  let n = 0, calm = 0, stop = false;
+  const quit = () => { stop = true; };
+  const evs = ["wheel", "touchstart", "pointerdown", "keydown"];
+  evs.forEach(t => addEventListener(t, quit, { capture: true, passive: true, once: true }));
+  const done = () => { evs.forEach(t => removeEventListener(t, quit, { capture: true })); railHere(); };
+  const fix = () => {
+    if (stop || job !== lineJob || !el.isConnected || n++ > 12) return done();
+    const d = off();
+    if (Math.abs(d) > 1){ pane.scrollTop += d; calm = 0; } else if (++calm > 1) return done();
+    requestAnimationFrame(fix);
+  };
+  requestAnimationFrame(fix);
+  railHere();
+  return el;
+}
+/* 읽던 자리 기억 (이 기기에만): 읽기 화면은 스크롤이 멈출 때, 노벨은 대사를 넘길 때. 지난 이야기의 ‘이어 보기’가 이 값을 씀 */
+export function savePos(i){
+  if (!V.posReady || !V.log || !V.chapter || i < 0) return;
+  setPos(posKey(V.chapter), { i, n: V.log.m.length, a: anchorOf(V.log, i) });
+}
+function saveReadPos(){
+  if (!V.posReady || !V.log || V.mode === "novel" || nav.current !== "log") return;
+  const pane = $("#log-pane"), max = pane.scrollHeight - pane.clientHeight;
+  // 맨 위는 ‘안 읽음’, 다 그려진 뒤의 맨 아래는 ‘다 읽음’
+  savePos(pane.scrollTop < 40 ? 0 : V.allDrawn && max > 0 && pane.scrollTop >= max - 8 ? V.log.m.length - 1 : readLine());
+}
+let posT = 0;
+$("#log-pane").addEventListener("scroll", () => {
+  if (!V.posReady || V.mode === "novel") return;
+  // 열기만 하고 움직이지 않았으면 읽던 자리를 바꾸지 않음 (다 읽은 회차를 잠깐 열어 봐도 ‘다 읽음’ 그대로)
+  if (!V.posMoved){ if (Math.abs($("#log-pane").scrollTop - V.openTop) < 4) return; V.posMoved = true; }
+  clearTimeout(posT); posT = setTimeout(() => { posT = 0; saveReadPos(); }, 400);
+}, { passive: true });
+document.addEventListener("visibilitychange", () => { if (document.hidden && posT){ clearTimeout(posT); posT = 0; saveReadPos(); } });
+/* switching: 읽기↔노벨 버튼으로 바꾼 것 / startAt: 기록을 열 때 이어 볼 대사 번호 */
+async function applyMode(switching = false, startAt = -1){
   const vn = V.mode === "novel" && !!V.log;
-  const from = switching && vn ? Math.max(0, readLine()) : -1;     // 읽던 자리에서 노벨 시작
+  const from = switching && vn ? Math.max(0, readLine()) : startAt;     // 읽던 자리에서 노벨 시작
+  if (switching) V.posMoved = true;
   $$("#log-mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === (vn ? "novel" : "read"))));
   $("#log-pane").hidden = vn;
   $("#log-vn").hidden = !vn;
@@ -265,14 +364,16 @@ async function applyMode(switching = false){
   document.body.classList.toggle("vn-on", vn);
   $$("#log-width button").forEach(b => { b.disabled = vn; });   // 노벨에서는 쓸 일이 없지만 자리는 그대로
   // 노벨에서는 잡담이 채팅창으로 나오므로, 직접 탭을 끈 적이 없으면 잡담 탭을 켬 (읽기 화면 기본값은 접힘)
-  if (vn && !V.tabsTouched && V.log){ let ch = false; V.log.tabs.forEach(([, f], t) => { if (f === "other" && V.hidden.delete(t)) ch = true; }); if (ch){ drawTabs(); render(); } }
+  if (vn && !V.tabsTouched && V.log){ let ch = false; V.log.tabs.forEach(([, f], t) => { if (f === "other" && V.hidden.delete(t)) ch = true; }); if (ch){ drawTabs(); render(); if (F.q) runFind(); } }
   $('[data-page="log"]').classList.toggle("folded", false);
   const m = await novel();
+  if (nav.current !== "log"){ m.closeNovel(); return; }             // 불러오는 사이 다른 화면으로 갔으면 열지 않음
   if (vn) m.openNovel(from);
   else {
     const at = m.closeNovel();                                      // 노벨에서 보던 대사로 읽기 화면을 옮김
     if (switching && at >= 0) scrollToLine(at);
     if (P.follow) follow(); else if (switching) stopAudio();
+    if (F.q) markAll();                                              // 읽기 화면으로 돌아오면 찾는 말 표시를 다시
   }
   const bar = $(".log-bar"); if (bar) bar.scrollLeft = 0;     // 휴대폰: 버튼 줄이 옆으로 밀려 ‘읽기’가 가려지지 않게
 }
@@ -286,13 +387,14 @@ export async function openLog(number){
   $("#log-title").textContent = c.title;
   setTitle(`제${c.number}화 ${c.title}`);
   $("#log-meta").textContent = "";
+  V.posReady = false; clearTimeout(posT); closeFind(true);
   $("#log-tabs").innerHTML = ""; $("#log-tabbar").hidden = true; aaMenu(false); $("#log-rail").hidden = true;
   $('[data-page="log"]').classList.remove("folded");
   applySize(); applyWidth(); applyBig(); applySt(); bgmTitle(); applyTabFold();
   const box = $("#log-body");
   $("#log-edit").hidden = true; $("#log-snd").hidden = true;
   $("#log-mode").hidden = true; $("#log-pane").hidden = false; $("#log-vn").hidden = true; $(".log-box").classList.remove("is-vn");
-  import("./novel.js?v=20261031h").then(m => m.closeNovel()).catch(() => {});
+  VN?.closeNovel();                                   // 열려 있던 노벨 화면 정리 (아직 불러온 적 없으면 열린 것도 없음)
   stopAudio(); setSound(false); V.editing = false; box.classList.remove("editing"); document.body.classList.remove("vn-on");
   $("#log-edit").setAttribute("aria-label", "편집"); $("#log-edit").setAttribute("aria-pressed", "false"); { const eb = $("#log-editbar"); if (eb) eb.hidden = true; }
   if (!c.log){ box.innerHTML = `<p class="empty-note">이 회차에는 아직 진행 기록이 없습니다.</p>`; return; }
@@ -324,7 +426,13 @@ export async function openLog(number){
   drawTabs();
   render();
   drawRail();
-  if (V.mode === "novel") applyMode();
+  // 읽던 자리에서 이어 보기: ‘처음부터’로 들어왔거나 다 읽은 회차는 맨 앞에서
+  const fromStart = String(state.logStart) === String(c.number); state.logStart = null;
+  const saved = getPos(posKey(c)), resume = !fromStart && posState(saved).kind === "mid" ? findPos(V.log, saved) : -1;
+  V.posReady = true; V.posMoved = false;
+  if (fromStart) savePos(0);                                         // ‘처음부터’: 읽던 자리를 지움
+  if (V.mode === "novel") applyMode(false, resume);
+  else { if (resume > 0) scrollToLine(resume); V.openTop = $("#log-pane").scrollTop; }
 }
 
 /* ---------- 구간 BGM ----------
@@ -416,10 +524,127 @@ document.addEventListener("scroll", e => {
   if (e.target.id !== "log-pane" || !P.follow) return;
   clearTimeout(P.timer); P.timer = setTimeout(follow, 250);
 }, true);
-addEventListener("hashchange", () => { if (!location.hash.startsWith("#story/")){ stopAudio(); novel().then(m => m.closeNovel()); document.body.classList.remove("log-big", "vn-on"); if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {}); P.follow = false; $("#log-follow")?.setAttribute("aria-pressed", "false"); } });
+addEventListener("hashchange", () => { if (!location.hash.startsWith("#story/")){ stopAudio(); VN?.closeNovel(); closeFind(true); document.body.classList.remove("log-big", "vn-on"); if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {}); P.follow = false; $("#log-follow")?.setAttribute("aria-pressed", "false"); } });
+
+/* ---------- 찾기 ----------
+   위 막대의 돋보기(또는 Ctrl+F, /)를 누르면 탭 줄 자리에 찾기 칸이 겹쳐 뜸 (화면이 밀리지 않음).
+   켜 둔 탭의 대사 본문에서 찾고, Enter·▼ 다음 / Shift+Enter·▲ 이전. 꺼 둔 탭에 결과가 있으면 알려 주고 눌러서 켤 수 있음.
+   읽기: 그 대사로 스크롤 / 노벨: 그 대사로 건너뜀 (메인 밖의 탭이면 그 채팅창을 엶) */
+/* 꾸밈 기호(**굵게**, {#색|글자})를 뺀 본문 */
+const plainText = t => !/[*{]/.test(t) ? t : t.replace(/\*\*(.+?)\*\*/g, "$1").replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, "$1$2").replace(/\{(?:#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})\|([^{}]+)\}/g, "$1");
+function markChunk(chunk){ for (const p of chunk.querySelectorAll("p[data-i]")) if (F.set.has(+p.dataset.i)) hlMark(p, F.q); }
+function markAll(){
+  hlClear();
+  $$("#log-body .lg-chunk").forEach(markChunk);
+  if (F.cur >= 0 && HL){ const r = rangesIn($(`#log-body [data-i="${F.hits[F.cur]}"]`), F.q)[0]; if (r) HL.cur.add(r); }
+}
+function findLabel(){
+  const n = F.hits.length, lab = $("#log-find-n"), more = $("#log-find-more"), num = k => k.toLocaleString("ko-KR");
+  lab.textContent = !F.q ? "" : !n ? "결과 없음" : F.cur >= 0 ? `${num(F.cur + 1)} / ${num(n)}` : `${num(n)}건`;
+  lab.classList.toggle("none", !!F.q && !n);
+  $("#log-find-prev").disabled = $("#log-find-next").disabled = !n;
+  const off = [...F.off.values()].reduce((a, b) => a + b, 0);
+  more.hidden = !off;
+  if (off){ more.textContent = `꺼 둔 탭 +${num(off)}`; more.setAttribute("aria-label", `꺼 둔 탭에 ${num(off)}건 더 있습니다. 눌러서 그 탭을 켜고 같이 찾기`); more.title = "눌러서 그 탭을 켜고 같이 찾기"; }
+}
+function runFind(){
+  clearTimeout(F.t); F.t = 0;
+  const log = V.log, q = norm($("#log-q").value.trim());
+  Object.assign(F, { q, hits: [], set: new Set(), cur: -1, off: new Map() });
+  if (log && q){
+    if (!F.idx || F.idx.length !== log.m.length) F.idx = log.m.map(x => norm(plainText(x[2])));   // 한 번 만들어 두고 다시 씀
+    log.m.forEach((x, i) => {
+      if (!F.idx[i].includes(q)) return;
+      if (V.hidden.has(x[0])) F.off.set(x[0], (F.off.get(x[0]) || 0) + 1); else { F.hits.push(i); F.set.add(i); }
+    });
+  }
+  if (V.mode === "novel") hlClear(); else markAll();
+  findLabel();
+}
+/* 화면에 보이는 첫 대사 (읽기). 위로 지나간 묶음은 건너뜀 */
+function topLine(){
+  const top = $("#log-pane").getBoundingClientRect().top + 4;
+  for (const ch of $$("#log-body .lg-chunk")){
+    if (ch.getBoundingClientRect().bottom <= top) continue;
+    for (const p of ch.querySelectorAll("[data-i]")) if (p.getBoundingClientRect().bottom > top) return +p.dataset.i;
+  }
+  return 0;
+}
+async function findGo(dir){
+  if (F.t) runFind();                                                // 막 친 글자까지 반영
+  if (!F.hits.length) return;
+  const vn = V.mode === "novel" ? await novel() : null;
+  if (F.cur < 0){                                                    // 처음에는 지금 보는 자리에서 가까운 결과부터
+    const here = vn ? vn.nowLine() : topLine();
+    F.cur = dir > 0 ? F.hits.findIndex(i => i >= here) : F.hits.length - 1 - [...F.hits].reverse().findIndex(i => i <= here);
+    if (F.cur < 0 || F.cur >= F.hits.length) F.cur = dir > 0 ? 0 : F.hits.length - 1;
+  } else F.cur = (F.cur + dir + F.hits.length) % F.hits.length;
+  const i = F.hits[F.cur];
+  findLabel();
+  if (vn){ vn.findJump(i, F.q); return; }
+  // 대사가 길면 첫 줄이 아니라 찾은 낱말이 보이는 곳으로
+  let r;
+  const el = scrollToLine(i, p => (r === undefined ? (r = rangesIn(p, F.q)[0] || null) : r)?.getBoundingClientRect().top);
+  if (!el) return;
+  if (HL){ HL.cur.clear(); if (r) HL.cur.add(r); }
+  el.classList.add("just"); setTimeout(() => el.classList.remove("just"), 1600);
+}
+function openFind(){
+  if (!V.log) return;
+  F.open = true;
+  const bar = $("#log-tabbar"), q = $("#log-q");
+  bar.hidden = false; bar.classList.add("finding"); $("#log-find").hidden = false;
+  $("#log-find-btn").setAttribute("aria-expanded", "true");
+  aaMenu(false);
+  q.focus(); q.select();
+  if (q.value.trim()) runFind(); else findLabel();
+}
+/* reset: 다른 회차를 열 때 — 찾던 말도 지움 */
+function closeFind(reset = false){
+  const was = F.open;
+  clearTimeout(F.t);
+  Object.assign(F, { open: false, q: "", hits: [], set: new Set(), cur: -1, off: new Map(), idx: null, t: 0 });
+  hlClear();
+  const bar = $("#log-tabbar");
+  bar.classList.remove("finding"); $("#log-find").hidden = true;
+  bar.hidden = !V.log || V.log.tabs.length < 2;
+  $("#log-find-btn").setAttribute("aria-expanded", "false");
+  findLabel();
+  if (reset) $("#log-q").value = "";
+  else if (was) $("#log-find-btn").focus();
+}
+$("#log-q").addEventListener("input", () => { clearTimeout(F.t); F.t = setTimeout(runFind, 160); });
+/* Enter(휴대폰 자판의 ‘검색’ 키 포함) = 다음 결과. 칸을 form으로 두어, 한글을 조합하는 중의 Enter는 글자 확정만 하고 넘어가지 않게 브라우저에 맡김 */
+$("#log-find").addEventListener("submit", e => { e.preventDefault(); findGo(1); });
+$("#log-q").addEventListener("keydown", e => {
+  if (e.isComposing || e.keyCode === 229) return;
+  if (e.key === "Enter" && e.shiftKey){ e.preventDefault(); findGo(-1); }
+  else if (e.key === "ArrowDown"){ e.preventDefault(); findGo(1); }
+  else if (e.key === "ArrowUp"){ e.preventDefault(); findGo(-1); }
+});
+document.addEventListener("comu:log-dirty", () => { F.idx = null; if (F.open && F.q) runFind(); });   // 편집으로 본문이 바뀜
+document.addEventListener("keydown", e => {
+  if (nav.current !== "log" || !V.log || e.altKey || document.querySelector("dialog[open]")) return;
+  const mod = e.ctrlKey || e.metaKey, typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
+  if (mod && !e.shiftKey && e.key.toLowerCase() === "f"){
+    if (F.open && document.activeElement === $("#log-q")) return;    // 찾기 칸에서 한 번 더 누르면 브라우저 찾기
+    e.preventDefault(); openFind();
+  } else if (!mod && e.key === "/" && !typing){ e.preventDefault(); openFind(); }
+});
 
 /* ---------- 조작 ---------- */
 document.addEventListener("click", e => {
+  if (e.target.closest("#log-find-btn")){ F.open ? closeFind() : openFind(); return; }
+  if (e.target.closest("#log-find-next")){ findGo(1); return; }
+  if (e.target.closest("#log-find-prev")){ findGo(-1); return; }
+  if (e.target.closest("#log-find-x")){ closeFind(); return; }
+  if (e.target.closest("#log-find-more") && V.log){
+    for (const t of F.off.keys()) V.hidden.delete(t);
+    V.tabsTouched = true; drawTabs(); render();
+    if (V.mode === "novel") novel().then(m => m.refreshNovel());
+    runFind(); $("#log-q").focus();
+    return;
+  }
   const tb = e.target.closest("#log-tabs button");
   if (tb && V.log){
     const t = +tb.dataset.tab;
@@ -431,6 +656,7 @@ document.addEventListener("click", e => {
     pane.scrollTop = Math.min(top, pane.scrollHeight);
     if (V.mode === "novel") novel().then(m => m.refreshNovel());
     railHere();
+    if (F.q) runFind();                                              // 보이는 탭이 바뀌었으니 다시 찾음
     return;
   }
   const pb = e.target.closest("[data-bgm-play]");
@@ -468,7 +694,7 @@ document.addEventListener("click", e => {
   const stb = e.target.closest("[data-st]"); if (stb){ showSt = stb.dataset.st === "1"; try { localStorage.setItem(ST_KEY, showSt ? "1" : "0"); } catch (_) {} applySt(); return; }
   if (!$("#log-aa-menu").hidden && !e.target.closest("#log-aa-menu")) aaMenu(false);
   if (e.target.closest("#log-full")){ toggleFull(); return; }
-  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261031h").then(m => m.toggleEdit()); return; }
+  if (e.target.closest("#log-edit")){ import("./logedit.js?v=20261031i").then(m => m.toggleEdit()); return; }
   const sz = e.target.closest(".log-size button");
   if (sz){
     size = Math.max(0, Math.min(SIZES.length - 1, size + +sz.dataset.size));
@@ -480,5 +706,7 @@ document.addEventListener("keydown", e => {
   if (e.key !== "Escape" || nav.current !== "log" || document.querySelector("dialog[open]")) return;
   // 여기서 처리한 Esc는 사이트 전체의 ‘Esc = 목록으로’까지 가지 않게 막음
   if (!$("#log-aa-menu").hidden){ e.stopPropagation(); aaMenu(false); $("#log-aa").focus(); return; }
+  // 찾기 닫기: 찾기 칸 안에서 눌렀거나, 노벨의 지난 대사·채팅창처럼 먼저 닫을 것이 없을 때
+  if (F.open && (e.target.id === "log-q" || (!$("#vn-log:not([hidden])") && !$("#vn-stage.side-open")))){ e.stopImmediatePropagation(); closeFind(); return; }
   if (big && !document.fullscreenElement && !$("#vn-log:not([hidden])")){ e.stopPropagation(); setBig(false); }
 });

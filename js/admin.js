@@ -1,12 +1,12 @@
-import { loadMine } from "./auth.js?v=20261031h";
-import { CONFIG, idOf } from "./config.js?v=20261031h";
-import { CAT, CURRENCY, FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261031h";
-import { $, $$, CUR, announce, chipAmt, esc, toast } from "./dom.js?v=20261031h";
-import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261031h";
-import { renderMarkdown } from "./markdown.js?v=20261031h";
-import { extOf, toWebP } from "./img.js?v=20261031h";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
-import { state } from "./state.js?v=20261031h";
-import { ALL, renderAccount } from "./views.js?v=20261031h";
+import { loadMine } from "./auth.js?v=20261031i";
+import { CONFIG, idOf } from "./config.js?v=20261031i";
+import { CAT, CURRENCY, FOCUS, LOGS, ROLE, USE_DB, fmtDate, fmtTime, parseFocus, publicUrl, refreshPublic, sb } from "./data.js?v=20261031i";
+import { $, $$, CUR, announce, chipAmt, esc, toast } from "./dom.js?v=20261031i";
+import { checkField, errMsg, fieldError, showMsg, validateForm, withBusy } from "./forms.js?v=20261031i";
+import { renderMarkdown } from "./markdown.js?v=20261031i";
+import { extOf, toWebP } from "./img.js?v=20261031i";   // 이미지 변환 (룰렛 자리 이미지와 같이 씀)
+import { state } from "./state.js?v=20261031i";
+import { ALL, renderAccount } from "./views.js?v=20261031i";
 
 /* =========================================================
    ADMIN — 관리 페이지. 화면만 관리자에게 보이고, 실제 차단은 RLS + RPC가 담당
@@ -186,7 +186,7 @@ export async function admLoad(table){
 function ensureAdminCss(){
   if (document.getElementById("admin-css")) return;
   const l = document.createElement("link");
-  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261031h";
+  l.id = "admin-css"; l.rel = "stylesheet"; l.href = "css/admin.css?v=20261031i";
   document.head.append(l);
 }
 
@@ -888,7 +888,7 @@ admPanel().addEventListener("click", async e => {
   if (t.closest(".bm-link")){ e.preventDefault(); toast("이 버튼은 누르지 말고 즐겨찾기 막대로 끌어다 놓으세요"); return; }
   if (t.closest("[data-log-room]")) return withBusy(t.closest("[data-log-room]"), logRoom);
   if (t.closest("[data-log-lib]")) return logLibPaste();
-  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261031h"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
+  if (t.closest("[data-log-bm-copy]")){ const { BOOKMARKLET } = await import("./logparse.js?v=20261031i"); try { await navigator.clipboard.writeText(BOOKMARKLET); toast("북마크 코드를 복사했습니다"); } catch (_){ toast("복사하지 못했습니다"); } return; }
   const logSave = t.closest("[data-log-save]");
   if (logSave) return withBusy(logSave, () => logSaveNow(logSave.dataset.id));
   const logDel = t.closest("[data-log-del]");
@@ -987,19 +987,24 @@ async function logRead(input){
   if (!f) return;
   if (f.size > 60 * 1024 * 1024){ fieldError(input, "60MB 이하 파일만 올릴 수 있습니다."); return; }
   $("#log-status").textContent = "읽는 중…";
-  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261031h");
-  LOG.match = (await import("./logsecret.js?v=20261031h")).matchCharacters;
+  const { parseLog, analyze, BOOKMARKLET } = await import("./logparse.js?v=20261031i");
+  LOG.match = (await import("./logsecret.js?v=20261031i")).matchCharacters;
   const messages = parseLog(await f.text());
   $("#log-status").textContent = "";
   if (!messages.length){ fieldError(input, "대사를 찾지 못했습니다. 코코포리아에서 내보낸 로그 파일이 맞는지 확인해 주세요."); return; }
   LOG.messages = messages; LOG.info = analyze(messages); LOG.name = f.name;
   const tabs = LOG.info.tabs, sp = LOG.info.speakers;
+  const hasOld = !!(ADM.rows.chapters || []).find(r => r.id === btn.dataset.id)?.log_path;
   opts.innerHTML = `
     <p class="form-note">대사 ${messages.length.toLocaleString("ko-KR")}개 · 탭 ${tabs.length}개 · 화자 ${sp.length}명을 찾았습니다.</p>
     <fieldset class="log-fs"><legend>저장할 탭과 종류</legend>
       <div class="log-tabrows">${tabs.map((t, i) => logTabRow(t, i)).join("")}</div>
-      <p class="hint">메인: 노벨 모드 대사창 · 잡담: 노벨 모드 채팅창, 읽기 화면에서 처음엔 접힘 · 정보: 노벨 모드 쪽지 ·
-        비밀: 공개 기록 파일에서 빠지고, 체크한 캐릭터의 주인과 관리자만 봅니다. 캐릭터는 그 탭에서 말한 이름과 같은 사이트 캐릭터를 미리 골라 둡니다.</p>
+      <ul class="hint log-kinds">
+        <li><b>메인</b> — 노벨에서 아래 대사창에 한 줄씩 나옵니다.</li>
+        <li><b>잡담</b> — 노벨에서는 오른쪽 채팅창에 나오고, 읽기 화면에서는 처음에 꺼져 있습니다.</li>
+        <li><b>정보</b> — 노벨에서는 오른쪽 채팅창에 제목만 보이고, 누르면 펼쳐집니다.</li>
+        <li><b>비밀</b> — 공개 기록 파일에서 빠지고, 체크한 캐릭터의 주인과 관리자만 봅니다. 그 탭에서 말한 이름과 같은 사이트 캐릭터를 미리 골라 둡니다.</li>
+      </ul>
     </fieldset>
     <fieldset class="log-fs"><legend>나레이션으로 보일 화자</legend>
       <p class="hint" style="margin-top:0">체크한 화자는 이름 없이 본문처럼 보입니다 (진행자·KP 등).</p>
@@ -1023,7 +1028,11 @@ async function logRead(input){
       </details>
       <p class="adm-status" id="log-lib-status" role="status"></p>
     </fieldset>
-    <label class="check"><input type="checkbox" id="log-strip" checked>줄 처음·끝의 @표정 태그 지우기</label>`;
+    <label class="check"><input type="checkbox" id="log-strip" checked>줄 처음·끝의 @표정 태그 지우기</label>
+    ${hasOld ? `<fieldset class="log-fs"><legend>이미 저장된 기록이 있습니다</legend>
+      <label class="check"><input type="checkbox" id="log-keep" checked>기록 화면에서 넣은 배경·BGM 표시를 새 기록에도 그대로 두기</label>
+      <p class="hint" style="margin-bottom:0">표시가 붙어 있던 대사를 새 로그에서 찾아 같은 자리에 옮깁니다. 기록 화면에서 고친 대사는 새 로그 내용으로 바뀝니다.</p>
+    </fieldset>` : ""}`;
   btn.disabled = false;
 }
 
@@ -1053,7 +1062,7 @@ function libSummary(extra = ""){
 }
 
 async function logRoom(){
-  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261031h");
+  const { roomIdFrom, loadRoom, alignRoomFaces } = await import("./logparse.js?v=20261031i");
   const id = roomIdFrom($("#log-room").value);
   if (!id){ $("#log-lib-status").textContent = "코코포리아 룸 링크 형식이 아닙니다. (https://ccfolia.com/rooms/…)"; $("#log-room").focus(); return; }
   try {
@@ -1069,7 +1078,7 @@ async function logRoom(){
 }
 
 async function logLibPaste(){
-  const { parseLibrary } = await import("./logparse.js?v=20261031h");
+  const { parseLibrary } = await import("./logparse.js?v=20261031i");
   try {
     const lib = parseLibrary($("#log-lib-text").value);
     if (!lib.length){ $("#log-lib-status").textContent = "캐릭터를 찾지 못했습니다."; return; }
@@ -1113,34 +1122,39 @@ export async function backupFaces(urls, onProgress = () => {}){
 
 async function logSaveNow(id){
   if (!LOG.messages) return;
-  const { pack } = await import("./logparse.js?v=20261031h");
+  const { pack } = await import("./logparse.js?v=20261031i");
   const include = new Set($$('input[name="log-tab"]:checked').map(i => LOG.info.tabs[+i.value].name));
   const narrators = new Set($$('input[name="log-narr"]:checked').map(i => LOG.info.speakers[+i.value].name));
   if (!include.size){ $("#log-status").textContent = "저장할 탭을 하나 이상 골라 주세요."; return; }
   const row = (ADM.rows.chapters || []).find(r => r.id === id);
-  if (row?.log_path && !confirm("이미 저장된 기록을 새 로그로 바꿉니다. 기록 화면에서 고친 대사와 BGM 구간은 사라집니다. 계속할까요?")) return;
+  const keep = !!row?.log_path && !!$("#log-keep")?.checked;
+  if (row?.log_path && !confirm(keep
+    ? "이미 저장된 기록을 새 로그로 바꿉니다. 배경·BGM 표시는 같은 대사를 찾아 옮기고, 기록 화면에서 고친 대사는 새 로그 내용으로 바뀝니다. 계속할까요?"
+    : "이미 저장된 기록을 새 로그로 바꿉니다. 기록 화면에서 고친 대사와 배경·BGM 표시는 사라집니다. 계속할까요?")) return;
   const formats = new Map($$('select[name="log-fmt"]').map(sel => [LOG.info.tabs[+sel.dataset.t].name, sel.value]));
   const owners = new Map(LOG.info.tabs.map((t, i) => [t.name, $$(`input[name="log-who-${i}"]:checked`).map(x => x.value)]));
   const data = pack(LOG.messages, { include, narrators, stripTag: $("#log-strip").checked, src: LOG.name, library: LOG.library, formats, owners });
   try {
+    const { saveLog, carryMarks, loadSecrets, mergeLog } = await import("./logsecret.js?v=20261031i");
+    // 예전 기록의 배경·BGM 표시를 새 기록의 같은 대사로 옮김 (예전 기록을 못 읽으면 저장하지 않음 — 표시를 잃지 않게)
+    let carried = null;
+    if (keep){
+      $("#log-status").textContent = "예전 기록의 배경·BGM 표시를 옮기는 중…";
+      const r = await fetch(publicUrl("logs", row.log_path));
+      if (!r.ok) throw new Error("예전 기록을 읽지 못해서 저장하지 않았습니다. 잠시 후 다시 하거나, ‘배경·BGM 표시 그대로 두기’를 끄고 저장해 주세요.");
+      const sec = await loadSecrets(sb, id);
+      carried = carryMarks(mergeLog(await r.json(), sec.rows), data);
+      data.bg = carried.bg; data.bgm = carried.bgm;
+    }
     if (data.faces.length){
       const r = await backupFaces(data.faces, (d, n) => { $("#log-status").textContent = `표정 이미지 복사 중… ${d}/${n}`; });
       data.faces = r.faces;
       if (r.ok < data.faces.length) toast(`이미지 ${data.faces.length - r.ok}개는 코코포리아가 복사를 막아 원본 주소로 연결했습니다`);
     }
-    // 비밀 탭은 공개 기록 파일에서 빼서 log_secrets 표로 (update-20.sql)
-    const { splitLog, saveSecrets } = await import("./logsecret.js?v=20261031h");
-    const { pub, secrets } = splitLog(data);
-    const blob = new Blob([JSON.stringify(pub)], { type: "application/json" });
-    const path = `ch-${id}-${Date.now()}.json`;
-    $("#log-status").textContent = `저장 중… (${Math.ceil(blob.size / 1024).toLocaleString("ko-KR")}KB${secrets.length ? ` · 비밀 탭 ${secrets.length}개 따로` : ""})`;
-    await saveSecrets(sb, id, secrets);
-    const up = await sb.storage.from("logs").upload(path, blob, { contentType: "application/json", cacheControl: "31536000", upsert: false });
-    if (up.error) throw up.error;
-    const { error } = await sb.from("chapters").update({ log_path: path, updated_at: new Date().toISOString() }).eq("id", id);
-    if (error){ sb.storage.from("logs").remove([path]); throw error; }
-    if (row?.log_path) sb.storage.from("logs").remove([row.log_path]);
-    toast(`기록을 저장했습니다 (대사 ${data.n.toLocaleString("ko-KR")}개)`);
+    // 비밀 탭은 공개 기록 파일에서 빼서 log_secrets 표로 (update-20.sql). 공개 파일 → 비밀 탭 → 회차 연결 순서로 저장
+    await saveLog(sb, id, data, { oldPath: row?.log_path || "", onStatus: t => { $("#log-status").textContent = t; } });
+    const lost = carried ? carried.total - carried.kept : 0;
+    toast(`기록을 저장했습니다 (대사 ${data.n.toLocaleString("ko-KR")}개${carried?.total ? ` · 배경·BGM 표시 ${carried.kept}개 옮김${lost ? `, ${lost}개는 자리를 못 찾아 뺌` : ""}` : ""})`, lost ? 6000 : 2200);
     LOG.messages = null;
     await admLoad("chapters"); admRenderCrud("chapters");
     refreshPublic();
@@ -1153,7 +1167,7 @@ async function logDelete(id){
   const { error } = await sb.from("chapters").update({ log_path: null, updated_at: new Date().toISOString() }).eq("id", id);
   if (error){ $("#log-status").textContent = errMsg(error); return; }
   sb.storage.from("logs").remove([row.log_path]);
-  import("./logsecret.js?v=20261031h").then(m => m.saveSecrets(sb, id, [])).catch(() => {});   // 붙어 있던 비밀 탭도
+  import("./logsecret.js?v=20261031i").then(m => m.clearSecrets(sb, id)).catch(() => {});   // 붙어 있던 비밀 탭도
   toast("기록을 삭제했습니다");
   await admLoad("chapters"); admRenderCrud("chapters");
   refreshPublic();

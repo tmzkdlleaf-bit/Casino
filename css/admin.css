@@ -194,3 +194,8 @@ table.shop-log .st-cancelled{opacity:.6}
 .bulk-prev li{display:grid; gap:.2rem; justify-items:center; font-size:.6875rem; color:var(--text-2)}
 .bulk-prev img{width:3.6rem; height:3.6rem; object-fit:contain; image-rendering:pixelated; background:var(--black)}
 .bulk-prev span{max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
+/* 탭 종류 설명 */
+.log-kinds{margin:.7rem 0 0; padding-left:1.1rem}
+.log-kinds li{margin:.2rem 0}
+.log-kinds b{color:var(--ivory); font-weight:600}

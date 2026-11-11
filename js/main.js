@@ -1,14 +1,14 @@
-import { refreshAuth } from "./auth.js?v=20261031h";
-import { CALM_KEY, PAGES } from "./config.js?v=20261031h";
-import { AUTH_HASH, DB_CONFIGURED, USE_DB, loadAll, sb, showBootError } from "./data.js?v=20261031h";
-import { $, $$, announce, toast } from "./dom.js?v=20261031h";
-import { initBgm, initWorldBg } from "./ambience.js?v=20261031h";
-import { applyCalm, applyFilter, applyShow, castGo, castGoIndex, castStep, filterSummary, layoutCast, renderHeroChips, runIntro, setShowHover, showStep } from "./effects.js?v=20261031h";
-import { errMsg } from "./forms.js?v=20261031h";
-import { focusHeading, route } from "./router.js?v=20261031h";
-import { applyNavOrder } from "./navorder.js?v=20261031h";
-import { DATA, motionOK, nav, state } from "./state.js?v=20261031h";
-import { placeSegInk, renderAccount, renderCast, renderHome, renderInventory, renderNext, renderQuickLinks, renderRecords, renderSchedule, renderShop, renderStory } from "./views.js?v=20261031h";
+import { refreshAuth } from "./auth.js?v=20261031i";
+import { CALM_KEY, PAGES } from "./config.js?v=20261031i";
+import { AUTH_HASH, DB_CONFIGURED, USE_DB, loadAll, sb, showBootError } from "./data.js?v=20261031i";
+import { $, $$, announce, toast } from "./dom.js?v=20261031i";
+import { initBgm, initWorldBg } from "./ambience.js?v=20261031i";
+import { applyCalm, applyFilter, applyShow, castGo, castGoIndex, castStep, filterSummary, layoutCast, renderHeroChips, runIntro, setShowHover, showStep } from "./effects.js?v=20261031i";
+import { errMsg } from "./forms.js?v=20261031i";
+import { focusHeading, route } from "./router.js?v=20261031i";
+import { applyNavOrder } from "./navorder.js?v=20261031i";
+import { DATA, motionOK, nav, state } from "./state.js?v=20261031i";
+import { placeSegInk, renderAccount, renderCast, renderHome, renderInventory, renderNext, renderQuickLinks, renderRecords, renderSchedule, renderShop, renderStory } from "./views.js?v=20261031i";
 
 /* ---------- events ---------- */
 document.addEventListener("click", e => {
@@ -26,6 +26,10 @@ document.addEventListener("click", e => {
 
   const slot = e.target.closest("#pf-inv button.slot");
   if (slot){ renderInventory(state.invItems, +slot.dataset.slot); $(`#pf-inv [data-slot="${slot.dataset.slot}"]`).focus(); return; }
+
+  // 진행 기록 ‘처음부터’: 읽던 자리로 가지 않고 맨 앞에서 열기 (링크는 그대로 따라감)
+  const fromStart = e.target.closest("[data-log-start]");
+  if (fromStart) state.logStart = fromStart.dataset.logStart;
 
   // 지난 이야기: 회차 고르기 (넓은 화면은 오른쪽 창에 표시)
   const ch = e.target.closest("[data-ch]");

@@ -2286,3 +2286,110 @@ html{scrollbar-color:rgba(238,243,250,.22) transparent}
 ::-webkit-scrollbar-thumb{min-height:2.5rem; border:3px solid transparent; border-radius:999px; background:rgba(238,243,250,.2) padding-box}
 ::-webkit-scrollbar-thumb:hover{background-color:rgba(239,26,114,.75)}
 ::-webkit-scrollbar-thumb:active{background-color:var(--velvet)}
+
+/* =========================================================
+   진행 기록 — 손질 (고장 3건 · 노벨 대사창 · 휴대폰 위 막대와 탭 줄 · 찾기 · 이어 보기)
+   ========================================================= */
+/* 선택된 알약 버튼(읽기|노벨, 보기 설정): 마우스를 올리거나 휴대폰에서 누른 뒤에도 글자가 보이게 */
+.mseg button[aria-pressed="true"], .mseg button[aria-pressed="true"]:hover:not(:disabled){background:var(--ivory); color:#05070F}
+/* 켜진 AUTO: 누른 직후(올린 상태)에도 켜진 색 그대로 */
+.vn-ctl .vc[aria-pressed="true"], .vn-ctl .vc[aria-pressed="true"]:hover:not(:disabled){color:var(--red-text); background:rgba(239,26,114,.16)}
+/* 지난 대사 창은 무대 위의 다른 버튼(비밀·잡담, 편집)보다 위에 */
+.vn-log{z-index:8; background:#05070F}   /* 뒤의 대사창·조작 줄이 비쳐 보이지 않게 */
+.ib:disabled{opacity:.35; cursor:default}
+.ib-ico{flex:none; width:1rem; height:1rem; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round}
+
+/* ---------- 노벨 대사창: 높이를 줄 수로 정함 (이름 1줄 + 대사 N줄). 넘치는 대사는 쪽으로 넘김 (novel.js) ----------
+   무대(.vn-stage)가 크기 기준 상자라, 크기에 따라 바뀌는 값은 무대의 ‘자식’에 둠 (기준 상자 자신에게는 @container가 듣지 않음) */
+.vn-stage > *{
+  --vn-fs:calc(var(--lg-fs) * 1.3); --vn-lh:1.7; --vn-lines:3;
+  --vn-line:calc(var(--vn-fs) * var(--vn-lh));
+  --vn-top:2rem; --vn-gap:.7rem; --vn-ctl:3.5rem; --vn-px:clamp(1.2rem, 3vw, 2.6rem);
+  --box-h:calc(var(--vn-top) + var(--vn-line) * (var(--vn-lines) + 1) + var(--vn-gap) + var(--vn-ctl));
+}
+/* 줄 수: 무대가 높으면 4줄, 보통 3줄, 낮으면 2줄. 좁은 무대(휴대폰)는 글자를 조금 줄이고 4줄 → 낮아지면 3줄 → 2줄 */
+@container (min-height:880px){ .vn-stage > *{--vn-lines:4} }
+@container (max-height:469px){ .vn-stage > *{--vn-lines:2; --vn-top:1.2rem} }
+@container (max-height:300px){ .vn-stage > *{--vn-lines:1; --vn-top:.6rem; --vn-gap:.4rem} }   /* 눕힌 휴대폰처럼 아주 낮을 때 */
+@container (max-width:640px){ .vn-stage > *{--vn-fs:calc(var(--lg-fs) * 1.12); --vn-lines:4; --vn-top:1.5rem; --vn-px:1rem} }
+@container (max-width:640px) and (max-height:519px){ .vn-stage > *{--vn-lines:3} }
+@container (max-width:640px) and (max-height:399px){ .vn-stage > *{--vn-lines:2; --vn-top:1rem} }
+.vn-stage .vn-box, .vn-stage .vn-box.f-info, .vn-stage .vn-box.f-secret{height:var(--box-h); padding:var(--vn-top) var(--vn-px) 0;
+  background:linear-gradient(rgba(5,7,15,0), rgba(5,7,15,.9) var(--vn-top), rgba(5,7,15,.96))}
+.vn-stage .vn-name{flex:none; height:var(--vn-line); margin:0; font-size:calc(var(--vn-fs) * .88); line-height:1.2; text-shadow:0 1px 8px rgba(0,0,0,.75)}
+.vn-stage .vn-text{flex:1 1 0; min-height:0; margin:0 0 var(--vn-gap); font-size:var(--vn-fs); line-height:var(--vn-lh); overflow:hidden auto; overscroll-behavior:contain; scrollbar-width:none}
+.vn-stage .vn-text::-webkit-scrollbar{display:none}
+@container (min-width:641px){ .vn-stage .vn-text{padding-right:1.8rem} }   /* 오른쪽 아래 ▼ 자리는 비워 둠 */
+.vn-stage .vn-box.sys .vn-text{font-size:calc(var(--vn-fs) * .8)}
+.vn-text .h{visibility:hidden}                        /* 아직 안 나온 글자: 자리만 차지 */
+.vn-text.flip{animation:vn-flip .2s ease-out}
+@keyframes vn-flip{from{opacity:.2; transform:translateY(.3rem)} to{opacity:1; transform:none}}
+.vn-stage .vn-box .vn-ctl{flex:none; box-sizing:border-box; height:var(--vn-ctl); margin:0 calc(-1 * var(--vn-px)) !important; padding:.3rem var(--vn-px) .7rem}
+.vn-stage .vn-more{right:var(--vn-px); bottom:calc(var(--vn-ctl) + .45rem) !important}
+.vn-stage .vn-fix{top:calc(var(--vn-top) + .15rem); right:var(--vn-px)}
+.vn-stage .vn-side{bottom:calc(var(--box-h) - var(--vn-top) + .3rem)}
+@container (max-width:640px){ .vn-stage .vn-st{height:min(62%, calc(100% - var(--box-h) + 2.5rem))} }   /* 좁은 무대: 스탠딩은 대사창 위에 — 머리가 잘리지 않게 남은 높이 안에서 */
+/* 쪽 표시: 대사가 한 쪽에 다 안 들어갈 때만, 조작 줄 위 가운데 */
+.vn-pg{position:absolute; left:50%; top:0; z-index:3; transform:translate(-50%, -50%); min-height:1.5rem; padding:0 .7rem; border:1px solid rgba(239,26,114,.6); border-radius:999px; background:#0a0d1c; color:var(--red-text);
+  font-family:var(--f-pixel); font-size:.7rem; line-height:1; letter-spacing:.06em; white-space:nowrap; font-variant-numeric:tabular-nums; cursor:pointer}
+.vn-pg[hidden]{display:none}
+.vn-pg:hover:not(:disabled){background:#2a0a1c}
+.vn-pg:disabled{border-color:rgba(238,243,250,.18); color:var(--smoke); cursor:default}
+@media (prefers-reduced-motion:reduce){ .vn-text.flip{animation:none} }
+
+/* ---------- 위 막대: 아이콘 버튼 묶음 ---------- */
+.lb-btns{position:relative; flex:none; display:flex; align-items:center; gap:.5rem}
+/* 휴대폰: 1줄 = 돌아가기·회차·제목 (+오른쪽 끝에 BGM), 2줄 = 읽기·노벨 | 아이콘 버튼 */
+@media (max-width:760px){
+  .log-bar{position:relative; grid-template-columns:minmax(0,1fr) auto; gap:.45rem .5rem}
+  .lb-r{display:contents}
+  .lb-l{grid-column:1 / -1; grid-row:1; gap:.6rem}
+  .lbgm{position:absolute; top:.45rem; right:.6rem}                      /* 제목 줄 오른쪽 끝에 얹고 */
+  .log-bar:has(#log-snd:not([hidden])) .lb-l{padding-right:8rem}         /* 그만큼 제목 자리를 비워 둠 */
+  .lb-c{grid-column:1; grid-row:2}
+  .lb-btns{grid-column:2; grid-row:2; gap:.3rem}
+  .lb-btns .ib{min-width:2.4rem; height:2.4rem; padding:0 .5rem}
+  .lb-t .cb-ep{display:block; font-size:.68rem}
+  .lb-t .cb-title{font-size:1rem}
+  .log-mode button{min-width:0; padding:0 .3rem}
+}
+
+/* ---------- 탭 줄: 휴대폰에서는 넘치는 탭을 다음 줄로 (접으면 한 줄) ---------- */
+.log-tabbar{position:relative}
+@media (max-width:760px){
+  .log-tabbar, .log-tabbar.folded{height:auto; min-height:3rem; padding:.4rem .6rem; align-items:start; overflow:visible}
+  .log-tabbar .log-chips{flex-wrap:wrap; overflow:visible; row-gap:.35rem}
+  .log-tabbar .tchip{min-height:2.2rem; padding:0 .75rem}
+  .log-tabbar .tchip .c{display:none}                 /* 대사 수는 넓은 화면에서만 */
+}
+
+/* ---------- 찾기: 탭 줄 자리에 겹쳐 뜸 ---------- */
+.log-find{position:absolute; inset:0; z-index:5; display:flex; align-items:center; gap:.4rem; padding:0 1.1rem; background:#05070F; color:var(--smoke)}
+.log-find[hidden]{display:none}
+.log-box.is-vn .log-find{background:#000}
+.log-tabbar.finding > :not(.log-find){visibility:hidden}
+.log-find input{flex:1 1 auto; min-width:0; height:2.3rem; padding:0 .4rem; border:0; border-bottom:1px solid rgba(238,243,250,.22); border-radius:0; background:none; color:var(--ivory); font:inherit; font-size:1rem; outline:none}
+.log-find input:focus{border-bottom-color:var(--velvet)}
+.log-find input::placeholder{color:#6b7797}
+.log-find .fn{flex:none; min-width:3rem; text-align:right; font-family:var(--f-pixel); font-size:.75rem; font-variant-numeric:tabular-nums; white-space:nowrap}
+.log-find .fn.none{color:var(--red-text)}
+.fmore{flex:none; min-height:1.9rem; padding:0 .7rem; border:1px dashed rgba(173,207,234,.55); border-radius:999px; background:none; color:var(--gold); font-family:var(--f-pixel); font-size:.7rem; white-space:nowrap; cursor:pointer}
+.fmore[hidden]{display:none}
+.fmore:hover{border-style:solid}
+.ib.sm{min-width:2.2rem; height:2.2rem; padding:0; font-size:.7rem}
+@media (max-width:760px){
+  .log-find{padding:0 .6rem; gap:.25rem}
+  .log-find > .ib-ico{display:none}
+  .fmore{padding:0 .5rem}
+}
+::highlight(log-find){background-color:rgba(173,207,234,.34); color:inherit}
+::highlight(log-find-cur){background-color:#EF1A72; color:#fff}
+.vn-chat-list li.hit .bub, .vn-chat-list li.hit.q, .vn-chat-list li.hit .vn-info{box-shadow:0 0 0 2px var(--gold)}
+
+/* ---------- 지난 이야기: 읽던 자리 ---------- */
+.rd{display:inline-block; margin-left:.5rem; font-family:var(--f-pixel); font-weight:400; font-size:.68rem; color:var(--red-text)}
+.rd.done{color:var(--smoke)}
+.log-links{display:flex; flex-wrap:wrap; align-items:center; gap:.5rem}
+.m-only .log-links, .timeline .log-links{margin-top:.75rem}
+.log-links .log-link{margin-top:0}
+.log-link .pct{font-variant-numeric:tabular-nums; opacity:.9}
